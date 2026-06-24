@@ -18,6 +18,27 @@ class ProductSystemOption {
   });
 }
 
+class _SystemOptionsCacheEntry {
+  final List<ProductSystemOption> makeOptions;
+  final List<ProductSystemOption> modelOptions;
+  final List<ProductSystemOption> seriesOptions;
+  final List<ProductSystemOption> manufacturerOptions;
+  final List<ProductSystemOption> soldByOptions;
+
+  _SystemOptionsCacheEntry({
+    required List<ProductSystemOption> makeOptions,
+    required List<ProductSystemOption> modelOptions,
+    required List<ProductSystemOption> seriesOptions,
+    required List<ProductSystemOption> manufacturerOptions,
+    required List<ProductSystemOption> soldByOptions,
+  })  : makeOptions = List<ProductSystemOption>.unmodifiable(makeOptions),
+        modelOptions = List<ProductSystemOption>.unmodifiable(modelOptions),
+        seriesOptions = List<ProductSystemOption>.unmodifiable(seriesOptions),
+        manufacturerOptions =
+            List<ProductSystemOption>.unmodifiable(manufacturerOptions),
+        soldByOptions = List<ProductSystemOption>.unmodifiable(soldByOptions);
+}
+
 class ShopCategoryFilter extends StatefulWidget {
   final Function(Map<String, dynamic>) onApplyFilters;
   final String? initialCategoryId;
@@ -49,6 +70,9 @@ class ShopCategoryFilter extends StatefulWidget {
 }
 
 class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
+  static String? _cachedSystemOptionsKey;
+  static _SystemOptionsCacheEntry? _cachedSystemOptions;
+
   final menuController _menuController = Get.find<menuController>();
 
   String? _selectedCategoryId;
@@ -145,6 +169,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
     _selectedCategoryId = widget.initialCategoryId ?? 'all';
     _selectedSubCategoryId = widget.initialSubCategoryId;
     _selectedTitle = null;
+    _expandedCategories.clear();
     _selectedBrandIds = Set<String>.from(widget.initialSelectedBrands ?? []);
     _selectedMakeIds = Set<String>.from(widget.initialSelectedMakes ?? []);
     _selectedModelIds = Set<String>.from(widget.initialSelectedModels ?? []);
@@ -158,6 +183,12 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
     }
 
     if (_selectedSubCategoryId != null && _selectedSubCategoryId!.isNotEmpty) {
+      final parentCategoryId =
+          _findParentCategoryIdForSubcategory(_selectedSubCategoryId!);
+      if (parentCategoryId != null && parentCategoryId.isNotEmpty) {
+        _selectedCategoryId = parentCategoryId;
+      }
+
       if (_selectedCategoryId != null && _selectedCategoryId != 'all') {
         _expandedCategories.add(_selectedCategoryId!);
       }
@@ -169,6 +200,23 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
         }
       });
     }
+  }
+
+  String? _findParentCategoryIdForSubcategory(String subcategoryId) {
+    for (final category in _menuController.categories) {
+      if (_containsChildCategory(category.children, subcategoryId)) {
+        return category.id;
+      }
+    }
+    return null;
+  }
+
+  bool _containsChildCategory(List<Child> children, String targetId) {
+    for (final child in children) {
+      if (child.id == targetId) return true;
+      if (_containsChildCategory(child.children, targetId)) return true;
+    }
+    return false;
   }
 
   bool _sameStringSet(List<String>? a, List<String>? b) {
@@ -277,6 +325,23 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
       return;
     }
 
+    final cacheKey = _systemOptionsCacheKey;
+    final cachedOptions = _cachedSystemOptions;
+    if (cacheKey == _cachedSystemOptionsKey && cachedOptions != null) {
+      if (mounted) {
+        setState(() {
+          _applySystemOptions(cachedOptions);
+          _isMakesLoading = false;
+          _isModelsLoading = false;
+          _isSeriesLoading = false;
+          _isManufacturersLoading = false;
+          _isSoldByLoading = false;
+        });
+      }
+      log('Using cached make/model options for selected category');
+      return;
+    }
+
     if (mounted) {
       setState(() {
         _isMakesLoading = true;
@@ -330,12 +395,23 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
           manufacturerOptions.map((option) => option.id).toSet();
       final soldByIds = soldByOptions.map((option) => option.id).toSet();
 
+      final cacheEntry = _SystemOptionsCacheEntry(
+        makeOptions: makeOptions,
+        modelOptions: modelOptions,
+        seriesOptions: seriesOptions,
+        manufacturerOptions: manufacturerOptions,
+        soldByOptions: soldByOptions,
+      );
+      _cachedSystemOptionsKey = cacheKey;
+      _cachedSystemOptions = cacheEntry;
+
       setState(() {
-        _makeOptions = makeOptions;
-        _modelOptions = modelOptions;
-        _seriesOptions = seriesOptions;
-        _manufacturerOptions = manufacturerOptions;
-        _soldByOptions = soldByOptions;
+        _makeOptions = List<ProductSystemOption>.from(makeOptions);
+        _modelOptions = List<ProductSystemOption>.from(modelOptions);
+        _seriesOptions = List<ProductSystemOption>.from(seriesOptions);
+        _manufacturerOptions =
+            List<ProductSystemOption>.from(manufacturerOptions);
+        _soldByOptions = List<ProductSystemOption>.from(soldByOptions);
         _selectedMakeIds.removeWhere((id) => !makeIds.contains(id));
         _selectedModelIds.removeWhere((id) => !modelIds.contains(id));
         _selectedSeriesIds.removeWhere((id) => !seriesIds.contains(id));
@@ -367,6 +443,49 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
         _selectedCategoryId != 'all' &&
         _selectedCategoryId!.isNotEmpty;
     return hasSubCategory || hasCategory;
+  }
+
+  String get _systemOptionsCacheKey {
+    final selectedSubCategoryId = _selectedSubCategoryId;
+    if (selectedSubCategoryId != null && selectedSubCategoryId.isNotEmpty) {
+      return 'subcategory:$selectedSubCategoryId';
+    }
+
+    final selectedCategoryId = _selectedCategoryId;
+    if (selectedCategoryId != null &&
+        selectedCategoryId != 'all' &&
+        selectedCategoryId.isNotEmpty) {
+      return 'parentCategory:$selectedCategoryId';
+    }
+
+    return 'all';
+  }
+
+  void _applySystemOptions(_SystemOptionsCacheEntry options) {
+    _makeOptions = List<ProductSystemOption>.from(options.makeOptions);
+    _modelOptions = List<ProductSystemOption>.from(options.modelOptions);
+    _seriesOptions = List<ProductSystemOption>.from(options.seriesOptions);
+    _manufacturerOptions =
+        List<ProductSystemOption>.from(options.manufacturerOptions);
+    _soldByOptions = List<ProductSystemOption>.from(options.soldByOptions);
+
+    final makeIds = _makeOptions.map((option) => option.id).toSet();
+    final modelIds = _modelOptions.map((option) => option.id).toSet();
+    final seriesIds = _seriesOptions.map((option) => option.id).toSet();
+    final manufacturerIds =
+        _manufacturerOptions.map((option) => option.id).toSet();
+    final soldByIds = _soldByOptions.map((option) => option.id).toSet();
+
+    _selectedMakeIds.removeWhere((id) => !makeIds.contains(id));
+    _selectedModelIds.removeWhere((id) => !modelIds.contains(id));
+    _selectedSeriesIds.removeWhere((id) => !seriesIds.contains(id));
+    _selectedManufacturerIds.removeWhere((id) => !manufacturerIds.contains(id));
+    _selectedSoldByIds.removeWhere((id) => !soldByIds.contains(id));
+  }
+
+  void _clearCachedSystemOptions() {
+    _cachedSystemOptionsKey = null;
+    _cachedSystemOptions = null;
   }
 
   Future<List<dynamic>> _fetchProductsForSelectedCategory() async {
@@ -643,11 +762,17 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
       children: [
         InkWell(
           onTap: () {
+            final hasCategoryChanged = _selectedCategoryId != categoryId ||
+                _selectedSubCategoryId != null;
+
+            if (!hasCategoryChanged) return;
+
             setState(() {
               _selectedCategoryId = categoryId;
               _selectedSubCategoryId = null;
               _selectedTitle = categoryName;
               _clearSystemSelectionsAndOptions();
+              _clearCachedSystemOptions();
               log('Selected category: $categoryName ($categoryId)');
             });
             _refreshSystemOptionsForSelection();
@@ -697,13 +822,29 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                 if (hasChildren)
                   InkWell(
                     onTap: () {
+                      final hasCategoryChanged =
+                          _selectedCategoryId != categoryId ||
+                              _selectedSubCategoryId != null;
+
                       setState(() {
                         if (isExpanded) {
                           _expandedCategories.remove(categoryId);
                         } else {
                           _expandedCategories.add(categoryId);
                         }
+
+                        if (hasCategoryChanged) {
+                          _selectedCategoryId = categoryId;
+                          _selectedSubCategoryId = null;
+                          _selectedTitle = categoryName;
+                          _clearSystemSelectionsAndOptions();
+                          _clearCachedSystemOptions();
+                          log('Selected category: $categoryName ($categoryId)');
+                        }
                       });
+                      if (hasCategoryChanged) {
+                        _refreshSystemOptionsForSelection();
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(4),
@@ -740,11 +881,17 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
       children: [
         InkWell(
           onTap: () {
+            final hasCategoryChanged = _selectedCategoryId != parentId ||
+                _selectedSubCategoryId != childId;
+
+            if (!hasCategoryChanged) return;
+
             setState(() {
               _selectedCategoryId = parentId;
               _selectedSubCategoryId = childId;
               _selectedTitle = childName;
               _clearSystemSelectionsAndOptions();
+              _clearCachedSystemOptions();
               log('Selected subcategory level $level: $childName ($childId)');
             });
             _refreshSystemOptionsForSelection();
@@ -799,13 +946,29 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                 if (hasChildren)
                   InkWell(
                     onTap: () {
+                      final hasCategoryChanged =
+                          _selectedCategoryId != parentId ||
+                              _selectedSubCategoryId != childId;
+
                       setState(() {
                         if (isExpanded) {
                           _expandedCategories.remove(childId);
                         } else {
                           _expandedCategories.add(childId);
                         }
+
+                        if (hasCategoryChanged) {
+                          _selectedCategoryId = parentId;
+                          _selectedSubCategoryId = childId;
+                          _selectedTitle = childName;
+                          _clearSystemSelectionsAndOptions();
+                          _clearCachedSystemOptions();
+                          log('Selected subcategory level $level: $childName ($childId)');
+                        }
                       });
+                      if (hasCategoryChanged) {
+                        _refreshSystemOptionsForSelection();
+                      }
                     },
                     child: Padding(
                       padding: const EdgeInsets.all(4),
@@ -1151,11 +1314,17 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                 // All Categories option
                 InkWell(
                   onTap: () {
+                    final hasCategoryChanged = _selectedCategoryId != 'all' ||
+                        _selectedSubCategoryId != null;
+
+                    if (!hasCategoryChanged) return;
+
                     setState(() {
                       _selectedCategoryId = 'all';
                       _selectedSubCategoryId = null;
                       _selectedTitle = null;
                       _clearSystemSelectionsAndOptions();
+                      _clearCachedSystemOptions();
                     });
                   },
                   child: Padding(

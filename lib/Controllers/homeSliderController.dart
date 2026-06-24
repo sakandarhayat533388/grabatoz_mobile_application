@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../Api/Models/categorymodel.dart';
@@ -45,7 +44,7 @@ class HomeSliderController extends GetxController {
           } else {
             secondCategoryName.value = category.last.name ?? '';
             secondId.value = category.last.sId ?? '';
-          }
+          } 
         } else if (category.isNotEmpty) {
           firstCategoryName.value = category.first.name ?? '';
           firstId.value = category.first.sId ?? '';

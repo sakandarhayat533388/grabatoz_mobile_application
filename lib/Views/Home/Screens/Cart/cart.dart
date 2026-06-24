@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Views/Auth/signup.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/new_checkout_view.dart';
 import 'package:graba2z/Views/Home/home.dart';
@@ -25,6 +26,11 @@ const String _homeSvg = '''
 </svg>
 ''';
 
+const Color _discountBrandColor = kPrimaryColor;
+const Color _discountGold = Color(0xFFF5B51B);
+const Color _discountSoftBrandColor = Color(0xFFF0FBE0);
+const Color _discountSoftGold = Color(0xFFFFF7E4);
+
 class Cart extends StatefulWidget {
   const Cart({super.key});
 
@@ -39,11 +45,10 @@ class _CartState extends State<Cart> {
     super.initState();
     final cartNotifier = Get.find<CartNotifier>();
 
-    _loadUserIdAndCart(cartNotifier);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    _loadUserIdAndCart(cartNotifier).then((_) {
       if (!mounted || !Get.isRegistered<FirstUserDiscountController>()) return;
       final discountController = Get.find<FirstUserDiscountController>();
-      discountController.loadStatus().then((_) {
+      discountController.loadStatus().then((__) {
         discountController.previewCart(cartNotifier.cartOtherInfoList);
       });
     });
@@ -225,17 +230,32 @@ class _CartState extends State<Cart> {
           '';
       String price = product['price']?.toString() ??
           product['regularPrice']?.toString() ??
-          (cartItem.productPrice ?? 0).toString();
+          cartItem.cartBasePrice.toString();
       String stockStatus = product['stockStatus']?.toString() ??
           ((product['stock'] is num && (product['stock'] as num) > 0)
               ? 'Available'
               : 'Out of Stock');
+      String stockCount = (product['stock'] ??
+              product['countInStock'] ??
+              product['stockCount'] ??
+              product['quantity'] ??
+              '')
+          .toString();
       String description = product['description']?.toString() ??
           product['longDescription']?.toString() ??
           '';
       String shortdesc = product['shortdesc']?.toString() ??
           product['shortDescription']?.toString() ??
           '';
+      List<dynamic> colorVariations = product['colorVariations'] is List
+          ? List<dynamic>.from(product['colorVariations'])
+          : [];
+      List<dynamic> variations = product['variations'] is List
+          ? List<dynamic>.from(product['variations'])
+          : [];
+      List<dynamic> availableModels = product['availableModels'] is List
+          ? List<dynamic>.from(product['availableModels'])
+          : [];
 
       Get.to(() => NewProductDetails(
             images: images,
@@ -250,8 +270,12 @@ class _CartState extends State<Cart> {
             offerPrice: offerPrice,
             price: price,
             stockStatus: stockStatus,
+            stockCount: stockCount,
             description: description,
             shortdesc: shortdesc,
+            colorVariations: colorVariations,
+            variations: variations,
+            availableModels: availableModels,
           ));
     } catch (e) {
       debugPrint('Error fetching product details: $e');
@@ -369,7 +393,7 @@ class _CartState extends State<Cart> {
                                         context,
                                         cartItem.productName!,
                                         cartItem.productImage!,
-                                        cartItem.productPrice.toString(),
+                                        cartItem.cartBasePrice.toString(),
                                         cartItem.quantity.toString(),
                                       ) ==
                                       true;
@@ -441,7 +465,7 @@ class _CartState extends State<Cart> {
                                                     .productImage
                                                     .toString())
                                                 : "https://i.postimg.cc/SsWYSvq6/noimage.png",
-                                            cartItem.productPrice.toString(),
+                                            cartItem.cartBasePrice.toString(),
                                             cartItem.quantity.toString(),
                                             cartNotifier,
                                           );
@@ -460,7 +484,7 @@ class _CartState extends State<Cart> {
                                                   .productImage
                                                   .toString())
                                               : "https://i.postimg.cc/SsWYSvq6/noimage.png",
-                                          cartItem.productPrice.toString(),
+                                          cartItem.cartBasePrice.toString(),
                                           cartItem.quantity.toString(),
                                           cartNotifier,
                                         );
@@ -629,14 +653,13 @@ class _CartState extends State<Cart> {
                     ),
                     Obx(() {
                       final authProvider = Get.find<AuthController>();
-                      final appDiscountAmount = _appOrderDiscountAmount(
-                          cartNotifier, authProvider);
+                      final appDiscountAmount =
+                          _appOrderDiscountAmount(cartNotifier, authProvider);
                       if (appDiscountAmount <= 0) {
                         return const SizedBox.shrink();
                       }
 
-                      final isGuestPreview =
-                          authProvider.userID.value.isEmpty;
+                      final isGuestPreview = authProvider.userID.value.isEmpty;
                       return Column(
                         children: [
                           Row(
@@ -647,8 +670,7 @@ class _CartState extends State<Cart> {
                                     ? 'App registration discount:'
                                     : 'First app order discount:',
                                 style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold),
+                                    fontSize: 14, fontWeight: FontWeight.bold),
                               ),
                               Text(
                                 '- ${appDiscountAmount.toStringAsFixed(2)} AED',
@@ -1215,7 +1237,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                         children: [
                           Expanded(
                             child: Text(
-                              "${(widget.cartItem.productPrice ?? 0) * (widget.cartItem.quantity ?? 0)} AED", // Handle null
+                              "${(widget.cartItem.cartBasePrice * (widget.cartItem.quantity ?? 0)).toStringAsFixed(2)} AED",
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -1303,128 +1325,365 @@ void showCheckoutDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (BuildContext dialogContext) {
-      return AlertDialog(
-        backgroundColor: kPrimaryColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text(
-          "Checkout Options",
-          style: TextStyle(
-              fontWeight: FontWeight.bold, fontSize: 24, color: kdefwhiteColor),
-        ),
-        content: const Text(
-          "Please choose an option to proceed with checkout.",
-          style: TextStyle(
-              fontSize: 16, color: kdefwhiteColor, fontWeight: FontWeight.w600),
-        ),
-        actions: <Widget>[
-          GestureDetector(
-            onTap: () {
-              Navigator.of(dialogContext).pop();
-              // print("Login pressed");
-              rootContext.route(Login());
-            },
-            child: Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              margin: const EdgeInsets.symmetric(vertical: 5),
+      return Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 26, 20, 20),
               decoration: BoxDecoration(
                 color: kdefwhiteColor,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(22),
+                boxShadow: [
+                  BoxShadow(
+                    color: _discountBrandColor.withValues(alpha: .14),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
               ),
-              child: Row(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.login, color: kSecondaryColor),
-                  SizedBox(width: 8),
-                  Text(
-                    "Login".toUpperCase(),
+                  Container(
+                    height: 76,
+                    width: 76,
+                    decoration: const BoxDecoration(
+                      color: _discountSoftBrandColor,
+                      shape: BoxShape.circle,
+                    ),
+                    padding: const EdgeInsets.all(10),
+                    child: Image.asset(
+                      'assets/images/gift_image.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _discountSoftGold,
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.star_rounded,
+                            color: _discountGold, size: 16),
+                        SizedBox(width: 5),
+                        Text(
+                          'WELCOME NEW USERS!',
+                          style: TextStyle(
+                            color: _discountGold,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'New User Discount',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                        color: kSecondaryColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold),
+                      color: _discountBrandColor,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
+                    ),
+                  ),
+                  const Text(
+                    'Available!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: _discountGold,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w900,
+                      height: 1.05,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Register or log in to unlock your exclusive new user discount and enjoy special offers.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: kSecondaryColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: kdefwhiteColor,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE7ECF6)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Expanded(
+                          child: _CheckoutBenefitItem(
+                            icon: Icons.local_offer_rounded,
+                            title: 'Discount',
+                            subtitle: 'First order',
+                          ),
+                        ),
+                        _CheckoutBenefitDivider(),
+                        Expanded(
+                          child: _CheckoutBenefitItem(
+                            icon: Icons.redeem_rounded,
+                            title: 'Offers',
+                            subtitle: 'Member deals',
+                          ),
+                        ),
+                        _CheckoutBenefitDivider(),
+                        Expanded(
+                          child: _CheckoutBenefitItem(
+                            icon: Icons.speed_rounded,
+                            title: 'Fast',
+                            subtitle: 'Checkout',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _CheckoutActionButton(
+                    label: 'Login',
+                    icon: Icons.login_rounded,
+                    backgroundColor: _discountBrandColor,
+                    foregroundColor: kdefwhiteColor,
+                    onTap: () {
+                      Navigator.of(dialogContext).pop();
+                      rootContext.route(Login());
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _CheckoutActionButton(
+                    label: 'Register',
+                    icon: Icons.person_add_alt_1_rounded,
+                    backgroundColor: _discountBrandColor,
+                    foregroundColor: kdefwhiteColor,
+                    onTap: () {
+                      Navigator.of(dialogContext).pop();
+                      rootContext.route(SignUp());
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  _CheckoutActionButton(
+                    label: 'Continue as Guest',
+                    icon: Icons.person_outline_rounded,
+                    backgroundColor: kdefwhiteColor,
+                    foregroundColor: _discountBrandColor,
+                    borderColor: _discountBrandColor,
+                    onTap: () async {
+                      Navigator.of(dialogContext).pop();
+                      await clearGuestCheckoutData();
+
+                      final auth = Get.find<AuthController>();
+                      auth.isGuest.value = true;
+                      if (Get.isRegistered<FirstUserDiscountController>()) {
+                        Get.find<FirstUserDiscountController>().clearAll();
+                      }
+
+                      Get.to(() => CheckoutStepper(isforguest: true));
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: _discountSoftGold,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.warning_amber_rounded,
+                            color: _discountGold, size: 19),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Continue as Guest, you will lose your New User Discount.',
+                            style: TextStyle(
+                              color: kSecondaryColor,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              height: 1.25,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: () {
-              Navigator.of(dialogContext).pop();
-              rootContext.route(SignUp());
-            },
-            child: Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              margin: const EdgeInsets.symmetric(vertical: 5),
-              decoration: BoxDecoration(
-                color: kSecondaryColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.person_add, color: kdefwhiteColor),
-                  SizedBox(width: 8),
-                  Text(
-                    "Signup".toUpperCase(),
-                    style: TextStyle(
-                        color: kdefwhiteColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold),
+            Positioned(
+              top: -12,
+              right: -8,
+              child: Material(
+                color: kdefwhiteColor,
+                shape: const CircleBorder(),
+                elevation: 5,
+                shadowColor: _discountBrandColor,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => Navigator.of(dialogContext).pop(),
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.close_rounded,
+                      color: kSecondaryColor,
+                      size: 22,
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-          GestureDetector(
-            onTap: () async {
-              // Navigator.of(context).pop();
-              // // context.route(GuestDataForm());
-              // Get.to(() => CheckoutStepper(
-              //       isforguest: true,
-              //     ));
-              Navigator.of(dialogContext).pop();
-
-              final continueAsGuest =
-                  await showGuestDiscountWarning(rootContext);
-              if (continueAsGuest != true) {
-                return;
-              }
-
-              final auth = Get.find<AuthController>();
-              auth.isGuest.value = true;
-              if (Get.isRegistered<FirstUserDiscountController>()) {
-                Get.find<FirstUserDiscountController>().clearAll();
-              }
-
-              Get.to(() => CheckoutStepper(isforguest: true));
-            },
-            child: Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-              margin: const EdgeInsets.symmetric(vertical: 5),
-              decoration: BoxDecoration(
-                color: kredColor,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.person, color: kdefwhiteColor),
-                  SizedBox(width: 8),
-                  Text(
-                    "Continue as Guest".toUpperCase(),
-                    style: TextStyle(
-                        color: kdefwhiteColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       );
     },
   );
+}
+
+class _CheckoutActionButton extends StatelessWidget {
+  const _CheckoutActionButton({
+    required this.label,
+    required this.icon,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.onTap,
+    this.borderColor,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final Color? borderColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: onTap,
+        child: Container(
+          height: 48,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: borderColor ?? backgroundColor),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: foregroundColor, size: 21),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: foregroundColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(Icons.chevron_right_rounded,
+                  color: foregroundColor, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckoutBenefitItem extends StatelessWidget {
+  const _CheckoutBenefitItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 40,
+          width: 40,
+          decoration: const BoxDecoration(
+            color: _discountSoftBrandColor,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: _discountBrandColor, size: 21),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: _discountBrandColor,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: kSecondaryColor,
+            fontSize: 9.5,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CheckoutBenefitDivider extends StatelessWidget {
+  const _CheckoutBenefitDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 58,
+      width: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 8),
+      color: const Color(0xFFE7ECF6),
+    );
+  }
 }

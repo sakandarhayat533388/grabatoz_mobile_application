@@ -143,8 +143,9 @@ class CartNotifier extends GetxController {
     List<CartOtherInfo> guestCart = cartOtherInfoListFromJson(guestCartData);
 
     for (var guestItem in guestCart) {
-      int existingIndex = mergedCart
-          .indexWhere((item) => item.productId == guestItem.productId);
+      final guestKey = _cartLineKey(guestItem);
+      int existingIndex =
+          mergedCart.indexWhere((item) => _cartLineKey(item) == guestKey);
 
       if (existingIndex >= 0) {
         mergedCart[existingIndex].quantity =
@@ -204,6 +205,14 @@ class CartNotifier extends GetxController {
         addedToCartTime: element.addedToCartTime?.toUtc().toString(),
       ));
     }
+  }
+
+  String _cartLineKey(CartOtherInfo item) {
+    final productId = item.productId ?? '';
+    final colorIndex = item.selectedColorIndex;
+    return colorIndex == null
+        ? '${productId}_nocolor'
+        : '${productId}_$colorIndex';
   }
 
   var selectedDeliveryMethodId = ''.obs;
@@ -312,8 +321,9 @@ class CartNotifier extends GetxController {
       {bool showNotification = true}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isNotificationEnabled = prefs.getBool('notification_enabled') ?? true;
-    int existingItemIndex = cartOtherInfoList
-        .indexWhere((item) => item.productId == cart.productId);
+    final cartKey = _cartLineKey(cart);
+    int existingItemIndex =
+        cartOtherInfoList.indexWhere((item) => _cartLineKey(item) == cartKey);
 
     if (existingItemIndex >= 0) {
       cartOtherInfoList[existingItemIndex].quantity =
@@ -368,7 +378,7 @@ class CartNotifier extends GetxController {
     double cartTotalPrice = cartOtherInfoList.fold(
         0.0,
         (sum, element) =>
-            sum + ((element.productPrice ?? 0.0) * (element.quantity ?? 1)));
+            sum + (element.cartBasePrice * (element.quantity ?? 1)));
 
     return double.parse(cartTotalPrice.toStringAsFixed(2));
   }
@@ -392,10 +402,13 @@ class CartOtherInfo {
   String? productName;
   String? productImage;
   double? productPrice;
+  double? originalPrice;
   Color? productColor;
   String? productSize;
   int? quantity;
   DateTime? addedToCartTime;
+  int? selectedColorIndex;
+  Map<String, dynamic>? selectedColorData;
 
   List<dynamic>? attributesName;
   List<dynamic>? selectedAttributes;
@@ -407,12 +420,15 @@ class CartOtherInfo {
     this.productName,
     this.productImage,
     this.productPrice,
+    this.originalPrice,
     this.productColor,
     this.productSize,
     this.quantity,
     this.attributesName,
     this.selectedAttributes,
     this.addedToCartTime,
+    this.selectedColorIndex,
+    this.selectedColorData,
   }) {
     variationId = variationId?.toInt();
   }
@@ -423,15 +439,30 @@ class CartOtherInfo {
     type = json['type'];
     productName = json['productName'];
     productImage = json['productImage'];
-    productPrice = json['productPrice'];
+    productPrice = json['productPrice'] != null
+        ? double.tryParse(json['productPrice'].toString())
+        : null;
+    originalPrice = json['originalPrice'] != null
+        ? double.tryParse(json['originalPrice'].toString())
+        : null;
     productColor = json['productColor'];
     productSize = json['productSize'];
     quantity = json['quantity'];
     attributesName = json['attributesName'];
     selectedAttributes = json['selectedAttributes'];
+    selectedColorIndex = json['selectedColorIndex'] is int
+        ? json['selectedColorIndex']
+        : int.tryParse((json['selectedColorIndex'] ?? '').toString());
+    selectedColorData = json['selectedColorData'] is Map
+        ? Map<String, dynamic>.from(json['selectedColorData'])
+        : null;
     addedToCartTime = json['addedToCartTime'] != null
         ? DateTime.parse(json['addedToCartTime'])
         : null;
+  }
+
+  double get cartBasePrice {
+    return productPrice ?? 0.0;
   }
 
   Map<String, dynamic> toJson() {
@@ -442,11 +473,14 @@ class CartOtherInfo {
     data['productName'] = productName;
     data['productImage'] = productImage;
     data['productPrice'] = productPrice;
+    data['originalPrice'] = originalPrice;
     data['productColor'] = productColor;
     data['productSize'] = productSize;
     data['quantity'] = quantity;
     data['attributesName'] = attributesName;
     data['selectedAttributes'] = selectedAttributes;
+    data['selectedColorIndex'] = selectedColorIndex;
+    data['selectedColorData'] = selectedColorData;
     // Store addedToCartTime as a String (ISO8601 format)
     data['addedToCartTime'] = addedToCartTime?.toIso8601String();
 

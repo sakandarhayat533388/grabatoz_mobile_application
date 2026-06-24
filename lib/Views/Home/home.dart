@@ -83,6 +83,7 @@ class _HomeState extends State<Home> {
   Future<void> _showFirstOpenDiscountPopup() async {
     final prefs = await SharedPreferences.getInstance();
     const popupShownKey = 'first_open_discount_popup_shown';
+    const bannerAsset = 'assets/images/popupimage.png';
     final hasShownPopup = prefs.getBool(popupShownKey) ?? false;
 
     if (hasShownPopup || !mounted) {
@@ -99,98 +100,130 @@ class _HomeState extends State<Home> {
       context: context,
       barrierDismissible: true,
       builder: (BuildContext context) {
+        final media = MediaQuery.of(context);
+        final dialogWidth =
+            (media.size.width - 32).clamp(280.0, 420.0).toDouble();
+        final bannerHeight = (dialogWidth / 1.11)
+            .clamp(210.0, media.size.height * 0.62)
+            .toDouble();
+
         return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: kdefwhiteColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 6,
-                  right: 6,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.close,
-                      color: kmediumblackColor,
-                      size: 22,
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: SizedBox(
+            width: dialogWidth,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Material(
+                color: kdefwhiteColor,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Stack(
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          height: bannerHeight,
+                          child: Image.asset(
+                            bannerAsset,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _DiscountPopupFallback(
+                                height: bannerHeight,
+                              );
+                            },
+                          ),
+                        ),
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: kdefblackColor.withValues(alpha: 0.42),
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              constraints: const BoxConstraints.tightFor(
+                                width: 36,
+                                height: 36,
+                              ),
+                              padding: EdgeInsets.zero,
+                              icon: const Icon(
+                                Icons.close,
+                                color: kdefwhiteColor,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 18),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 58,
-                        height: 58,
-                        decoration: const BoxDecoration(
-                          color: kPrimaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.local_offer,
-                          color: kdefwhiteColor,
-                          size: 30,
-                        ),
-                      ),
-                      14.0.heightbox,
-                      const Text(
-                        'Get extra 10 % discount',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: kdefblackColor,
-                          fontSize: 21,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      10.0.heightbox,
-                      const Text(
-                        'Register through mobile app then get extra 10% discount on first order.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: kmediumblackColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      20.0.heightbox,
-                      SizedBox(
-                        width: double.infinity,
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: kPrimaryColor,
-                            foregroundColor: kdefwhiteColor,
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: kSecondaryColor,
+                                side: BorderSide(
+                                  color:
+                                      kSecondaryColor.withValues(alpha: 0.18),
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 13),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              child: const Text(
+                                'Later',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           ),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            Get.to(() => const SignUp());
-                          },
-                          child: const Text(
-                            'Register',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 2,
+                            child: TextButton(
+                              style: TextButton.styleFrom(
+                                backgroundColor: kPrimaryColor,
+                                foregroundColor: kdefwhiteColor,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                Get.to(() => const SignUp());
+                              },
+                              child: const Text(
+                                'Register Now',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );
@@ -380,7 +413,7 @@ class _HomeState extends State<Home> {
                     navigationProvider.setTabIndex(index);
                   }
                 },
-                children:  [
+                children: [
                   HomeScreenView(),
                   Favorite(),
                   Shop(
@@ -392,6 +425,177 @@ class _HomeState extends State<Home> {
                   SizedBox(), // Empty placeholder for WhatsApp
                 ],
               ),
+      ),
+    );
+  }
+}
+
+class _DiscountPopupFallback extends StatelessWidget {
+  const _DiscountPopupFallback({
+    required this.height,
+  });
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final compact = height < 260;
+
+    return Container(
+      height: height,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF0C3E16),
+            Color(0xFF176728),
+            Color(0xFF0B2D12),
+          ],
+        ),
+      ),
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          Positioned(
+            left: -42,
+            bottom: -54,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: kPrimaryColor.withValues(alpha: 0.16),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -36,
+            top: 46,
+            child: Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: kdefwhiteColor.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(20, compact ? 16 : 22, 20, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Image.asset(
+                  AppImages.logoicon,
+                  width: compact ? 128 : 164,
+                  height: compact ? 42 : 54,
+                  color: kdefwhiteColor,
+                  fit: BoxFit.contain,
+                ),
+                SizedBox(height: compact ? 6 : 10),
+                Text(
+                  'GET EXCLUSIVE DISCOUNTS!',
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  style: TextStyle(
+                    color: const Color(0xFFFFE100),
+                    fontSize: compact ? 22 : 27,
+                    height: 1.05,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                SizedBox(height: compact ? 6 : 8),
+                Text(
+                  'Shop faster, easier & smarter with the Graba2z App.',
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  style: TextStyle(
+                    color: kdefwhiteColor,
+                    fontSize: compact ? 12 : 14,
+                    fontWeight: FontWeight.w600,
+                    height: 1.25,
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      flex: 4,
+                      child: Transform.rotate(
+                        angle: -0.08,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: compact ? 10 : 12,
+                            vertical: compact ? 9 : 11,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE6130B),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: kdefwhiteColor.withValues(alpha: 0.75),
+                              width: 1.2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: kdefblackColor.withValues(alpha: 0.22),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'APP EXCLUSIVE',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: const Color(0xFFFFE100),
+                                  fontSize: compact ? 10 : 12,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              Text(
+                                'DISCOUNTS',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: kdefwhiteColor,
+                                  fontSize: compact ? 20 : 25,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              Text(
+                                'AWAITS YOU!',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  color: const Color(0xFFFFE100),
+                                  fontSize: compact ? 11 : 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      flex: 3,
+                      child: Image.asset(
+                        'assets/images/headphone.png',
+                        height: compact ? 86 : 112,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

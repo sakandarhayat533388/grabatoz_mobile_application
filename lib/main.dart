@@ -7,12 +7,12 @@ import 'package:graba2z/Controllers/favController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Controllers/menuController.dart';
 import 'package:graba2z/Controllers/orderController.dart';
+import 'package:graba2z/Controllers/payment_charges_controller.dart';
 import 'package:graba2z/Controllers/paymentprovider.dart';
 import 'package:graba2z/Controllers/searchController.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:graba2z/Controllers/notification_controller.dart';
 import "package:get/get.dart";
-import "package:graba2z/Controllers/searchController.dart" as sr;
 import 'package:graba2z/Services/notification_permission_preloader.dart';
 
 import 'dart:io';
@@ -106,13 +106,13 @@ class _MyAppState extends State<MyApp> {
     Get.put(CartNotifier());
     Get.put(SearchScController());
     Get.put(DeliveryController());
+    Get.put(PaymentChargesController());
     Get.put(PaymentMethodController());
     Get.put(FocusController());
     Get.put(OrderController());
     Get.put(menuController());
     Get.put(bannerProductController());
-    if ((widget.userId ?? '').isNotEmpty &&
-        !_didLoadFirstUserDiscountStatus) {
+    if ((widget.userId ?? '').isNotEmpty && !_didLoadFirstUserDiscountStatus) {
       _didLoadFirstUserDiscountStatus = true;
       firstUserDiscountController.markAuthSessionPresent();
       WidgetsBinding.instance.addPostFrameCallback((_) {

@@ -2,6 +2,7 @@ class Configss {
   static String baseUrl = 'https://api.grabatoz.ae';
   // static String baseUrl = 'https://graba2z-backend-orpin.vercel.app';
   static String signup = "$baseUrl/api/users/register";
+  static String registerGuest = "$baseUrl/api/users/register-guest";
   static String login = "$baseUrl/api/users/login";
   static String getAllCategories = '$baseUrl/api/categories';
   static String getSubCategories = '$baseUrl/api/subcategories';
@@ -40,6 +41,7 @@ class Configss {
   static String applyCoupon = "$baseUrl/api/coupons/validate";
   // static String rangeFilter = "$baseUrl/api/app/products";
   static String getShippingCharge = "$baseUrl/api/delivery-charges";
+  static String getActivePaymentCharges = "$baseUrl/api/payment-charges/active";
   static String searchAll = "$baseUrl/api/mobile/products";
   // Public website URL for Tamara redirects
   static String webBaseUrl = "https://grabatoz.ae";

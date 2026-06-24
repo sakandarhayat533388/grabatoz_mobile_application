@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:graba2z/Api/Services/apiservices.dart';
+import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/checkout_controller.dart';
+import 'package:graba2z/Controllers/deliveryController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Utils/appcolors.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/image_helper.dart';
 import 'package:graba2z/Utils/packages.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -20,17 +24,17 @@ class NewSummaryView extends StatefulWidget {
   String customerEmail;
   String addressCustomer;
   double subtotal;
-  List<DeliveryMethod> deliveryMethods;
-  NewSummaryView(
-      {super.key,
-      required this.addressCustomer,
-      required this.companyAddress,
-      required this.companyName,
-      required this.customerEmail,
-      required this.phone,
-      required this.shippingType,
-      required this.subtotal,
-      required this.deliveryMethods});
+
+  NewSummaryView({
+    super.key,
+    required this.addressCustomer,
+    required this.companyAddress,
+    required this.companyName,
+    required this.customerEmail,
+    required this.phone,
+    required this.shippingType,
+    required this.subtotal,
+  });
 
   @override
   State<NewSummaryView> createState() => _NewSummaryViewState();
@@ -40,56 +44,125 @@ class _NewSummaryViewState extends State<NewSummaryView> {
   UserController _userController = Get.put(UserController());
   CartNotifier _cartNotifier = Get.put(CartNotifier());
   final cart2provider = Get.put(CartNotifier());
+  late DeliveryController _deliveryCtrl;
+  final TextEditingController couponController = TextEditingController();
+  bool _cartPricesHydrated = false;
 
   double get _cartSubtotal => _cartNotifier.cartOtherInfoList.fold(
         0.0,
-        (sum, item) => sum + ((item.productPrice ?? 0.0) * (item.quantity ?? 0)),
+        (sum, item) => sum + (item.cartBasePrice * (item.quantity ?? 0)),
       );
 
-  bool _hasHomeShippingCharge(double subtotal) {
-    return widget.shippingType == 'Home Delivery' && subtotal <= 500;
-  }
+  double get _cartOriginalTotal => _cartNotifier.cartOtherInfoList.fold(
+        0.0,
+        (sum, item) =>
+            sum +
+            (((item.originalPrice ?? item.productPrice) ?? 0.0) *
+                (item.quantity ?? 0)),
+      );
 
-  DeliveryMethod? _selectedDeliveryMethod() {
-    if (widget.deliveryMethods.isEmpty) return null;
-
-    final selectedId = _cartNotifier.selectedDeliveryMethodId.value;
-    if (selectedId.isNotEmpty) {
-      for (final method in widget.deliveryMethods) {
-        if (method.id == selectedId) return method;
-      }
-    }
-
-    return widget.deliveryMethods.first;
-  }
+  bool get _isHomeDelivery => widget.shippingType == 'Home Delivery';
 
   double _shippingChargeFor(double subtotal) {
-    if (!_hasHomeShippingCharge(subtotal)) return 0.0;
-    final selectedCharge = _selectedDeliveryMethod()?.charge;
-    if (selectedCharge != null && selectedCharge > 0) return selectedCharge;
-    if (_cartNotifier.deliveryFeeCharge.value > 0) {
-      return _cartNotifier.deliveryFeeCharge.value;
-    }
-    return 20.0;
+    if (!_isHomeDelivery) return 0.0;
+    if (subtotal > 500) return 0.0;
+    return _deliveryCtrl.selectedCharge;
   }
 
   double _totalBeforeFirstOrderDiscount(double subtotal) {
     return subtotal + _shippingChargeFor(subtotal);
   }
 
-  void _syncSummaryTotals() {
-    final subtotal = _cartSubtotal;
-    final selectedMethod = _selectedDeliveryMethod();
-    if (_hasHomeShippingCharge(subtotal)) {
-      if (selectedMethod != null) {
-        _cartNotifier.selectedDeliveryMethodId.value = selectedMethod.id;
-      }
-      _cartNotifier.deliveryFeeCharge.value = _shippingChargeFor(subtotal);
-    } else if (!_hasHomeShippingCharge(subtotal)) {
-      _cartNotifier.deliveryFeeCharge.value = 0.0;
+  double _firstOrderDiscountAmount() {
+    if (!Get.isRegistered<FirstUserDiscountController>()) return 0.0;
+
+    final discountController = Get.find<FirstUserDiscountController>();
+    if (!discountController.previewApplied.value) return 0.0;
+
+    return discountController.previewDiscountAmount.value;
+  }
+
+  double _toDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0.0;
+  }
+
+  Future<void> _hydrateCartPricesFromProducts() async {
+    if (_cartPricesHydrated || _cartNotifier.cartOtherInfoList.isEmpty) return;
+    _cartPricesHydrated = true;
+
+    var changed = false;
+    for (final item in _cartNotifier.cartOtherInfoList) {
+      final productId = item.productId?.toString() ?? '';
+      if (productId.isEmpty) continue;
+
+      try {
+        final response = await http.get(
+          Uri.parse('${Configss.baseUrl}/api/products/$productId'),
+        );
+        if (response.statusCode != 200) continue;
+
+        final decoded = jsonDecode(response.body);
+        final product = decoded is Map && decoded['data'] is Map
+            ? Map<String, dynamic>.from(decoded['data'] as Map)
+            : decoded is Map && decoded['product'] is Map
+                ? Map<String, dynamic>.from(decoded['product'] as Map)
+                : decoded is Map
+                    ? Map<String, dynamic>.from(decoded)
+                    : <String, dynamic>{};
+
+        final regularPrice = _toDouble(
+          product['price'] ?? product['regularPrice'] ?? product['mrp'],
+        );
+        final offerPrice = _toDouble(
+          product['offerPrice'] ??
+              product['salePrice'] ??
+              product['discountPrice'],
+        );
+        final currentPrice = offerPrice > 0 ? offerPrice : regularPrice;
+        if (currentPrice <= 0) continue;
+
+        final originalPrice =
+            regularPrice > currentPrice ? regularPrice : currentPrice;
+        if ((item.productPrice ?? 0.0) != currentPrice ||
+            (item.originalPrice ?? 0.0) != originalPrice) {
+          item.productPrice = currentPrice;
+          item.originalPrice = originalPrice;
+          changed = true;
+        }
+      } catch (_) {}
     }
-    _userController.subtotalAmount.value = subtotal;
-    _cartNotifier.totalAmount.value = _totalBeforeFirstOrderDiscount(subtotal);
+
+    if (!changed || !mounted) return;
+
+    _syncSummaryTotals();
+    _cartNotifier.update();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('userId')?.toString();
+      await _cartNotifier.saveCartToPrefs(userId);
+    } catch (_) {}
+    if (Get.isRegistered<FirstUserDiscountController>()) {
+      Get.find<FirstUserDiscountController>()
+          .previewCart(_cartNotifier.cartOtherInfoList);
+    }
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _deliveryCtrl = Get.find<DeliveryController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncSummaryTotals();
+      _hydrateCartPricesFromProducts();
+      if (!mounted || !Get.isRegistered<FirstUserDiscountController>()) return;
+      final discountController = Get.find<FirstUserDiscountController>();
+      discountController.loadStatus().then((_) {
+        discountController.previewCart(_cartNotifier.cartOtherInfoList);
+      });
+    });
   }
 
   @override
@@ -102,17 +175,11 @@ class _NewSummaryViewState extends State<NewSummaryView> {
     });
   }
 
-  @override
-  void initState() {
-    super.initState();  
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _syncSummaryTotals();
-      if (!mounted || !Get.isRegistered<FirstUserDiscountController>()) return;
-      final discountController = Get.find<FirstUserDiscountController>();
-      discountController.loadStatus().then((_) {
-        discountController.previewCart(_cartNotifier.cartOtherInfoList);
-      });
-    });
+  void _syncSummaryTotals() {
+    final subtotal = _cartSubtotal;
+    _userController.subtotalAmount.value = subtotal;
+    _cartNotifier.deliveryFeeCharge.value = _shippingChargeFor(subtotal);
+    _cartNotifier.totalAmount.value = _totalBeforeFirstOrderDiscount(subtotal);
   }
 
   @override
@@ -132,7 +199,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black, // Replace with kdefblackColor if needed
+                  color: Colors.black,
                 ),
               ),
             ],
@@ -166,11 +233,42 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                       Text("Phone: ${widget.phone}"),
                       Text(widget.companyName),
                       Text(widget.companyAddress),
-                      // text
                     ],
                   ),
           ),
         ),
+        if (_isHomeDelivery && subtotal <= 500)
+          Obx(() {
+            final method = _deliveryCtrl.selectedMethod;
+            if (method == null) return const SizedBox.shrink();
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 6),
+              child: defaultStyledContainer(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          method.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        if (method.deliveryTime.isNotEmpty)
+                          Text(method.deliveryTime,
+                              style: const TextStyle(
+                                  fontSize: 12, color: kmediumblackColor)),
+                      ],
+                    ),
+                    Text(
+                      'AED ${method.charge.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 6),
           child: Row(
@@ -180,7 +278,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black, // Replace with kdefblackColor if needed
+                  color: Colors.black,
                 ),
               ),
             ],
@@ -206,7 +304,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black, // Replace with kdefblackColor if needed
+                  color: Colors.black,
                 ),
               ),
             ],
@@ -241,7 +339,8 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                       children: [
                         CachedNetworkImage(
                           imageUrl: cartItem.productImage?.isNotEmpty ?? false
-                              ? ImageHelper.getUrl(cartItem.productImage.toString())!
+                              ? ImageHelper.getUrl(
+                                  cartItem.productImage.toString())!
                               : "https://i.postimg.cc/SsWYSvq6/noimage.png",
                           imageBuilder: (context, imageProvider) => Container(
                             width: 55,
@@ -298,11 +397,10 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                               ),
                               const SizedBox(height: 5),
                               Text(
-                                "${(cartItem.productPrice?.toDouble() ?? 0.0) * (cartItem.quantity ?? 0)} AED",
+                                "${(cartItem.cartBasePrice * (cartItem.quantity ?? 0)).toStringAsFixed(2)} AED",
                                 style: const TextStyle(
                                   fontSize: 12,
-                                  color: Colors
-                                      .green, // Use kPrimaryColor if needed
+                                  color: Colors.green,
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
@@ -341,68 +439,172 @@ class _NewSummaryViewState extends State<NewSummaryView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(vertical: 0),
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: defaultStyledContainer(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSummaryRow(
-                        "Subtotal", "AED ${subtotal.toStringAsFixed(2)}"),
-                    15.0.heightbox,
-                    _buildSummaryRow(
-                      "VAT Included",
-                      "AED ${(subtotal * 5 / 100).toStringAsFixed(2)}",
+                    const Text(
+                      "Order Summary",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
-                    15.0.heightbox,
-                    _buildSummaryRow(
+                    const SizedBox(height: 16),
+                    // Original Price
+                    _buildSummaryRowWithStyle(
+                      "Original Price",
+                      "AED ${_cartOriginalTotal.toStringAsFixed(2)}",
+                      valueStyle: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Discounted Price
+                    _buildSummaryRowWithStyle(
+                      "Discounted Price",
+                      "AED ${subtotal.toStringAsFixed(2)}",
+                      valueStyle: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFFD32F2F), // Red/Orange color
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Total Savings
+                    _buildSummaryRowWithStyle(
+                      "Total Savings",
+                      "- AED ${(_cartOriginalTotal - subtotal).clamp(0.0, double.infinity).toStringAsFixed(2)}",
+                      titleStyle: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF2E7D32),
+                        fontWeight: FontWeight.bold,
+                      ),
+                      valueStyle: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF2E7D32),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(color: Colors.black12, height: 1),
+                    const SizedBox(height: 12),
+                    // Subtotal
+                    _buildSummaryRowWithStyle(
+                      "Subtotal",
+                      "AED ${subtotal.toStringAsFixed(2)}",
+                      valueStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Shipping
+                    _buildSummaryRowWithStyle(
                       "Shipping",
-                      _hasHomeShippingCharge(subtotal)
+                      _isHomeDelivery && subtotal <= 500 && shippingCharge > 0
                           ? "AED ${shippingCharge.toStringAsFixed(2)}"
-                          : 'Free',
+                          : "Free",
                     ),
-                    15.0.heightbox,
-                    if (Get.isRegistered<FirstUserDiscountController>())
-                      Obx(() {
-                        final firstUserDiscount =
-                            Get.find<FirstUserDiscountController>();
-                        if (!firstUserDiscount.previewApplied.value ||
-                            firstUserDiscount.previewDiscountAmount.value <=
-                                0) {
-                          return const SizedBox.shrink();
-                        }
-                        return Column(
-                          children: [
-                            _buildSummaryRow(
-                              "First app order discount",
-                              "- AED ${firstUserDiscount.previewDiscountAmount.value.toStringAsFixed(2)}",
-                            ),
-                            15.0.heightbox,
-                          ],
-                        );
-                      }),
+                    const SizedBox(height: 12),
                     Obx(() {
-                      var firstUserDiscount = 0.0;
-                      if (Get.isRegistered<FirstUserDiscountController>()) {
-                        final discountController =
-                            Get.find<FirstUserDiscountController>();
-                        if (discountController.previewApplied.value) {
-                          firstUserDiscount =
-                              discountController.previewDiscountAmount.value;
-                        }
+                      final firstOrderDiscount = _firstOrderDiscountAmount();
+                      if (firstOrderDiscount <= 0) {
+                        return const SizedBox.shrink();
                       }
+
+                      return Column(
+                        children: [
+                          _buildSummaryRowWithStyle(
+                            "First order discount",
+                            "- AED ${firstOrderDiscount.toStringAsFixed(2)}",
+                            titleStyle: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.bold,
+                            ),
+                            valueStyle: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    }),
+                    // VAT Included
+                    _buildSummaryRowWithStyle(
+                      "VAT Included",
+                      "✓",
+                      valueStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(color: Colors.black12, height: 1),
+                    const SizedBox(height: 16),
+                    // Total Amount
+                    Obx(() {
+                      final firstUserDiscount = _firstOrderDiscountAmount();
                       final displayTotal =
                           (totalBeforeDiscount - firstUserDiscount)
-                          .clamp(0.0, double.infinity);
-                      return _buildSummaryRow(
+                              .clamp(0.0, double.infinity);
+                      return _buildSummaryRowWithStyle(
                         "Total Amount",
                         "AED ${displayTotal.toStringAsFixed(2)}",
-                        isBold: true,
+                        titleStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        valueStyle: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       );
-                    })
+                    }),
                   ],
                 ),
               ),
             ),
+            // Free shipping applied banner
+            if (!(_isHomeDelivery && subtotal <= 500)) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5E9), // Light green background
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFC8E6C9), // Light green border
+                    ),
+                  ),
+                  child: Row(
+                    children: const [
+                      Text(
+                        "🎉 Free shipping is applied to this order.",
+                        style: TextStyle(
+                          color: Color(0xFF2E7D32), // Dark green text
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             Padding(
               padding: defaultPadding(vertical: 10),
               child: GetBuilder<ApiServiceController>(builder: (
@@ -422,52 +624,30 @@ class _NewSummaryViewState extends State<NewSummaryView> {
     );
   }
 
-  Widget _buildSummaryRow(String title, String value,
-      {bool isBold = false, VoidCallback? ontap}) {
-    return GestureDetector(
-      onTap: ontap,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class DeliveryMethod {
-  final String id;
-  final String name;
-  final double charge;
-  final String deliveryTime;
-
-  DeliveryMethod({
-    required this.id,
-    required this.name,
-    required this.charge,
-    required this.deliveryTime,
-  });
-
-  factory DeliveryMethod.fromJson(Map<String, dynamic> json) {
-    return DeliveryMethod(
-      id: json['_id'],
-      name: json['name'],
-      charge: (json['charge'] as num).toDouble(),
-      deliveryTime: json['deliveryTime'] ?? '',
+  Widget _buildSummaryRowWithStyle(String title, String value,
+      {TextStyle? titleStyle, TextStyle? valueStyle}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: titleStyle ??
+              const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+        ),
+        Text(
+          value,
+          style: valueStyle ??
+              const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+        ),
+      ],
     );
   }
 }

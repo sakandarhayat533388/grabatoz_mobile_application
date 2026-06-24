@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'dart:developer';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/checkout_controller.dart';
+import 'package:graba2z/Controllers/deliveryController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
+import 'package:graba2z/Controllers/payment_charges_controller.dart';
+import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:graba2z/Views/success_page/successpayment.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/pay_by_card_webview.dart';
@@ -20,31 +22,103 @@ class PaymentMethodScreen extends StatefulWidget {
 
 class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   String selectedMethod = 'COD';
-  CartNotifier _cartNotifier = Get.put(CartNotifier());
-  UserController _usercontroller = Get.put(UserController());
+  final CartNotifier _cartNotifier = Get.put(CartNotifier());
+  final UserController _usercontroller = Get.put(UserController());
+  late DeliveryController _deliveryCtrl;
+  late PaymentChargesController _paymentChargesCtrl;
   double vatPerItem = 0.0;
   double totalVAT = 0.0;
   double total = 0.0;
   double deliveryFee = 0.0;
   double subtotal = 0.0;
 
-  getcalculations() {
-    subtotal = _cartNotifier.cartOtherInfoList.fold(
-        0.0, (sum, item) => sum + (item.productPrice! * (item.quantity ?? 0)));
-    _usercontroller.subtotalAmount.value = subtotal;
-    // Fixed VAT per item (1.19 AED)
+  double _firstOrderDiscountAmount() {
+    if (!Get.isRegistered<FirstUserDiscountController>()) return 0.0;
 
-    // Fixed delivery charge (AED 5)
+    final discountController = Get.find<FirstUserDiscountController>();
+    if (!discountController.previewApplied.value) return 0.0;
+
+    return discountController.previewDiscountAmount.value;
+  }
+
+  double _payableTotalAfterFirstOrderDiscount(double baseTotal) {
+    return (baseTotal - _firstOrderDiscountAmount())
+        .clamp(0.0, double.infinity)
+        .toDouble();
+  }
+
+  double get _cartOriginalTotal => _cartNotifier.cartOtherInfoList.fold(
+        0.0,
+        (sum, item) =>
+            sum +
+            (((item.originalPrice ?? item.productPrice) ?? 0.0) *
+                (item.quantity ?? 0)),
+      );
+
+  bool get _isCodSelected => selectedMethod == 'COD';
+
+  String get _selectedPaymentMethodKey => _mapPaymentMethod(selectedMethod);
+
+  bool _isCodPaymentMethod(String method) {
+    final normalized = method.trim().toLowerCase();
+    return normalized == 'cod' || normalized == 'cash on delivery';
+  }
+
+  double _totalBeforeDiscountForSelectedMethod(double baseTotal) {
+    final paymentChargeTotal =
+        _paymentChargesCtrl.totalFor(_selectedPaymentMethodKey);
+    if (!_isCodSelected) return baseTotal + paymentChargeTotal;
+
+    final standardShipping = _standardShippingAppliedToCurrentCart();
+
+    return ((baseTotal - standardShipping).clamp(0.0, double.infinity) +
+            paymentChargeTotal)
+        .toDouble();
+  }
+
+  double _standardShippingAppliedToCurrentCart() {
+    final currentSubtotal = subtotal > 0
+        ? subtotal
+        : _cartNotifier.cartOtherInfoList.fold(
+            0.0,
+            (sum, item) => sum + (item.cartBasePrice * (item.quantity ?? 0)),
+          );
+
+    if (!_usercontroller.isHomeDelivery.value || currentSubtotal > 500) {
+      return 0.0;
+    }
+
+    return _deliveryCtrl.selectedCharge;
+  }
+
+  double _currentBaseTotalBeforePaymentCharges() {
+    return _cartNotifier.totalAmount.value == 0.0
+        ? total
+        : _cartNotifier.totalAmount.value;
+  }
+
+  double _selectedPayableTotal() {
+    return _payableTotalAfterFirstOrderDiscount(
+      _totalBeforeDiscountForSelectedMethod(
+          _currentBaseTotalBeforePaymentCharges()),
+    );
+  }
+
+  getcalculations() {
+    _deliveryCtrl = Get.find<DeliveryController>();
+    subtotal = _cartNotifier.cartOtherInfoList.fold(
+        0.0, (sum, item) => sum + (item.cartBasePrice * (item.quantity ?? 0)));
+    _usercontroller.subtotalAmount.value = subtotal;
+
     deliveryFee = _usercontroller.isHomeDelivery.value && subtotal <= 500
-        ? _cartNotifier.deliveryFeeCharge.value
+        ? _deliveryCtrl.selectedCharge
         : 0.0;
 
-    // Calculate total VAT (multiply VAT per item by the quantity of each item)
     totalVAT = _cartNotifier.cartOtherInfoList
         .fold(0.0, (sum, item) => sum + (vatPerItem * (item.quantity ?? 0)));
 
-    // Total amount (subtotal + total VAT)
     total = subtotal + totalVAT + deliveryFee;
+    _cartNotifier.deliveryFeeCharge.value = deliveryFee;
     _cartNotifier.totalAmount.value = total;
     setState(() {});
   }
@@ -53,9 +127,14 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    _deliveryCtrl = Get.find<DeliveryController>();
+    _paymentChargesCtrl = Get.isRegistered<PaymentChargesController>()
+        ? Get.find<PaymentChargesController>()
+        : Get.put(PaymentChargesController());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       getcalculations();
+      _paymentChargesCtrl.fetchActiveCharges();
       if (!Get.isRegistered<FirstUserDiscountController>()) return;
       final discountController = Get.find<FirstUserDiscountController>();
       discountController.loadStatus().then((_) {
@@ -101,6 +180,23 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           subtitle: 'Pay when you receive your order',
           logo: 'assets/image ',
         ),
+        Obx(() {
+          _paymentChargesCtrl.activeCharges.length;
+          _paymentChargesCtrl.isLoading.value;
+          final total = _paymentChargesCtrl.totalFor(_selectedPaymentMethodKey);
+          if (total <= 0) return const SizedBox.shrink();
+          return _buildPaymentChargeBreakdown();
+        }),
+        Obx(() {
+          _paymentChargesCtrl.activeCharges.length;
+          _paymentChargesCtrl.isLoading.value;
+          if (Get.isRegistered<FirstUserDiscountController>()) {
+            final discountController = Get.find<FirstUserDiscountController>();
+            discountController.previewApplied.value;
+            discountController.previewDiscountAmount.value;
+          }
+          return _buildOrderSummaryCard();
+        }),
         // const Spacer(),
         Row(
           children: [
@@ -149,7 +245,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             String? guestPhone = prefs.getString('guest_phone');
 
                             if (checkGuest) {
-
                               createOrder(
                                   _usercontroller.orderItems,
                                   'home',
@@ -164,16 +259,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
-                                  _cartNotifier.deliveryFee,
-                                  // was 0.0
+                                  _standardShippingAppliedToCurrentCart(),
                                   _cartNotifier.totalAmount.value,
                                   _mapPaymentMethod(selectedMethod),
-                                  // normalized
                                   _usercontroller.optionalNote.text);
                             } else {
                               // Get full phone number with country code from SharedPreferences
-                              String fullPhone = prefs.getString('guest_phone') ??
-                                  _usercontroller.homePhoneController.text;
+                              String fullPhone =
+                                  prefs.getString('guest_phone') ??
+                                      _usercontroller.homePhoneController.text;
 
                               createOrder(
                                   _usercontroller.orderItems,
@@ -194,11 +288,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
-                                  _cartNotifier.deliveryFee,
-                                  // was 0.0
+                                  _standardShippingAppliedToCurrentCart(),
                                   _cartNotifier.totalAmount.value,
                                   _mapPaymentMethod(selectedMethod),
-                                  // normalized
                                   _usercontroller.optionalNote.text);
                             }
                           } else {
@@ -229,16 +321,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
-                                  _cartNotifier.deliveryFee,
-                                  // was 0.0
+                                  0.0,
                                   _cartNotifier.totalAmount.value,
                                   _mapPaymentMethod(selectedMethod),
-                                  // normalized
                                   _usercontroller.optionalNote.text);
                             } else {
                               // Get full phone number with country code from SharedPreferences
-                              String fullPhonePickup = prefs.getString('guest_phone') ??
-                                  _usercontroller.homePhoneController.text;
+                              String fullPhonePickup =
+                                  prefs.getString('guest_phone') ??
+                                      _usercontroller.homePhoneController.text;
 
                               createOrder(
                                   _usercontroller.orderItems,
@@ -263,11 +354,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     "storeId": _usercontroller.storeId.value
                                   },
                                   _usercontroller.subtotalAmount.value,
-                                  _cartNotifier.deliveryFee,
-                                  // was 0.0
+                                  0.0,
                                   _cartNotifier.totalAmount.value,
                                   _mapPaymentMethod(selectedMethod),
-                                  // normalized
                                   _usercontroller.optionalNote.text);
                             }
                           }
@@ -280,22 +369,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                       ),
                       child: Obx(
                         () {
-                          final baseTotal =
-                              _cartNotifier.totalAmount.value == 0.0
-                                  ? total
-                                  : _cartNotifier.totalAmount.value;
-                          var firstUserDiscount = 0.0;
-                          if (Get.isRegistered<
-                              FirstUserDiscountController>()) {
+                          _paymentChargesCtrl.activeCharges.length;
+                          _paymentChargesCtrl.isLoading.value;
+                          if (Get.isRegistered<FirstUserDiscountController>()) {
                             final discountController =
                                 Get.find<FirstUserDiscountController>();
-                            if (discountController.previewApplied.value) {
-                              firstUserDiscount = discountController
-                                  .previewDiscountAmount.value;
-                            }
+                            discountController.previewApplied.value;
+                            discountController.previewDiscountAmount.value;
                           }
-                          final displayTotal = (baseTotal - firstUserDiscount)
-                              .clamp(0.0, double.infinity);
+                          final displayTotal = _selectedPayableTotal();
                           return Text(
                             "Place Order - AED ${displayTotal.toStringAsFixed(2)}",
                             style: TextStyle(color: Colors.white),
@@ -331,6 +413,51 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     return double.tryParse(value.toString()) ?? fallback;
   }
 
+  double _codHandlingCharge(String paymentMethod) {
+    final handling =
+        _paymentChargesCtrl.amountMatching(paymentMethod, ['handling']);
+    if (handling > 0) return handling;
+
+    final lines = _paymentChargesCtrl.linesFor(paymentMethod);
+    if (lines.isEmpty) return 0.0;
+    final shipping = _paymentChargesCtrl
+        .amountMatching(paymentMethod, ['shipping', 'delivery']);
+    return (lines.fold(0.0, (sum, charge) => sum + charge.amount) - shipping)
+        .clamp(0.0, double.infinity)
+        .toDouble();
+  }
+
+  double _codShippingCharge(String paymentMethod) {
+    return _paymentChargesCtrl.amountMatching(
+      paymentMethod,
+      ['shipping', 'delivery'],
+    );
+  }
+
+  bool _hasText(dynamic value) {
+    return value?.toString().trim().isNotEmpty ?? false;
+  }
+
+  bool _validateGuestOrderData(
+    Map<String, dynamic>? shippingAddress,
+  ) {
+    if (shippingAddress == null) return false;
+    return _hasText(shippingAddress['name']) &&
+        _hasText(shippingAddress['email']) &&
+        _hasText(shippingAddress['phone']) &&
+        _hasText(shippingAddress['address']) &&
+        _hasText(shippingAddress['city']) &&
+        _hasText(shippingAddress['state']) &&
+        _hasText(shippingAddress['zipCode']);
+  }
+
+  List<Map<String, dynamic>> _paymentChargePayload(String paymentMethod) {
+    return _paymentChargesCtrl
+        .linesFor(paymentMethod)
+        .map((charge) => charge.toJson())
+        .toList();
+  }
+
   Future<void> createOrder(
     List orderItems,
     String deliveryType,
@@ -346,6 +473,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     SharedPreferences sp = await SharedPreferences.getInstance();
     _usercontroller.token.value = sp.getString('token') ?? '';
     final bool isGuestOrder = sp.getBool('Guest') ?? false;
+    final normalizedShippingAddress = shippingAdress is Map
+        ? Map<String, dynamic>.from(shippingAdress)
+        : <String, dynamic>{};
 
     // Basic validations (do not set loading yet)
     // if (_usercontroller.token.value.isEmpty) {
@@ -358,22 +488,47 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       return;
     }
     if (deliveryType == 'home') {
-      final hasAddress = shippingAdress != null &&
-          (shippingAdress['address']?.toString().trim().isNotEmpty ?? false);
+      final hasAddress =
+          normalizedShippingAddress['address']?.toString().trim().isNotEmpty ??
+              false;
       if (!hasAddress) {
         EasyLoading.showError('Please provide a valid shipping address.');
         return;
       }
     }
-
-    // If orderItems is empty, build it from cart
-    List composedOrderItems = orderItems;
-    if (composedOrderItems.isEmpty) {
-      composedOrderItems = _buildOrderItemsFromCart();
-      log('Composed orderItems from cart: ${jsonEncode(composedOrderItems)}');
+    if (isGuestOrder && !_validateGuestOrderData(normalizedShippingAddress)) {
+      EasyLoading.showError(
+        'Please enter guest name, email, phone and address before placing order.',
+      );
+      return;
     }
 
+    // Always build from the live cart so selected color metadata is preserved.
+    List composedOrderItems = _buildOrderItemsFromCart();
+    if (composedOrderItems.isEmpty) {
+      composedOrderItems = orderItems;
+    }
+    log('Composed orderItems from cart: ${jsonEncode(composedOrderItems)}');
+
     _usercontroller.iscardLoading.value = true;
+
+    final firstOrderDiscount = _firstOrderDiscountAmount();
+    final isCodPayment = _isCodPaymentMethod(paymentMethod);
+    final paymentCharge = _paymentChargesCtrl.chargeFor(paymentMethod);
+    final paymentChargeTotal = _paymentChargesCtrl.totalFor(paymentMethod);
+    final codFee = isCodPayment ? _codHandlingCharge(paymentMethod) : 0.0;
+    final codShippingFee =
+        isCodPayment ? _codShippingCharge(paymentMethod) : 0.0;
+    final standardShippingInput =
+        deliveryType == 'home' && itemsPrice <= 500 ? shippingPrice : 0.0;
+    final standardShippingPrice = isCodPayment ? 0.0 : standardShippingInput;
+    final totalBeforeDiscount = isCodPayment
+        ? ((totalPrice - standardShippingInput).clamp(0.0, double.infinity) +
+                paymentChargeTotal)
+            .toDouble()
+        : (totalPrice + paymentChargeTotal).toDouble();
+    final payableTotal =
+        _payableTotalAfterFirstOrderDiscount(totalBeforeDiscount);
 
     final Map<String, dynamic> orderData = {
       "orderSource": "app",
@@ -382,8 +537,17 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       "shippingAddress": shippingAdress,
       "pickupDetails": pickupDetails,
       "itemsPrice": (itemsPrice).toDouble(),
-      "shippingPrice": (shippingPrice).toDouble(),
-      "totalPrice": (totalPrice).toDouble(),
+      "shippingPrice": standardShippingPrice.toDouble(),
+      "deliveryChargeId": isCodPayment ? null : _deliveryCtrl.selectedId.value,
+      "codFee": codFee,
+      "codShippingFee": codShippingFee,
+      "paymentChargeId": paymentCharge?.id,
+      "paymentChargeTotal": paymentChargeTotal,
+      "paymentCharges": _paymentChargePayload(paymentMethod),
+      "totalPrice": payableTotal,
+      "originalTotalPrice": totalBeforeDiscount.toDouble(),
+      "appDiscountAmount": firstOrderDiscount,
+      "appDiscountPreviewApplied": firstOrderDiscount > 0,
       "paymentMethod": paymentMethod,
       "actualPaymentMethod": paymentMethod,
       "customerNotes": customerNotes
@@ -409,13 +573,25 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         final data = jsonDecode(response.body);
         final serverTotalPrice = _toDouble(
           data['totalPrice'],
-          fallback: _toDouble(data['finalTotal'], fallback: totalPrice),
+          fallback:
+              _toDouble(data['finalTotal'], fallback: totalBeforeDiscount),
         );
-        final payableTotalPrice = isGuestOrder ? totalPrice : serverTotalPrice;
-        final bool appDiscountApplied =
+        final bool backendAppDiscountApplied =
             !isGuestOrder && data['appDiscountApplied'] == true;
-        final double appDiscountAmount =
-            appDiscountApplied ? _toDouble(data['appDiscountAmount']) : 0.0;
+        final bool localAppDiscountApplied =
+            !isGuestOrder && firstOrderDiscount > 0;
+        final bool appDiscountApplied =
+            backendAppDiscountApplied || localAppDiscountApplied;
+        final payableTotalPrice = isGuestOrder
+            ? totalBeforeDiscount
+            : backendAppDiscountApplied
+                ? serverTotalPrice
+                : localAppDiscountApplied
+                    ? payableTotal
+                    : serverTotalPrice;
+        final double appDiscountAmount = backendAppDiscountApplied
+            ? _toDouble(data['appDiscountAmount'])
+            : (localAppDiscountApplied ? firstOrderDiscount : 0.0);
         final String appDiscountName = appDiscountApplied
             ? (data['appDiscountName']?.toString() ?? '')
             : '';
@@ -448,6 +624,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           navigationProvider.setTabIndex(0);
           setState(() {});
           await _cartNotifier.clearCartDataInPrefs(userId);
+          if (isGuestOrder) {
+            await clearGuestCheckoutData();
+          }
           if (Get.isRegistered<FirstUserDiscountController>()) {
             await Get.find<FirstUserDiscountController>().refreshAfterOrder();
           }
@@ -541,7 +720,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${_usercontroller.token.value}',
-
         },
         body: jsonEncode(payload),
       );
@@ -579,7 +757,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     for (final item in _cartNotifier.cartOtherInfoList) {
       try {
         final qty = (item.quantity ?? 1).toInt();
-        final unit = (item.productPrice ?? 0.0).toDouble();
+        final unit = item.cartBasePrice;
         final total = (unit * qty).toDouble();
         list.add({
           "name": item.productName ?? "",
@@ -649,7 +827,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       "currencyCode": "AED",
       "orderId": orderId
     };
-    log('the object from my side ${orderData}');
+    log('the object from my side $orderData');
     try {
       final response = await http.post(
         url,
@@ -687,6 +865,303 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     }
   }
 
+  Widget _buildOrderSummaryCard() {
+    final currentSubtotal = subtotal > 0
+        ? subtotal
+        : _cartNotifier.cartOtherInfoList.fold(
+            0.0,
+            (sum, item) => sum + (item.cartBasePrice * (item.quantity ?? 0)),
+          );
+    final originalTotal = _cartOriginalTotal > currentSubtotal
+        ? _cartOriginalTotal
+        : currentSubtotal;
+    final savings =
+        (originalTotal - currentSubtotal).clamp(0.0, double.infinity);
+    final standardShipping =
+        _isCodSelected ? 0.0 : _standardShippingAppliedToCurrentCart();
+    final paymentChargeLines =
+        _paymentChargesCtrl.linesFor(_selectedPaymentMethodKey);
+    final firstOrderDiscount = _firstOrderDiscountAmount();
+    final displayTotal = _selectedPayableTotal();
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 8, bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .08),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Order Summary",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _buildSummaryRowWithStyle(
+            "Original Price",
+            "AED ${originalTotal.toStringAsFixed(2)}",
+            valueStyle: const TextStyle(
+              fontSize: 13,
+              color: Colors.grey,
+              decoration: TextDecoration.lineThrough,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildSummaryRowWithStyle(
+            "Discounted Price",
+            "AED ${currentSubtotal.toStringAsFixed(2)}",
+            valueStyle: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFFD32F2F),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildSummaryRowWithStyle(
+            "Total Savings",
+            "- AED ${savings.toStringAsFixed(2)}",
+            titleStyle: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF2E7D32),
+              fontWeight: FontWeight.bold,
+            ),
+            valueStyle: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF2E7D32),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Divider(color: Colors.black12, height: 1),
+          const SizedBox(height: 12),
+          _buildSummaryRowWithStyle(
+            "Subtotal",
+            "AED ${currentSubtotal.toStringAsFixed(2)}",
+            valueStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildSummaryRowWithStyle(
+            "Shipping",
+            standardShipping > 0
+                ? "AED ${standardShipping.toStringAsFixed(2)}"
+                : "Free",
+          ),
+          if (paymentChargeLines.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ...paymentChargeLines.map(
+              (charge) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildSummaryRowWithStyle(
+                  charge.name.isEmpty ? "Payment charge" : charge.name,
+                  "AED ${charge.amount.toStringAsFixed(2)}",
+                  titleStyle: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF92400E),
+                    fontWeight: FontWeight.bold,
+                  ),
+                  valueStyle: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF92400E),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          if (firstOrderDiscount > 0) ...[
+            _buildSummaryRowWithStyle(
+              "First order discount",
+              "- AED ${firstOrderDiscount.toStringAsFixed(2)}",
+              titleStyle: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF2E7D32),
+                fontWeight: FontWeight.bold,
+              ),
+              valueStyle: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF2E7D32),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          _buildSummaryRowWithStyle("VAT Included", "Included"),
+          const SizedBox(height: 16),
+          const Divider(color: Colors.black12, height: 1),
+          const SizedBox(height: 16),
+          _buildSummaryRowWithStyle(
+            "Total Amount",
+            "AED ${displayTotal.toStringAsFixed(2)}",
+            titleStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+            valueStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRowWithStyle(
+    String title,
+    String value, {
+    TextStyle? titleStyle,
+    TextStyle? valueStyle,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: titleStyle ??
+                const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minWidth: 96, maxWidth: 132),
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: valueStyle ??
+                  const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPaymentChargeBreakdown() {
+    final paymentCharge =
+        _paymentChargesCtrl.chargeFor(_selectedPaymentMethodKey);
+    final lines = paymentCharge?.charges ?? <PaymentChargeLine>[];
+    if (paymentCharge == null || lines.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 6, bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEA),
+        border: Border.all(color: const Color(0xFFFDE047)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.receipt_long_outlined,
+                size: 20,
+                color: Color(0xFF92400E),
+              ),
+              SizedBox(width: 10),
+              Text(
+                "Payment Charges",
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF78350F),
+                ),
+              ),
+            ],
+          ),
+          if (paymentCharge.description.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text(
+              paymentCharge.description,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFFA16207),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          ...lines.map(
+            (charge) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: _buildPaymentChargeLine(
+                charge.name.isEmpty ? 'Payment charge' : charge.name,
+                charge.amount,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentChargeLine(String title, double amount) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Icon(
+          Icons.add_circle_outline,
+          size: 16,
+          color: Color(0xFF92400E),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: RichText(
+            text: TextSpan(
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF78350F),
+              ),
+              children: [
+                TextSpan(
+                  text: "$title: ",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                TextSpan(text: "AED ${amount.toStringAsFixed(2)}"),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildPaymentTile({
     required String value,
     required String title,
@@ -697,11 +1172,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       onTap: () {
         setState(() {
           selectedMethod = value;
-          log('the select method is ${selectedMethod}');
+          log('the select method is $selectedMethod');
         });
       },
       child: Container(
-        margin: EdgeInsets.symmetric(vertical: 5),
+        margin: const EdgeInsets.symmetric(vertical: 5),
         // width: MediaQuery.of(context).size.width / 2 - 22,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -715,15 +1190,28 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         ),
         child: Row(
           children: [
-            Radio<String>(
-              value: value,
-              groupValue: selectedMethod,
-              onChanged: (val) {
-                setState(() {
-                  selectedMethod = val!;
-                  log('the select method is ${selectedMethod}');
-                });
-              },
+            Container(
+              height: 20,
+              width: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: selectedMethod == value ? kPrimaryColor : Colors.black,
+                  width: 1.8,
+                ),
+              ),
+              child: selectedMethod == value
+                  ? Center(
+                      child: Container(
+                        height: 10,
+                        width: 10,
+                        decoration: const BoxDecoration(
+                          color: kPrimaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
             const SizedBox(width: 6),
             Expanded(
@@ -756,13 +1244,20 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final List<Map<String, dynamic>> items = [];
     for (final item in _cartNotifier.cartOtherInfoList) {
       try {
-        items.add({
+        final orderItem = {
           "product": item.productId,
           "name": item.productName ?? '',
           "quantity": (item.quantity ?? 1),
-          "price": (item.productPrice ?? 0.0).toDouble(),
+          "price": item.cartBasePrice,
           "image": item.productImage ?? '',
-        });
+        };
+
+        if (item.selectedColorIndex != null) {
+          orderItem["selectedColorIndex"] = item.selectedColorIndex;
+          orderItem["selectedColorData"] = item.selectedColorData ?? {};
+        }
+
+        items.add(orderItem);
       } catch (e) {
         log('Skipping cart item due to mapping error: $e');
       }

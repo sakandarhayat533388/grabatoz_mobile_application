@@ -52,6 +52,19 @@ class _DealsProductCardState extends State<DealsProductCard> {
     return double.tryParse(v.toString()) ?? 0.0;
   }
 
+  bool _hasPositivePrice(dynamic v) => _toDouble(v) > 0;
+
+  String _formatPrice(dynamic v) {
+    if (v == null || v.toString().trim().isEmpty) return 'N/A';
+    final price = double.tryParse(v.toString());
+    return price == null ? v.toString() : price.toStringAsFixed(2);
+  }
+
+  String _detailsPrice(dynamic v) {
+    final price = double.tryParse(v?.toString() ?? '');
+    return price == null ? '0' : price.toStringAsFixed(2);
+  }
+
   double _avgRatingFromMap(Map m) {
     // Prefer explicit average fields if provided
     if (m.containsKey('averageRating')) return _toDouble(m['averageRating']);
@@ -99,7 +112,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
       return ProductCardDeal.none;
     }
     return Get.find<FirstUserDiscountController>()
-        .getProductCardDeal(widget.productList, showGuestFallback: true);
+        .getProductCardDeal(widget.productList);
   }
 
   // --- Added: API-driven review stats for this product
@@ -264,21 +277,8 @@ class _DealsProductCardState extends State<DealsProductCard> {
       var productData = widget.productList as Map;
 
       // Extract images
-      int? offerPriceForDetails;
       final rawOfferPrice = productData['offerPrice'];
-      if (rawOfferPrice is String) {
-        offerPriceForDetails = int.tryParse(rawOfferPrice);
-      } else if (rawOfferPrice is num) {
-        offerPriceForDetails = rawOfferPrice.toInt();
-      }
-
-      int? priceForDetails;
       final rawPrice = productData['price'];
-      if (rawPrice is String) {
-        priceForDetails = int.tryParse(rawPrice);
-      } else if (rawPrice is num) {
-        priceForDetails = rawPrice.toInt();
-      }
 
       List<String> imagesForDetails = [];
       final rawGalleryImages = productData['galleryImages'];
@@ -368,8 +368,23 @@ class _DealsProductCardState extends State<DealsProductCard> {
 
       String sku = productData['sku']?.toString() ?? '';
       String stockStatus = productData['stockStatus']?.toString() ?? 'Unknown';
+      String stockCount = (productData['stock'] ??
+              productData['countInStock'] ??
+              productData['stockCount'] ??
+              productData['quantity'] ??
+              '')
+          .toString();
       String description = productData['description']?.toString() ?? '';
       String shortdesc = productData['shortDescription']?.toString() ?? '';
+      List<dynamic> colorVariations = productData['colorVariations'] is List
+          ? List<dynamic>.from(productData['colorVariations'])
+          : [];
+      List<dynamic> variations = productData['variations'] is List
+          ? List<dynamic>.from(productData['variations'])
+          : [];
+      List<dynamic> availableModels = productData['availableModels'] is List
+          ? List<dynamic>.from(productData['availableModels'])
+          : [];
 
       try {
         Get.to(
@@ -385,12 +400,16 @@ class _DealsProductCardState extends State<DealsProductCard> {
                 categoryName: categoryName,
                 categoryId: categoryId,
                 sku: sku,
-                offerPrice: (offerPriceForDetails ?? 0).toString(),
-                price: (priceForDetails ?? 0).toString(),
+                offerPrice: _detailsPrice(rawOfferPrice),
+                price: _detailsPrice(rawPrice),
                 stockStatus: stockStatus,
+                stockCount: stockCount,
                 description: description,
                 shortdesc: shortdesc,
                 subcategoryName: subcategoryName,
+                colorVariations: colorVariations,
+                variations: variations,
+                availableModels: availableModels,
               );
             } catch (e, s) {
               print(
@@ -682,26 +701,18 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                       ),
                                     ],
                                     gapTiny.heightbox,
-                                    Obx(() {
-                                      final deal = _firstUserDeal();
+                                    Builder(builder: (_) {
                                       final hasOffer = widget.productList
                                               is Map &&
-                                          widget.productList['offerPrice'] !=
-                                              null &&
-                                          widget.productList['offerPrice']
-                                                  .toString() !=
-                                              '0' &&
-                                          widget.productList['offerPrice']
-                                              .toString()
-                                              .isNotEmpty;
+                                          _hasPositivePrice(
+                                              widget.productList['offerPrice']);
                                       final currentPrice = hasOffer
-                                          ? widget.productList['offerPrice']
-                                              .toString()
-                                          : ((widget.productList is Map
+                                          ? _formatPrice(
+                                              widget.productList['offerPrice'])
+                                          : _formatPrice(
+                                              widget.productList is Map
                                                   ? widget.productList['price']
-                                                      ?.toString()
-                                                  : null) ??
-                                              'N/A');
+                                                  : null);
                                       return Column(
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
@@ -718,9 +729,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                                       color: Color(0xFF16A34A)),
                                                 ),
                                                 TextSpan(
-                                                  text: deal.showPriceCut
-                                                      ? "${deal.discountedPrice!.toStringAsFixed(2)} AED"
-                                                      : "$currentPrice AED",
+                                                  text: "$currentPrice AED",
                                                   style: const TextStyle(
                                                       fontSize: 10,
                                                       fontWeight:
@@ -730,21 +739,9 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                               ],
                                             ),
                                           ),
-                                          if (deal.showPriceCut)
+                                          if (hasOffer)
                                             Text(
-                                              "AED ${deal.originalPrice!.toStringAsFixed(2)}",
-                                              style: const TextStyle(
-                                                fontSize: 8,
-                                                fontWeight: FontWeight.bold,
-                                                color: kSecondaryColor,
-                                                decoration:
-                                                    TextDecoration.lineThrough,
-                                                decorationColor: kredColor,
-                                              ),
-                                            )
-                                          else if (hasOffer)
-                                            Text(
-                                              "AED ${(widget.productList is Map ? widget.productList['price']?.toString() : null) ?? 'N/A'}",
+                                              "AED ${_formatPrice(widget.productList is Map ? widget.productList['price'] : null)}",
                                               style: const TextStyle(
                                                 fontSize: 8,
                                                 fontWeight: FontWeight.bold,
@@ -857,6 +854,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                             _toDouble(map['price']);
                                         final double finalPrice =
                                             offerP > 0 ? offerP : regularP;
+
                                         if (finalPrice <= 0) {
                                           Get.snackbar('Info',
                                               'Price not available for this product.');
@@ -898,6 +896,9 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                             productName: productName,
                                             productImage: productImageForCart,
                                             productPrice: finalPrice,
+                                            originalPrice: regularP > finalPrice
+                                                ? regularP
+                                                : finalPrice,
                                             quantity: 1,
                                           ),
                                           userId,

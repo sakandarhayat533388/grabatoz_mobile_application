@@ -271,13 +271,13 @@ class AuthController extends GetxController {
         }
       } else {
         print("❌ Failed: ${response.statusCode} - ${response.body}");
-        Get.snackbar(
-          'Error',
-          'Failed to update profile',
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        // Get.snackbar(
+        //   'Error',
+        //   'Failed to update profile',
+        //   backgroundColor: Colors.red,
+        //   colorText: Colors.white,
+        //   snackPosition: SnackPosition.BOTTOM,
+        // );
       }
     } catch (e) {
       isprofileUpdating.value = false;

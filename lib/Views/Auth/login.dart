@@ -1,8 +1,8 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:get/get.dart';
-import 'package:graba2z/Api/Services/apiservices.dart';
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Views/Auth/signup.dart';
 import '../../Utils/packages.dart';
 import '../Home/home.dart';
@@ -41,19 +41,18 @@ class _LoginState extends State<Login> {
       });
     });
   }
+
   Future<void> clearGuestFlag() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await clearGuestCheckoutData();
+  }
 
-    await prefs.remove('Guest');
+  void _handleBackNavigation() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
 
-    // Optional but recommended
-    await prefs.remove('guest_name');
-    await prefs.remove('guest_email');
-    await prefs.remove('guest_phone');
-    await prefs.remove('guest_address');
-    await prefs.remove('guest_city');
-    await prefs.remove('guest_state');
-    await prefs.remove('guest_zip');
+    Get.offAll(() => const Home());
   }
 
   @override
@@ -67,10 +66,13 @@ class _LoginState extends State<Login> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
 
-
     return Scaffold(
       appBar: CustomAppBar(
-         titleWidget: Image.asset(
+        leadingWidget: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, size: 20),
+          onPressed: _handleBackNavigation,
+        ),
+        titleWidget: Image.asset(
           AppImages.logoicon,
           width: 100,
           height: 100,
@@ -145,7 +147,7 @@ class _LoginState extends State<Login> {
                                         top: 8.0, left: 5),
                                     child: Text(
                                       emailvalidate
-                                          .loginemailErrorMessage.value!,
+                                          .loginemailErrorMessage.value,
                                       style: const TextStyle(color: Colors.red),
                                     ),
                                   ),
@@ -217,9 +219,6 @@ class _LoginState extends State<Login> {
                     40.0.heightbox,
                     GetBuilder<AuthController>(
                       builder: (authProvider) {
-                        final apiservice = Get.find<ApiServiceController>();
-
-
                         return PrimaryButton(
                           buttonColor: kdefwhiteColor,
                           textColor: kSecondaryColor,

@@ -5,6 +5,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get/get.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
+import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/cancel_page.dart';
 import 'package:graba2z/Views/success_page/successpayment.dart';
 
@@ -39,6 +40,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
     if (Get.isRegistered<CartNotifier>()) {
       await Get.find<CartNotifier>().clearCartDataInPrefs(widget.userId);
     }
+    await clearGuestCheckoutData();
     if (Get.isRegistered<FirstUserDiscountController>()) {
       await Get.find<FirstUserDiscountController>().refreshAfterOrder();
     }

@@ -3,9 +3,9 @@ import 'dart:developer';
 
 import 'package:get/get.dart';
 import 'package:graba2z/Configs/config.dart';
-import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'orderController.dart';
 
 class ProductCardDeal {
   final bool showBadge;
@@ -37,6 +37,8 @@ class FirstUserDiscountController extends GetxController {
   final previewDiscountAmount = 0.0.obs;
   final previewEligibleSubtotal = 0.0.obs;
   final previewDiscount = Rxn<Map<String, dynamic>>();
+  // Track whether loadStatus() has been called and returned at least once
+  final statusChecked = false.obs;
 
   Future<String?> _token() async {
     final prefs = await SharedPreferences.getInstance();
@@ -63,19 +65,43 @@ class FirstUserDiscountController extends GetxController {
     reason.value = '';
     hasAnyOrder.value = false;
     discount.value = null;
+    statusChecked.value = false; // Reset so next login re-checks from API
     clearPreview();
   }
 
   void markAuthSessionPresent() {
     hasAuthSession.value = true;
+    // Immediately check orders from OrderController (no API wait needed)
+    _checkOrdersFromController();
+  }
+
+  /// Check directly from OrderController if user has any orders.
+  /// This is instant (no network) and runs as soon as auth session is known.
+  void _checkOrdersFromController() {
+    try {
+      if (Get.isRegistered<OrderController>()) {
+        final orderCtrl = Get.find<OrderController>();
+        final totalOrders = orderCtrl.activeOrders.length +
+            orderCtrl.completedOrders.length +
+            orderCtrl.cancelledOrders.length;
+        if (totalOrders > 0) {
+          hasAnyOrder.value = true;
+          log('🔍 [Badge] Orders found from OrderController ($totalOrders) → badge hidden');
+        }
+      }
+    } catch (e) {
+      log('🔍 [Badge] _checkOrdersFromController error: $e');
+    }
   }
 
   Future<void> loadStatus() async {
     isStatusLoading.value = true;
     final authToken = await _token();
+    log('🔍 [Badge] loadStatus() called. Token: ${authToken != null && authToken.isNotEmpty ? "FOUND (${authToken.substring(0, 10)}...)" : "NULL/EMPTY"}');
     if (authToken == null || authToken.isEmpty) {
       clearAll();
       isStatusLoading.value = false;
+      log('🔍 [Badge] No token → clearAll, badge = GUEST mode');
       return;
     }
     hasAuthSession.value = true;
@@ -89,6 +115,9 @@ class FirstUserDiscountController extends GetxController {
         },
       );
 
+      log('🔍 [Badge] API status: ${response.statusCode}');
+      log('🔍 [Badge] API body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data is Map) {
@@ -100,9 +129,12 @@ class FirstUserDiscountController extends GetxController {
               ? Map<String, dynamic>.from(rawDiscount)
               : null;
           if (!eligible.value) clearPreview();
+          log('🔍 [Badge] eligible=${eligible.value}, hasAnyOrder=${hasAnyOrder.value}, reason="${reason.value}"');
+          log('🔍 [Badge] → Badge should show: ${!hasAnyOrder.value}');
         }
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         clearAll();
+        log('🔍 [Badge] 401/403 → clearAll');
       } else {
         log('First user discount status failed: ${response.statusCode} ${response.body}');
       }
@@ -110,10 +142,13 @@ class FirstUserDiscountController extends GetxController {
       log('First user discount status error: $e');
     } finally {
       isStatusLoading.value = false;
+      statusChecked.value =
+          true; // Mark that we've completed at least one check
+      log('🔍 [Badge] Final state → hasAuthSession=${hasAuthSession.value}, hasAnyOrder=${hasAnyOrder.value}, statusChecked=${statusChecked.value}');
     }
   }
 
-  Future<void> previewCart(List<CartOtherInfo> cartItems) async {
+  Future<void> previewCart(List<dynamic> cartItems) async {
     final authToken = await _token();
     if (authToken == null ||
         authToken.isEmpty ||
@@ -126,11 +161,11 @@ class FirstUserDiscountController extends GetxController {
     final orderItems = cartItems
         .where((item) =>
             (item.productId ?? '').isNotEmpty &&
-            (item.productPrice ?? 0) > 0 &&
+            (item.cartBasePrice ?? 0) > 0 &&
             (item.quantity ?? 0) > 0)
         .map((item) => {
               'product': item.productId,
-              'price': item.productPrice,
+              'price': item.cartBasePrice,
               'quantity': item.quantity ?? 1,
             })
         .toList();
@@ -180,42 +215,31 @@ class FirstUserDiscountController extends GetxController {
     await loadStatus();
   }
 
-  ProductCardDeal _guestProductCardDeal(dynamic product) {
-    if (product is! Map || hasAnyOrder.value) {
+  ProductCardDeal getProductCardDeal(
+    dynamic product,
+  ) {
+    // While API is still loading AND user is logged in → hide badge to avoid flicker
+    if (isStatusLoading.value && hasAuthSession.value) {
       return ProductCardDeal.none;
     }
 
-    final offerPrice = _toDouble(product['offerPrice']);
-    final regularPrice = _toDouble(product['price']);
-    final basePrice = offerPrice > 0 ? offerPrice : regularPrice;
-    if (basePrice <= 0) {
+    // API check not done yet for a logged-in session → hide badge (wait for result)
+    if (hasAuthSession.value && !statusChecked.value) {
+      return ProductCardDeal.none;
+    }
+
+    // Logged-in user who has already placed an order → hide badge completely
+    if (hasAuthSession.value && hasAnyOrder.value) {
+      return ProductCardDeal.none;
+    }
+
+    // Guest (no auth session) → always show badge, no price cut
+    if (!hasAuthSession.value) {
       return const ProductCardDeal(showBadge: true, showPriceCut: false);
     }
 
-    final discountedPrice = (basePrice * (1 - guestCardDiscountPercent / 100))
-        .clamp(0.0, basePrice)
-        .toDouble();
-
-    return ProductCardDeal(
-      showBadge: true,
-      showPriceCut: discountedPrice < basePrice,
-      originalPrice: basePrice,
-      discountedPrice: discountedPrice,
-    );
-  }
-
-  ProductCardDeal getProductCardDeal(
-    dynamic product, {
-    bool showGuestFallback = false,
-  }) {
-    if (hasAnyOrder.value || isStatusLoading.value) {
-      return ProductCardDeal.none;
-    }
-
+    // Logged-in user not eligible or missing discount info → hide badge
     if (!eligible.value || discount.value == null || product is! Map) {
-      if (showGuestFallback && !hasAuthSession.value) {
-        return _guestProductCardDeal(product);
-      }
       return ProductCardDeal.none;
     }
 
@@ -274,7 +298,7 @@ class FirstUserDiscountController extends GetxController {
     return ProductCardDeal(
       showBadge: true,
       showPriceCut: discountedPrice < basePrice,
-      originalPrice: basePrice,
+      originalPrice: regularPrice > 0 ? regularPrice : basePrice,
       discountedPrice: discountedPrice,
     );
   }

@@ -20,7 +20,6 @@ import '../../../../Utils/packages.dart';
 import '../../../../Widgets/footertile.dart';
 import '../../../../Widgets/socialicon.dart';
 import '../../../Auth/signup.dart';
-import '../../../Product Folder/new_all_products.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});

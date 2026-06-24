@@ -62,6 +62,8 @@ class _ShopState extends State<Shop> {
   double _filterMaxPrice = 100000;
   String? _activeProductId;
   String? _activeParentType;
+  int _filterDrawerVersion = 0;
+  bool _hasAppliedDrawerSelection = false;
 
   @override
   void initState() {
@@ -101,6 +103,8 @@ class _ShopState extends State<Shop> {
       _activeProductId = widget.id;
       _activeParentType = widget.parentType;
       _currentTitle = null;
+      _hasAppliedDrawerSelection = false;
+      _filterDrawerVersion++;
     });
 
     controller.fetchProducts(
@@ -245,13 +249,15 @@ class _ShopState extends State<Shop> {
     );
   }
 
-  String? get _drawerInitialCategoryId =>
-      _filterCategoryId ??
-      (widget.parentType == 'parentCategory' ? widget.id : null);
+  String? get _drawerInitialCategoryId {
+    if (_hasAppliedDrawerSelection) return _filterCategoryId;
+    return widget.parentType == 'parentCategory' ? widget.id : null;
+  }
 
-  String? get _drawerInitialSubCategoryId =>
-      _filterSubCategoryId ??
-      (widget.parentType == 'subcategory' ? widget.id : null);
+  String? get _drawerInitialSubCategoryId {
+    if (_hasAppliedDrawerSelection) return _filterSubCategoryId;
+    return widget.parentType == 'subcategory' ? widget.id : null;
+  }
 
   ButtonStyle _webLikeLoadMoreStyle() {
     const Color green600 = Color(0xFF16A34A); // Tailwind green-600
@@ -295,6 +301,7 @@ class _ShopState extends State<Shop> {
       num? offerPriceNum;
 
       if (offerPrice is num) {
+        offerPriceNum = offerPrice;
       } else if (offerPrice is String) {
         offerPriceNum = num.tryParse(offerPrice);
       }
@@ -462,6 +469,8 @@ class _ShopState extends State<Shop> {
         _activeProductId = widget.id;
         _activeParentType = widget.parentType;
         _currentTitle = null;
+        _hasAppliedDrawerSelection = false;
+        _filterDrawerVersion++;
       });
       _fetchActiveProducts();
       return;
@@ -484,6 +493,8 @@ class _ShopState extends State<Shop> {
         _activeProductId = selectedId;
         _activeParentType = parentType;
         _currentTitle = title.isNotEmpty ? title : null;
+        _hasAppliedDrawerSelection = true;
+        _filterDrawerVersion++;
       });
 
       _fetchActiveProducts();
@@ -504,6 +515,8 @@ class _ShopState extends State<Shop> {
       _activeProductId = widget.id;
       _activeParentType = widget.parentType;
       _currentTitle = null;
+      _hasAppliedDrawerSelection = true;
+      _filterDrawerVersion++;
     });
 
     if (_hasSystemFilters || hadSystemFilters) {
@@ -552,9 +565,16 @@ class _ShopState extends State<Shop> {
     final navigationProvider = Get.put(BottomNavigationController());
     return Scaffold(
       key: _scaffoldKey,
+      onEndDrawerChanged: (isOpened) {
+        if (!isOpened && mounted) {
+          setState(() {
+            _filterDrawerVersion++;
+          });
+        }
+      },
       endDrawer: ShopCategoryFilter(
         key: ValueKey(
-          'shop-filter-${_drawerInitialCategoryId ?? ''}-${_drawerInitialSubCategoryId ?? ''}',
+          'shop-filter-$_filterDrawerVersion-${_drawerInitialCategoryId ?? ''}-${_drawerInitialSubCategoryId ?? ''}',
         ),
         onApplyFilters: _applyFilters,
         initialCategoryId: _drawerInitialCategoryId,

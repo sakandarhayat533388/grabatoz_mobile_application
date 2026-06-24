@@ -1,17 +1,16 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:graba2z/Controllers/checkout_controller.dart';
 import 'package:graba2z/Utils/packages.dart'; // for AuthController
 
 class AddressDetailsBottomSheet extends StatefulWidget {
-  String phone;
-  bool isforGuest;
-  String? existingStreet;
-  String? existingCity;
-  String? existingState;
-  String? existingZipCode;
+  final String phone;
+  final bool isforGuest;
+  final String? existingStreet;
+  final String? existingCity;
+  final String? existingState;
+  final String? existingZipCode;
 
-  AddressDetailsBottomSheet({
+  const AddressDetailsBottomSheet({
     super.key,
     required this.phone,
     required this.isforGuest,
@@ -22,7 +21,7 @@ class AddressDetailsBottomSheet extends StatefulWidget {
   });
 
   @override
-  _AddressDetailsBottomSheetState createState() =>
+  State<AddressDetailsBottomSheet> createState() =>
       _AddressDetailsBottomSheetState();
 }
 
@@ -46,7 +45,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
   final zipCodeController = TextEditingController();
   final nameController = TextEditingController();
   final cityController = TextEditingController();
-  UserController _userController = Get.put(UserController());
+  final UserController _userController = Get.put(UserController());
   final AuthController _authController = Get.find<AuthController>();
 
   @override
@@ -71,31 +70,30 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
   }
 
   Future<void> _saveAndSyncAddress() async {
-    if (addressController.text.isNotEmpty &&
-        cityController.text.isNotEmpty &&
+    final hasRequiredAddress = addressController.text.trim().isNotEmpty &&
+        cityController.text.trim().isNotEmpty &&
         selectedState != 'Select State' &&
-        zipCodeController.text.isNotEmpty || nameController.text.isNotEmpty) {
-      if(widget.isforGuest) {
+        zipCodeController.text.trim().isNotEmpty;
+    final hasRequiredGuestName =
+        !widget.isforGuest || nameController.text.trim().isNotEmpty;
 
+    if (hasRequiredAddress && hasRequiredGuestName) {
+      if (widget.isforGuest) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('guest_name', nameController.text);
-        await prefs.setString('guest_city', cityController.text);
-        await prefs.setString('guest_address', addressController.text);
-        await prefs.setString('guest_zip', zipCodeController.text);
-        await prefs.setString('guest_state', selectedState );
+        await prefs.setString('guest_name', nameController.text.trim());
+        await prefs.setString('guest_city', cityController.text.trim());
+        await prefs.setString('guest_address', addressController.text.trim());
+        await prefs.setString('guest_zip', zipCodeController.text.trim());
+        await prefs.setString('guest_state', selectedState);
         await prefs.setBool('Guest', true);
 
-        _userController.saveAddress(
-          phone: widget.phone,
-          street: addressController.text.toString(),
-          city: cityController.text.toString(),
-          state: selectedState,
-          zipCode: zipCodeController.text.toString(),
-          country: 'UAE',
-        );
-
-      }
-      else{
+        _userController.homeNameController.text = nameController.text.trim();
+        _userController.street.value = addressController.text.trim();
+        _userController.city.value = cityController.text.trim();
+        _userController.state.value = selectedState;
+        _userController.zipcode.value = zipCodeController.text.trim();
+        if (mounted) Navigator.pop(context);
+      } else {
         _userController.saveAddress(
           phone: widget.phone,
           street: addressController.text.toString(),
@@ -114,7 +112,6 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
         // Update observable values too
         _authController.address.value = addressController.text;
       }
-
     } else {
       Get.snackbar('Warning', "Some fields are missing",
           backgroundColor: Colors.red, colorText: Colors.white);
@@ -126,7 +123,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
     return SafeArea(
       child: Padding(
         padding:
-        EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: DraggableScrollableSheet(
           expand: false,
           initialChildSize: 0.9,
@@ -174,12 +171,12 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                   Text('Country'),
                   SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: 'UAE',
+                    initialValue: 'UAE',
                     items: ['UAE']
                         .map((country) => DropdownMenuItem<String>(
-                      value: country,
-                      child: Text(country),
-                    ))
+                              value: country,
+                              child: Text(country),
+                            ))
                         .toList(),
                     onChanged: null,
                     decoration: InputDecoration(
@@ -190,12 +187,12 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                   Text('State/Region *'),
                   SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: selectedState,
+                    initialValue: selectedState,
                     items: states
                         .map((state) => DropdownMenuItem<String>(
-                      value: state,
-                      child: Text(state),
-                    ))
+                              value: state,
+                              child: Text(state),
+                            ))
                         .toList(),
                     onChanged: (value) {
                       setState(() {
@@ -221,22 +218,22 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                       SizedBox(width: 12),
                       Expanded(
                           child: Obx(
-                                () => _userController.isLoading.value
-                                ? Container(
+                        () => _userController.isLoading.value
+                            ? SizedBox(
                                 width: 30,
                                 child:
-                                Center(child: CircularProgressIndicator()))
-                                : ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Color(0xFF8FD034),
+                                    Center(child: CircularProgressIndicator()))
+                            : ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color(0xFF8FD034),
+                                ),
+                                onPressed: _saveAndSyncAddress,
+                                child: Text(
+                                  "Save Address",
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
-                              onPressed: _saveAndSyncAddress,
-                              child: Text(
-                                "Save Address",
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
-                          )),
+                      )),
                     ],
                   )
                 ],
@@ -249,19 +246,38 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
   }
 
   Widget _buildRadioOption(String type) {
-    return Row(
-      children: [
-        Radio<String>(
-          value: type,
-          groupValue: addressType,
-          onChanged: (value) {
-            setState(() {
-              addressType = value!;
-            });
-          },
-        ),
-        Text(type),
-      ],
+    final isSelected = addressType == type;
+    return InkWell(
+      onTap: () => setState(() => addressType = type),
+      child: Row(
+        children: [
+          Container(
+            height: 20,
+            width: 20,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? kPrimaryColor : Colors.grey,
+                width: 1.8,
+              ),
+            ),
+            child: isSelected
+                ? Center(
+                    child: Container(
+                      height: 10,
+                      width: 10,
+                      decoration: const BoxDecoration(
+                        color: kPrimaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  )
+                : null,
+          ),
+          SizedBox(width: 8),
+          Text(type),
+        ],
+      ),
     );
   }
 

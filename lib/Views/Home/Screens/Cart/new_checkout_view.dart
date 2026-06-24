@@ -1,27 +1,26 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:easy_stepper/easy_stepper.dart';
 import 'package:get/get.dart';
 import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/checkout_controller.dart';
-import 'package:graba2z/Utils/appcolors.dart';
+import 'package:graba2z/Controllers/deliveryController.dart';
+import 'package:graba2z/Controllers/payment_charges_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Utils/packages.dart'; // for AuthController
 import 'package:graba2z/Views/Home/Screens/Cart/address_formt.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/new_payment.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/new_summary_view.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/store_selection.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
 
 class CheckoutStepper extends StatefulWidget {
-  bool isforguest;
-  CheckoutStepper({super.key, required this.isforguest});
+  final bool isforguest;
+  const CheckoutStepper({super.key, required this.isforguest});
 
   @override
   State<CheckoutStepper> createState() => _CheckoutStepperState();
@@ -50,36 +49,36 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     '+974': 'QA', // Qatar
     '+973': 'BH', // Bahrain
     '+965': 'KW', // Kuwait
-    '+91': 'IN',  // India
-    '+92': 'PK',  // Pakistan
-    '+44': 'GB',  // UK
-    '+1': 'US',   // USA
-    '+63': 'PH',  // Philippines
-    '+20': 'EG',  // Egypt
+    '+91': 'IN', // India
+    '+92': 'PK', // Pakistan
+    '+44': 'GB', // UK
+    '+1': 'US', // USA
+    '+63': 'PH', // Philippines
+    '+20': 'EG', // Egypt
     '+962': 'JO', // Jordan
     '+961': 'LB', // Lebanon
-    '+86': 'CN',  // China
-    '+81': 'JP',  // Japan
-    '+82': 'KR',  // South Korea
-    '+49': 'DE',  // Germany
-    '+33': 'FR',  // France
-    '+39': 'IT',  // Italy
-    '+34': 'ES',  // Spain
-    '+61': 'AU',  // Australia
-    '+55': 'BR',  // Brazil
-    '+7': 'RU',   // Russia
-    '+90': 'TR',  // Turkey
-    '+27': 'ZA',  // South Africa
+    '+86': 'CN', // China
+    '+81': 'JP', // Japan
+    '+82': 'KR', // South Korea
+    '+49': 'DE', // Germany
+    '+33': 'FR', // France
+    '+39': 'IT', // Italy
+    '+34': 'ES', // Spain
+    '+61': 'AU', // Australia
+    '+55': 'BR', // Brazil
+    '+7': 'RU', // Russia
+    '+90': 'TR', // Turkey
+    '+27': 'ZA', // South Africa
     '+234': 'NG', // Nigeria
     '+254': 'KE', // Kenya
     '+880': 'BD', // Bangladesh
-    '+94': 'LK',  // Sri Lanka
+    '+94': 'LK', // Sri Lanka
     '+977': 'NP', // Nepal
-    '+60': 'MY',  // Malaysia
-    '+65': 'SG',  // Singapore
-    '+62': 'ID',  // Indonesia
-    '+66': 'TH',  // Thailand
-    '+84': 'VN',  // Vietnam
+    '+60': 'MY', // Malaysia
+    '+65': 'SG', // Singapore
+    '+62': 'ID', // Indonesia
+    '+66': 'TH', // Thailand
+    '+84': 'VN', // Vietnam
   };
 
   // Parse phone number and detect country
@@ -127,13 +126,11 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
   int otpSeconds = 60;
   Timer? otpTimer;
 
-
-
   getUserInformation() async {
     SharedPreferences sp = await SharedPreferences.getInstance();
-    userEmail = sp.getString('userEmail') ?? '';
+    userEmail = widget.isforguest ? '' : sp.getString('userEmail') ?? '';
     _userController.homeemailAddress.text = userEmail;
-    if(widget.isforguest){
+    if (widget.isforguest) {
       setState(() {
         checkguest = true;
       });
@@ -141,15 +138,25 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     setState(() {});
   }
 
-  final AuthController _authController =
-      Get.isRegistered<AuthController>() ? Get.find<AuthController>() : Get.put(AuthController(), permanent: true);
+  final AuthController _authController = Get.isRegistered<AuthController>()
+      ? Get.find<AuthController>()
+      : Get.put(AuthController(), permanent: true);
 
   @override
   void initState() {
     super.initState();
+    if (widget.isforguest) {
+      _resetGuestCheckoutState();
+    }
     getUserInformation();
-    fetchDeliveryMethods();
+    final deliveryCtrl = Get.put(DeliveryController());
+    deliveryCtrl.fetchMethods();
+    final paymentChargesCtrl = Get.isRegistered<PaymentChargesController>()
+        ? Get.find<PaymentChargesController>()
+        : Get.put(PaymentChargesController());
+    paymentChargesCtrl.fetchActiveCharges();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.isforguest) return;
       _userController.getUserInformation();
       // Fetch profile like Edit Profile, prefill now, and keep in sync when data arrives
       _authController.getUserProfileData();
@@ -158,13 +165,33 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     });
   }
 
+  Future<void> _resetGuestCheckoutState() async {
+    await clearGuestCheckoutData();
+    _userController.homeNameController.clear();
+    _userController.homeemailAddress.clear();
+    _userController.homePhoneController.clear();
+    _userController.phoneController.clear();
+    _userController.street.value = '';
+    _userController.city.value = '';
+    _userController.state.value = '';
+    _userController.zipcode.value = '';
+    completePhoneNumber = '';
+    selectedCountryCode = '+971';
+    initialCountryCode = 'AE';
+    isotpVerified = false;
+    isVerifying = true;
+    isCodeSent = false;
+    if (mounted) setState(() {});
+  }
+
   void _attachAuthControllerListeners() {
     // Keep checkout fields in sync when Edit Profile text controllers get populated
     _authController.editPhoneController.addListener(_syncFromAuthControllers);
     _authController.editaddressController.addListener(_syncFromAuthControllers);
     _authController.editcityController.addListener(_syncFromAuthControllers);
     _authController.editzipcodeController.addListener(_syncFromAuthControllers);
-    _authController.editStateController.addListener(_syncFromAuthControllers); // Add this line
+    _authController.editStateController
+        .addListener(_syncFromAuthControllers); // Add this line
   }
 
   void _syncFromAuthControllers() {
@@ -179,7 +206,9 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     bool changed = false;
 
     // Only parse if phone has country code and is different from what we already have
-    if (phone.isNotEmpty && phone.startsWith('+') && completePhoneNumber != phone) {
+    if (phone.isNotEmpty &&
+        phone.startsWith('+') &&
+        completePhoneNumber != phone) {
       // Parse country code from phone number
       _parseAndSetCountry(phone);
       changed = true;
@@ -210,11 +239,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     if (changed && mounted) setState(() {});
   }
 
-
-
-
-
-   // Timer set for resend code
+  // Timer set for resend code
   void startOtpTimer() {
     otpSeconds = 60;
     canResend = false;
@@ -230,7 +255,6 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
       setState(() {});
     });
   }
-
 
   Future<void> _sendCode() async {
     final email = _userController.homeemailAddress.text.trim();
@@ -256,7 +280,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
 
     EasyLoading.show(status: "Verifying OTP...");
 
-    final url = Uri.parse("${Configss.baseUrl}/api/request-callback/verify-code");
+    final url =
+        Uri.parse("${Configss.baseUrl}/api/request-callback/verify-code");
 
     try {
       final response = await http.post(
@@ -275,12 +300,10 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
-
-
           final email = _userController.homeemailAddress.text.trim();
           EasyLoading.showSuccess("OTP Verified Successfully");
-            final prefs = await SharedPreferences.getInstance();
-              await prefs.setString('guest_email', email);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('guest_email', email);
 
           setState(() {
             isCodeSent = false;
@@ -292,15 +315,14 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
           EasyLoading.showError(data['message'] ?? "OTP Verification Failed");
         }
       } else {
-        EasyLoading.showError("OTP Verification Failed: ${response.statusCode}");
+        EasyLoading.showError(
+            "OTP Verification Failed: ${response.statusCode}");
       }
     } catch (e) {
       EasyLoading.dismiss();
       EasyLoading.showError("Error verifying OTP: $e");
     }
   }
-
-
 
   // Send Email Verification code
   Future<void> sendEmailVerificationCode(String email) async {
@@ -333,6 +355,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
             backgroundColor: Colors.green,
             colorText: Colors.white,
           );
+
           /// OTP FIELD SHOW + TIMER START
           setState(() {
             isCodeSent = true;
@@ -364,8 +387,6 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
       );
     }
   }
-
-
 
   // Pull data from AuthController (used in Edit Profile) into checkout fields
   void _prefillFromProfile() {
@@ -415,21 +436,23 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
   @override
   void dispose() {
     // Remove listeners to avoid leaks
-    _authController.editPhoneController.removeListener(_syncFromAuthControllers);
-    _authController.editaddressController.removeListener(_syncFromAuthControllers);
+    _authController.editPhoneController
+        .removeListener(_syncFromAuthControllers);
+    _authController.editaddressController
+        .removeListener(_syncFromAuthControllers);
     _authController.editcityController.removeListener(_syncFromAuthControllers);
-    _authController.editzipcodeController.removeListener(_syncFromAuthControllers);
-    _authController.editStateController.removeListener(_syncFromAuthControllers); // Add this line
+    _authController.editzipcodeController
+        .removeListener(_syncFromAuthControllers);
+    _authController.editStateController
+        .removeListener(_syncFromAuthControllers); // Add this line
     super.dispose();
   }
-
-
-
 
   final _cartNotifier = Get.put(CartNotifier());
   double vatPerItem = 0.0;
   double subtotal = 0.0;
   String? _homePhoneError;
+  bool _isRegisteringGuest = false;
 
   String _digitsOnly(String s) => s.replaceAll(RegExp(r'[^0-9]'), '');
 
@@ -446,9 +469,199 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     return completePhoneNumber;
   }
 
+  Future<bool> _registerGuestAccount(String phone) async {
+    final prefs = await SharedPreferences.getInstance();
+    final name = (prefs.getString('guest_name') ??
+            _userController.homeNameController.text)
+        .trim();
+    final email = _userController.homeemailAddress.text.trim();
+    final address = (prefs.getString('guest_address') ??
+            _userController.street.value.replaceAll('"', ''))
+        .trim();
+    final city = (prefs.getString('guest_city') ??
+            _userController.city.value.replaceAll('"', ''))
+        .trim();
+    final state = (prefs.getString('guest_state') ??
+            _userController.state.value.replaceAll('"', ''))
+        .trim();
+    final zipCode = (prefs.getString('guest_zip') ??
+            _userController.zipcode.value.replaceAll('"', ''))
+        .trim();
+    final registeredEmail = prefs.getString('guest_registered_email') ?? '';
+
+    if (registeredEmail == email && email.isNotEmpty) {
+      return true;
+    }
+
+    if (name.isEmpty ||
+        email.isEmpty ||
+        phone.trim().isEmpty ||
+        address.isEmpty ||
+        city.isEmpty ||
+        state.isEmpty ||
+        zipCode.isEmpty) {
+      Get.snackbar(
+        'Warning',
+        'Please complete all guest details before continuing',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+
+    setState(() => _isRegisteringGuest = true);
+    EasyLoading.show(status: 'Checking guest account...');
+
+    try {
+      final response = await http.post(
+        Uri.parse(Configss.registerGuest),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          "name": name,
+          "email": email,
+          "phone": phone.trim(),
+          "address": {
+            "address": address,
+            "city": city,
+            "state": state,
+            "zipCode": zipCode,
+            "country": "UAE",
+          }
+        }),
+      );
+
+      EasyLoading.dismiss();
+
+      final data = response.body.isNotEmpty ? jsonDecode(response.body) : {};
+      if (response.statusCode == 200 && data['alreadyExists'] == true) {
+        await _showGuestAlreadyRegisteredDialog();
+        return false;
+      }
+
+      if (response.statusCode == 201 ||
+          (response.statusCode == 200 && data['success'] == true)) {
+        await prefs.setBool('Guest', true);
+        await prefs.setString('guest_email', email);
+        await prefs.setString('guest_registered_email', email);
+        return true;
+      }
+
+      EasyLoading.showError(
+        data['message']?.toString() ?? 'Unable to continue as guest',
+      );
+      return false;
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('Unable to continue as guest');
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() => _isRegisteringGuest = false);
+      }
+    }
+  }
+
+  Future<void> _showGuestAlreadyRegisteredDialog() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: kPrimaryColor.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person_search_rounded,
+                    color: kPrimaryColor,
+                    size: 34,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Account Already Exists',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: kdefblackColor,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'This email is already registered. Please log in to continue with your order.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.35,
+                    color: kmediumblackColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimaryColor,
+                      foregroundColor: Colors.white,
+                      elevation: 3,
+                      shadowColor: kPrimaryColor.withValues(alpha: 0.35),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                    onPressed: () async {
+                      await clearGuestCheckoutData();
+                      if (Navigator.of(dialogContext).canPop()) {
+                        Navigator.of(dialogContext).pop();
+                      }
+                      Get.offAll(() => const Login());
+                    },
+                    icon: const Icon(Icons.login_rounded, size: 20),
+                    label: const Text(
+                      'Go to Login',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Your cart is safe while you sign in.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   getcalculations() {
     subtotal = _cartNotifier.cartOtherInfoList.fold(
-        0.0, (sum, item) => sum + (item.productPrice! * (item.quantity ?? 0)));
+        0.0, (sum, item) => sum + (item.cartBasePrice * (item.quantity ?? 0)));
 
     if (subtotal <= 500) {
       _cartNotifier.totalAmount.value =
@@ -458,30 +671,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     }
   }
 
-  List<DeliveryMethod> deliveryMethods = [];
-
-  Future<void> fetchDeliveryMethods() async {
-    final response = await http.get(Uri.parse(Configss.getShippingCharge));
-
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      deliveryMethods = data.map((e) => DeliveryMethod.fromJson(e)).toList();
-
-      if (deliveryMethods.isNotEmpty) {
-        _cartNotifier.selectedDeliveryMethodId.value =
-            deliveryMethods.first.id;
-        _cartNotifier.deliveryFeeCharge.value = deliveryMethods.first.charge;
-        getcalculations();
-      }
-
-      setState(() {});
-    } else {
-      throw Exception("Failed to load delivery methods");
-    }
-  }
-
   String? selectedSubCategoryId;
-  UserController _userController = Get.put(UserController());
+  final UserController _userController = Get.put(UserController());
   @override
   Widget build(BuildContext context) {
     // Re-sync state every time widget rebuilds (when returning from Edit Profile)
@@ -540,7 +731,6 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     );
   }
 
-
   Widget _buildStepContent() {
     // Use completePhoneNumber which is set by IntlPhoneField
     final displayPhone = _userController.isHomeDelivery.value
@@ -565,7 +755,6 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
               ? 'Home Delivery'
               : 'Store Pickup',
           subtotal: subtotal,
-          deliveryMethods: deliveryMethods,
         );
       case 2:
         return PaymentMethodScreen();
@@ -697,7 +886,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                           child: TextFormField(
                             controller: _userController.homeemailAddress,
                             keyboardType: TextInputType.emailAddress,
-                            readOnly: !widget.isforguest, // login user email edit na kar sake
+                            readOnly: !widget
+                                .isforguest, // login user email edit na kar sake
                             decoration: const InputDecoration(
                               labelText: "E-mail",
                               hintText: "example@email.com",
@@ -709,23 +899,20 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         /// ✅ ONLY FOR GUEST USER
                         if (widget.isforguest) ...[
                           const SizedBox(width: 8),
-
-
                           if (isotpVerified) ...[
                             Expanded(
                               flex: 1,
                               child: SizedBox(
                                 height: 55,
                                 child: ElevatedButton(
-                                  onPressed: () async {
-
-                                  },
+                                  onPressed: () async {},
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                   ),
                                   child: const Text(
                                     "Verifed",
-                                    style: TextStyle(color: Colors.white, fontSize: 10),
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 10),
                                   ),
                                 ),
                               ),
@@ -745,13 +932,13 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   ),
                                   child: const Text(
                                     "Verify",
-                                    style: TextStyle(color: Colors.white, fontSize: 13),
+                                    style: TextStyle(
+                                        color: Colors.white, fontSize: 13),
                                   ),
                                 ),
                               ),
                             ),
                           ],
-
                         ],
                       ],
                     ),
@@ -779,25 +966,23 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                 ),
                                 canResend
                                     ? GestureDetector(
-                                  onTap:(){
-
-                                  },
-                                  child: const Text(
-                                    "Resend",
-                                    style: TextStyle(
-                                      color: Colors.green,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                )
+                                        onTap: () {},
+                                        child: const Text(
+                                          "Resend",
+                                          style: TextStyle(
+                                            color: Colors.green,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      )
                                     : Text(
-                                  "$otpSeconds sec",
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                                        "$otpSeconds sec",
+                                        style: const TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 12,
+                                        ),
+                                      ),
                               ],
                             ),
                           ),
@@ -813,19 +998,20 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   width: double.infinity,
                                   height: 48,
                                   child: ElevatedButton(
-                                    onPressed: isOtpVerifying ? null : verifyOtp,
+                                    onPressed:
+                                        isOtpVerifying ? null : verifyOtp,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.green,
                                     ),
                                     child: isOtpVerifying
                                         ? const SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
+                                            height: 18,
+                                            width: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
                                         : const Text("Verify Code"),
                                   ),
                                 ),
@@ -833,21 +1019,18 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                 const SizedBox(height: 6),
 
                                 /// COUNTDOWN / RESEND
-
                               ],
                             ),
                           ),
                         ],
                       ),
-
                       const SizedBox(height: 12),
                     ],
 
-
-
                     // International Phone Field
                     IntlPhoneField(
-                      key: ValueKey(initialCountryCode), // Rebuild when country changes
+                      key: ValueKey(
+                          initialCountryCode), // Rebuild when country changes
                       controller: _userController.homePhoneController,
                       decoration: InputDecoration(
                         labelText: 'Phone Number',
@@ -925,10 +1108,14 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                               phone: _userController
                                                   .homePhoneController.text
                                                   .toString(),
-                                              existingStreet: _userController.street.value,
-                                              existingCity: _userController.city.value,
-                                              existingState: _userController.state.value,
-                                              existingZipCode: _userController.zipcode.value,
+                                              existingStreet:
+                                                  _userController.street.value,
+                                              existingCity:
+                                                  _userController.city.value,
+                                              existingState:
+                                                  _userController.state.value,
+                                              existingZipCode:
+                                                  _userController.zipcode.value,
                                             ),
                                           );
                                         },
@@ -943,16 +1130,21 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                           _userController.zipcode.value = '';
 
                                           // Also clear from AuthController for Edit Profile sync
-                                          _authController.editaddressController.clear();
-                                          _authController.editcityController.clear();
-                                          _authController.editzipcodeController.clear();
-                                          _authController.editStateController.clear();
+                                          _authController.editaddressController
+                                              .clear();
+                                          _authController.editcityController
+                                              .clear();
+                                          _authController.editzipcodeController
+                                              .clear();
+                                          _authController.editStateController
+                                              .clear();
 
                                           // Update observable values
                                           _authController.address.value = '';
 
                                           // Clear from SharedPreferences to prevent reload
-                                          final prefs = await SharedPreferences.getInstance();
+                                          final prefs = await SharedPreferences
+                                              .getInstance();
                                           await prefs.remove('user_address');
                                           await prefs.remove('user_zipCode');
                                           await prefs.remove('user_city');
@@ -960,9 +1152,12 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
 
                                           // IMPORTANT: Update backend API to persist the removal
                                           await _authController.sendUserData(
-                                            phone: _authController.editPhoneController.text,
-                                            name: _authController.editNameController.text,
-                                            email: _authController.editemailController.text,
+                                            phone: _authController
+                                                .editPhoneController.text,
+                                            name: _authController
+                                                .editNameController.text,
+                                            email: _authController
+                                                .editemailController.text,
                                             street: '',
                                             city: '',
                                             state: '',
@@ -996,17 +1191,17 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               onPressed: () async {
-
-
+                if (_isRegisteringGuest) return;
                 if (_userController.isHomeDelivery.value) {
                   final homePhone =
                       _userController.homePhoneController.text.trim();
                   // Use complete phone number from IntlPhoneField
                   final fullPhoneNumber = completePhoneNumber;
 
-                  if(widget.isforguest){
-                    if(checkguest && isVerifying){
-                      Get.snackbar('Warning', 'Please enter a Email and verify it',
+                  if (widget.isforguest) {
+                    if (checkguest && isVerifying) {
+                      Get.snackbar(
+                          'Warning', 'Please enter a Email and verify it',
                           backgroundColor: Colors.red, colorText: Colors.white);
                       return;
                     }
@@ -1023,13 +1218,15 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   final prefs = await SharedPreferences.getInstance();
                   // Save full phone number with country code
                   await prefs.setString('guest_phone', fullPhoneNumber);
-                  await prefs.setString('guest_country_code', selectedCountryCode);
+                  await prefs.setString(
+                      'guest_country_code', selectedCountryCode);
 
                   // Sync full phone to edit profile (but NOT homePhoneController - IntlPhoneField manages that)
                   _authController.editPhoneController.text = fullPhoneNumber;
                   _authController.phoneNumber.value = fullPhoneNumber;
 
-                  if (_userController.street.value.isEmpty && _userController.activeStep.value == 0) {
+                  if (_userController.street.value.isEmpty &&
+                      _userController.activeStep.value == 0) {
                     // Save phone to backend BEFORE showing address form
                     await _authController.sendUserData(
                       phone: fullPhoneNumber,
@@ -1048,7 +1245,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       isScrollControlled: true,
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
                       ),
                       builder: (context) => AddressDetailsBottomSheet(
                         isforGuest: widget.isforguest,
@@ -1056,6 +1254,10 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       ),
                     );
                   } else {
+                    if (widget.isforguest &&
+                        !await _registerGuestAccount(fullPhoneNumber)) {
+                      return;
+                    }
                     // Sync phone and address to edit profile before continuing
                     _syncToAuthController();
 
@@ -1069,10 +1271,12 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
 
                   // Debug current state
                   print('🔍 Continue button pressed for pickup');
-                  print('   selectedStoreIndex: ${_userController.selectedStoreIndex?.value}');
+                  print(
+                      '   selectedStoreIndex: ${_userController.selectedStoreIndex?.value}');
                   print('   storeId: "${_userController.storeId.value}"');
                   print('   storeName: "${_userController.storeName.value}"');
-                  print('   storeAddress: "${_userController.storeAddress.value}"');
+                  print(
+                      '   storeAddress: "${_userController.storeAddress.value}"');
                   print('   storePhone: "${_userController.storePhone.value}"');
                   print('   pickupPhone: "$pickupPhone"');
 
@@ -1110,7 +1314,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   _authController.editPhoneController.text = pickupPhone;
                   _authController.phoneNumber.value = pickupPhone;
 
-                  if (_userController.street.value.isEmpty && _userController.activeStep.value == 0) {
+                  if (_userController.street.value.isEmpty &&
+                      _userController.activeStep.value == 0) {
                     // Save phone to backend BEFORE showing address form
                     await _authController.sendUserData(
                       phone: pickupPhone,
@@ -1129,7 +1334,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       isScrollControlled: true,
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
                       ),
                       builder: (context) => AddressDetailsBottomSheet(
                         isforGuest: widget.isforguest,
@@ -1140,6 +1346,10 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                     // Sync phone and address to edit profile before continuing
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.setString('guest_phone', pickupPhone);
+                    if (widget.isforguest &&
+                        !await _registerGuestAccount(pickupPhone)) {
+                      return;
+                    }
                     _syncToAuthController();
 
                     setState(() {
