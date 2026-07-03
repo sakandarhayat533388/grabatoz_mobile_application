@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:graba2z/Controllers/orderController.dart';
 import 'package:graba2z/Views/Home/Screens/Settings/Modules/Order%20History/order_details_view.dart';
 import 'package:graba2z/Views/Home/Screens/Settings/Modules/Order%20History/ordercard.dart';
+import 'package:graba2z/Views/Home/Screens/Settings/Modules/Order%20History/invoice_preview_screen.dart';
 import 'package:graba2z/Widgets/secondarybutton.dart';
 import '../../../../../../Utils/packages.dart';
 
@@ -41,15 +42,13 @@ class ActiveOrdersTabState extends State<ActiveOrdersTab> {
                     createdDate: formattedDate,
                     orderItems: order['orderItems'],
                     totalPrice: order['totalPrice'].toString(),
-                    actionButton:
-                        GestureDetector(onTap: () {}, child: Container()),
                     status: order['status'],
-                    bottomWidget: SecondaryButton(
-                        buttonText: "Details",
-                        onPressFunction: () {
-                          Get.to(() => OrderDetailScreen(order: order));
-                          // context.route(OrderDetailsScreen(order: order));
-                        }),
+                    onViewDetails: () {
+                      Get.to(() => OrderDetailScreen(order: order));
+                    },
+                    onDownloadInvoice: () {
+                      Get.to(() => InvoicePreviewScreen(order: order));
+                    },
                   );
                 },
               )

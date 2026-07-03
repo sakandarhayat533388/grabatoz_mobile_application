@@ -22,6 +22,8 @@ class PaymentMethodScreen extends StatefulWidget {
 
 class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   String selectedMethod = 'COD';
+  List<String> allowedPaymentMethods = ['tamara', 'tabby', 'card', 'cod'];
+  bool isLoadingPaymentMethods = true;
   final CartNotifier _cartNotifier = Get.put(CartNotifier());
   final UserController _usercontroller = Get.put(UserController());
   late DeliveryController _deliveryCtrl;
@@ -134,12 +136,96 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       getcalculations();
+      fetchAllowedPaymentMethods();
       _paymentChargesCtrl.fetchActiveCharges();
       if (!Get.isRegistered<FirstUserDiscountController>()) return;
       final discountController = Get.find<FirstUserDiscountController>();
       discountController.loadStatus().then((_) {
         discountController.previewCart(_cartNotifier.cartOtherInfoList);
       });
+    });
+  }
+
+  Future<void> fetchAllowedPaymentMethods() async {
+    setState(() {
+      isLoadingPaymentMethods = true;
+    });
+
+    try {
+      final productIds = _cartNotifier.cartOtherInfoList
+          .map((item) => item.productId)
+          .whereType<String>()
+          .toList();
+
+      if (productIds.isEmpty) {
+        setState(() {
+          allowedPaymentMethods = ['tamara', 'tabby', 'card', 'cod'];
+          isLoadingPaymentMethods = false;
+        });
+        return;
+      }
+
+      final url = Uri.parse(Configss.resolvePaymentMethods);
+      log('Fetching allowed payment methods from $url with productIds: $productIds');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'productIds': productIds}),
+      );
+
+      if (response.statusCode == 200) {
+        final rawData = jsonDecode(response.body);
+        log('Resolve payment methods response: $rawData');
+        
+        List<String> resolved = [];
+        if (rawData is List) {
+          resolved = rawData.map((e) => e.toString().toLowerCase().trim()).toList();
+        } else if (rawData is Map) {
+          final methods = rawData['allowedMethods'] ?? rawData['paymentMethods'] ?? rawData['data'];
+          if (methods is List) {
+            resolved = methods.map((e) => e.toString().toLowerCase().trim()).toList();
+          }
+        }
+
+        if (resolved.isNotEmpty) {
+          setState(() {
+            allowedPaymentMethods = resolved;
+            
+            // Auto-select the first available method if current selection is not allowed
+            final currentMapped = _mapPaymentMethod(selectedMethod).toLowerCase();
+            if (!allowedPaymentMethods.contains(currentMapped)) {
+              if (allowedPaymentMethods.contains('cod')) {
+                selectedMethod = 'COD';
+              } else if (allowedPaymentMethods.contains('card')) {
+                selectedMethod = 'Card';
+              } else if (allowedPaymentMethods.contains('tabby')) {
+                selectedMethod = 'Tabby';
+              } else if (allowedPaymentMethods.contains('tamara')) {
+                selectedMethod = 'Tamara';
+              } else {
+                final first = allowedPaymentMethods.first;
+                if (first == 'cod') selectedMethod = 'COD';
+                else if (first == 'card') selectedMethod = 'Card';
+                else if (first == 'tabby') selectedMethod = 'Tabby';
+                else if (first == 'tamara') selectedMethod = 'Tamara';
+              }
+            }
+            isLoadingPaymentMethods = false;
+          });
+          return;
+        }
+      } else {
+        log('Error resolving payment methods: Status Code ${response.statusCode}, Body ${response.body}');
+      }
+    } catch (e) {
+      log('Exception resolving payment methods: $e');
+    }
+
+    // Fallback on error or empty response
+    setState(() {
+      allowedPaymentMethods = ['tamara', 'tabby', 'card', 'cod'];
+      isLoadingPaymentMethods = false;
     });
   }
 
@@ -156,30 +242,63 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        // _buildPaymentTile(
-        //   value: 'Tamara',
-        //   title: 'Tamara',
-        //   subtitle: 'Buy now, pay later in 3 installments',
-        //   logo: 'assets/images/tmara.png', // Replace with your asset
-        // ),
-        // _buildPaymentTile(
-        //   value: 'Tabby',
-        //   title: 'Tabby',
-        //   subtitle: 'Split your purchase into 4 payments',
-        //   logo: 'assets/images/tabby.jpg',
-        // ),
-        _buildPaymentTile(
-          value: 'Card',
-          title: 'Pay By Card',
-          subtitle: 'Credit/Debit card payment',
-          logo: 'assets/images/master.jpg',
-        ),
-        _buildPaymentTile(
-          value: 'COD',
-          title: 'Cash On Delivery',
-          subtitle: 'Pay when you receive your order',
-          logo: 'assets/image ',
-        ),
+        if (isLoadingPaymentMethods)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24.0),
+            child: Center(
+              child: Column(
+                children: [
+                  CircularProgressIndicator(color: kPrimaryColor),
+                  SizedBox(height: 12),
+                  Text(
+                    "Loading available payment options...",
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else ...[
+          if (allowedPaymentMethods.contains('tamara'))
+            _buildPaymentTile(
+              value: 'Tamara',
+              title: 'Tamara',
+              subtitle: 'Buy now, pay later in 3 installments',
+              logo: 'assets/images/tmara.png',
+            ),
+          if (allowedPaymentMethods.contains('tabby'))
+            _buildPaymentTile(
+              value: 'Tabby',
+              title: 'Tabby',
+              subtitle: 'Split your purchase into 4 payments',
+              logo: 'assets/images/tabby.jpg',
+            ),
+          if (allowedPaymentMethods.contains('card'))
+            _buildPaymentTile(
+              value: 'Card',
+              title: 'Pay By Card',
+              subtitle: 'Credit/Debit card payment',
+              logo: 'assets/images/master.jpg',
+            ),
+          if (allowedPaymentMethods.contains('cod'))
+            _buildPaymentTile(
+              value: 'COD',
+              title: 'Cash On Delivery',
+              subtitle: 'Pay when you receive your order',
+              logo: 'assets/image ',
+            ),
+          if (allowedPaymentMethods.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16.0),
+              child: Center(
+                child: Text(
+                  "No payment methods are available for the items in your cart. Please contact support.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.red, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+        ],
         Obx(() {
           _paymentChargesCtrl.activeCharges.length;
           _paymentChargesCtrl.isLoading.value;
@@ -227,10 +346,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             ? _usercontroller.homeNameController.text.trim()
                             : _usercontroller.fullName.value.trim();
 
-                        if (selectedMethod == 'COD' ||
-                            selectedMethod == "Card" ||
-                            selectedMethod == "Tabby" ||
-                            selectedMethod == "Tamara") {
+                        final currentMapped = _mapPaymentMethod(selectedMethod).toLowerCase();
+                        if (allowedPaymentMethods.contains(currentMapped)) {
                           if (_usercontroller.isHomeDelivery.value) {
                             SharedPreferences prefs =
                                 await SharedPreferences.getInstance();
@@ -596,10 +713,24 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ? (data['appDiscountName']?.toString() ?? '')
             : '';
         final String? userId = sp.getString('userId')?.toString();
-        if (selectedMethod == 'Card' || selectedMethod == 'Tabby') {
+        if (selectedMethod == 'Card') {
           await paymentRequest(
             data['_id'],
             payableTotalPrice,
+            userId: userId,
+            appDiscountApplied: appDiscountApplied,
+            appDiscountAmount: appDiscountAmount,
+            appDiscountName: appDiscountName,
+          );
+        } else if (selectedMethod == 'Tabby') {
+          await tabbyPaymentRequest(
+            orderId: data['_id'],
+            totalAmount: payableTotalPrice,
+            customer: {
+              "name": shippingAdress?['name'] ?? '',
+              "email": shippingAdress?['email'] ?? '',
+              "phone": shippingAdress?['phone'] ?? '',
+            },
             userId: userId,
             appDiscountApplied: appDiscountApplied,
             appDiscountAmount: appDiscountAmount,
@@ -647,6 +778,150 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       _usercontroller.iscardLoading.value = false;
       EasyLoading.showError('Create order error: ${e.toString()}');
       print('Error creating order: $e');
+    }
+  }
+
+  String _formatPhoneForTabby(String phone) {
+    String cleaned = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    if (cleaned.startsWith('00')) {
+      cleaned = '+' + cleaned.substring(2);
+    }
+    if (cleaned.startsWith('0')) {
+      cleaned = '+971' + cleaned.substring(1);
+    }
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+' + cleaned;
+    }
+    return cleaned;
+  }
+
+  List<Map<String, dynamic>> _buildTabbyItemsFromCart() {
+    final List<Map<String, dynamic>> list = [];
+    for (final item in _cartNotifier.cartOtherInfoList) {
+      try {
+        final qty = (item.quantity ?? 1).toInt();
+        final unit = item.cartBasePrice;
+        list.add({
+          "title": item.productName ?? "",
+          "quantity": qty,
+          "unit_price": unit.toStringAsFixed(2),
+          "reference_id": (item.productId ?? '').toString(),
+        });
+      } catch (e) {
+        log('Skipping cart item for Tabby mapping: $e');
+      }
+    }
+    return list;
+  }
+
+  Map<String, dynamic> _buildTabbyAddress() {
+    final city = _usercontroller.city.value.replaceAll('"', '').trim();
+    final street = _usercontroller.street.value.replaceAll('"', '').trim();
+    final zip = _usercontroller.zipcode.value.replaceAll('"', '').trim();
+    return {
+      "city": city.isNotEmpty ? city : "Dubai",
+      "address": street.isNotEmpty ? street : "Address not specified",
+      "zip": zip.isNotEmpty ? zip : "00000",
+    };
+  }
+
+  Future<void> tabbyPaymentRequest({
+    required String orderId,
+    required double totalAmount,
+    Map<String, dynamic>? customer,
+    String? userId,
+    bool appDiscountApplied = false,
+    double appDiscountAmount = 0.0,
+    String appDiscountName = '',
+  }) async {
+    final url = Uri.parse("https://api.tabby.ai/api/v2/checkout");
+    EasyLoading.show(status: 'Please wait...');
+
+    final name = (customer?['name'] as String? ?? '').trim();
+    final email = (customer?['email'] as String? ?? '').trim();
+    final phone = _formatPhoneForTabby((customer?['phone'] as String? ?? '').trim());
+
+    final List<Map<String, dynamic>> items = _buildTabbyItemsFromCart();
+    final shippingAddress = _buildTabbyAddress();
+
+    final Map<String, dynamic> payload = {
+      "payment": {
+        "amount": totalAmount.toStringAsFixed(2),
+        "currency": "AED",
+        "buyer": {
+          "phone": phone,
+          "email": email,
+          "name": name,
+        },
+        "order": {
+          "reference_id": orderId,
+          "items": items,
+        },
+        "shipping_address": shippingAddress,
+      },
+      "lang": "en",
+      "merchant_code": "AE",
+      "merchant_urls": {
+        "success": "${Configss.webBaseUrl}/payment/success",
+        "cancel": "${Configss.webBaseUrl}/payment/cancel",
+        "failure": "${Configss.webBaseUrl}/payment/failure",
+      }
+    };
+
+    log('Tabby request payload: ${jsonEncode(payload)}');
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer sk_95cb5ca6-170d-4cef-91f9-0454cae7bd6d',
+        },
+        body: jsonEncode(payload),
+      );
+      EasyLoading.dismiss();
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String checkoutUrl = '';
+        try {
+          final config = data['configuration'];
+          if (config != null) {
+            final availableProducts = config['available_products'];
+            if (availableProducts != null) {
+              final installments = availableProducts['installments'];
+              if (installments is List && installments.isNotEmpty) {
+                checkoutUrl = installments[0]['web_url']?.toString() ?? '';
+              }
+            }
+          }
+        } catch (e) {
+          log('Error parsing Tabby web_url: $e');
+        }
+
+        if (checkoutUrl.isEmpty) {
+          checkoutUrl = data['web_url'] ?? '';
+        }
+
+        if (checkoutUrl.isEmpty) {
+          EasyLoading.showError('Invalid Tabby response structure');
+          return;
+        }
+
+        Get.to(() => WebViewScreen(
+              url: checkoutUrl,
+              userId: userId,
+              appDiscountApplied: appDiscountApplied,
+              appDiscountAmount: appDiscountAmount,
+              appDiscountName: appDiscountName,
+            ));
+      } else {
+        final msg = _extractServerMessage(response.body);
+        EasyLoading.showError('Tabby init failed: $msg');
+        log('Tabby init failed: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('Tabby init error: ${e.toString()}');
     }
   }
 

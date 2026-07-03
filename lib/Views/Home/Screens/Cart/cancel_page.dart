@@ -125,7 +125,8 @@ class CancelPagePayment extends StatelessWidget {
                         color: Colors.red,
                         size: 35,
                       )
-                          // fit: BoxFit.cover),             child: Image.asset("assets/images/success.png",
+                          // fit: BoxFit.cover),             
+                          //child: Image.asset("assets/images/success.png",
                           // fit: BoxFit.cover),
                           ),
                     ),
