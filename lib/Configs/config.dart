@@ -36,6 +36,7 @@ class Configss {
   static String firstUserDiscountStatus =
       "$baseUrl/api/app-discounts/me/first-user-discount";
   static String firstUserDiscountPreview = "$baseUrl/api/app-discounts/preview";
+  static String getPopupSettings = "$baseUrl/api/popup-settings";
 
   // static String userProfile = "$baseUrl/api/users/profile";
   static String updateProfile = "$baseUrl/api/users/profile";

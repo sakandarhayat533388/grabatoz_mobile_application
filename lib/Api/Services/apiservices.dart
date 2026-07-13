@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:graba2z/Configs/config.dart';
+import 'package:graba2z/Api/Models/popup_settings_model.dart';
 import '../../Utils/packages.dart';
 
 class ApiServiceController extends GetxController {
@@ -122,6 +123,27 @@ class ApiServiceController extends GetxController {
       }
     } catch (e) {
       throw Exception('Error: ${e.toString()}');
+    }
+  }
+
+  Future<PopupSettingsModel?> fetchActivePopup({String pageKey = 'home'}) async {
+    try {
+      final uri = Uri.parse('${Configss.getPopupSettings}?platform=app&pageKey=$pageKey');
+      final response = await http.get(uri);
+      
+      if (response.statusCode == 200) {
+        final body = json.decode(response.body);
+        if (body == null) {
+          return null;
+        }
+        if (body is Map<String, dynamic>) {
+          return PopupSettingsModel.fromJson(body);
+        }
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching active popup settings: $e');
+      return null;
     }
   }
 }

@@ -7,6 +7,7 @@ import 'package:graba2z/Utils/image_helper.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/cart.dart';
 import 'package:graba2z/Views/Product%20Folder/newProduct_card.dart';
 
+import 'package:graba2z/Utils/popup_helper.dart';
 import '../../../../Utils/packages.dart';
 
 class Favorite extends StatefulWidget {
@@ -16,6 +17,16 @@ class Favorite extends StatefulWidget {
   State<Favorite> createState() => _FavoriteState();
 }
 class _FavoriteState extends State<Favorite> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        PopupHelper.showIfNeeded(context, 'wishlist');
+      }
+    });
+  }
+
   void _handleBack() {
     final navigator = Navigator.of(context);
 

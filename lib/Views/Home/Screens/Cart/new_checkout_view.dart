@@ -14,6 +14,7 @@ import 'package:graba2z/Views/Home/Screens/Cart/address_formt.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/new_payment.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/new_summary_view.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/store_selection.dart';
+import 'package:graba2z/Utils/popup_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
@@ -156,9 +157,13 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
         : Get.put(PaymentChargesController());
     paymentChargesCtrl.fetchActiveCharges();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        PopupHelper.showIfNeeded(context, 'checkout');
+      }
       if (widget.isforguest) return;
       _userController.getUserInformation();
       // Fetch profile like Edit Profile, prefill now, and keep in sync when data arrives
+      _authController.getUserProfileData();
       _authController.getUserProfileData();
       _attachAuthControllerListeners();
       _prefillFromProfile(); // immediate attempt (in case data is already available)

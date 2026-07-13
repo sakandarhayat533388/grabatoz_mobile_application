@@ -3,6 +3,7 @@ import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/homeSliderController.dart';
 import 'package:graba2z/Controllers/home_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:graba2z/Utils/popup_helper.dart';
 import 'package:graba2z/Views/Categories%20Folder/subcategories_view.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/cart.dart';
 import 'package:graba2z/Views/Home/home.dart';
@@ -20,6 +21,16 @@ class AllCategoriesScreen extends StatefulWidget {
 }
 
 class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        PopupHelper.showIfNeeded(context, 'category');
+      }
+    });
+  }
+
   String generateSlug(String text) {
     return text
         .toLowerCase()                        // CAPITAL → lowercase

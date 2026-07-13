@@ -15,6 +15,7 @@ import '../Search Screen/searchscreensecond.dart';
 import '../banner redirect/filter_screen.dart';
 import 'deals_product_card.dart';
 import '../Cart/cart.dart';
+import 'package:graba2z/Utils/popup_helper.dart';
 
 class offerDeals extends StatefulWidget {
   final String? slug;
@@ -84,6 +85,12 @@ class _offerDealsState extends State<offerDeals> {
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted && controller.productList.isNotEmpty) {
         _extractBrandsAndCategories();
+      }
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        PopupHelper.showIfNeeded(context, 'offer');
       }
     });
   }

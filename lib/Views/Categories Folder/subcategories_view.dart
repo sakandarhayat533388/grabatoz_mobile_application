@@ -7,6 +7,7 @@ import 'package:graba2z/Controllers/home_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/cart.dart';
 import 'package:graba2z/Views/Product%20Folder/new_all_products.dart';
+import 'package:graba2z/Utils/popup_helper.dart';
 import '../../Utils/packages.dart';
 
 class SubCategoryScreen extends StatefulWidget {
@@ -22,6 +23,15 @@ class SubCategoryScreen extends StatefulWidget {
 
 class _SubCategoryScreenState extends State<SubCategoryScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        PopupHelper.showIfNeeded(context, 'category');
+      }
+    });
+  }
+
   HomeController _homeController = Get.put(HomeController());
   Widget build(BuildContext context) {
     // Filtered list of subcategories

@@ -9,6 +9,7 @@ import '../../../../Controllers/productcontroller.dart';
 import '../../../../Utils/appcolors.dart';
 import '../../../../Widgets/customappbar.dart';
 import '../../../Product Folder/newProduct_card.dart';
+import 'package:graba2z/Utils/popup_helper.dart';
 import '../Cart/cart.dart';
 import '../Search Screen/searchscreensecond.dart';
 import 'shop_category_filter.dart';
@@ -80,6 +81,12 @@ class _ShopState extends State<Shop> {
       parentType: widget.parentType,
     );
     log("Fetching products for id=${widget.id}, parentType=${widget.parentType}");
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        PopupHelper.showIfNeeded(context, 'shop');
+      }
+    });
   }
 
   @override

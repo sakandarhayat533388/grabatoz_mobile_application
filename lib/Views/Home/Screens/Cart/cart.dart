@@ -4,6 +4,7 @@ import 'dart:developer';
 // ADD: imports for local fetch
 import 'dart:convert';
 import 'package:graba2z/Utils/image_helper.dart';
+import 'package:graba2z/Utils/popup_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:graba2z/Configs/config.dart';
 import 'package:get/get.dart';
@@ -51,6 +52,12 @@ class _CartState extends State<Cart> {
       discountController.loadStatus().then((__) {
         discountController.previewCart(cartNotifier.cartOtherInfoList);
       });
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        PopupHelper.showIfNeeded(context, 'cart');
+      }
     });
   }
 

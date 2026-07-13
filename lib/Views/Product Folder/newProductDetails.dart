@@ -5,6 +5,7 @@ import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 import 'package:animated_read_more_text/animated_read_more_text.dart';
 import 'package:graba2z/Controllers/review_controller.dart';
 import 'package:graba2z/Utils/image_helper.dart';
+import 'package:graba2z/Utils/popup_helper.dart';
 import 'package:graba2z/Views/Home/home.dart';
 import 'package:graba2z/Views/Product%20Folder/add_review_view.dart';
 import 'package:graba2z/Views/Product%20Folder/bulk_purchace_view.dart';
@@ -1458,6 +1459,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
       if (mounted) {
         // Run all API calls in parallel - no need to wait, just trigger them
         _loadSideDataForCurrentProduct();
+        PopupHelper.showIfNeeded(context, 'product');
       }
     });
 
