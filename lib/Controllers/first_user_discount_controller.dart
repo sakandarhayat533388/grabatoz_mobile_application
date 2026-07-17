@@ -158,41 +158,49 @@ class FirstUserDiscountController extends GetxController {
       return;
     }
 
-    final orderItems = cartItems
+    final cpList = cartItems
         .where((item) =>
             (item.productId ?? '').isNotEmpty &&
-            (item.cartBasePrice ?? 0) > 0 &&
             (item.quantity ?? 0) > 0)
         .map((item) => {
               'product': item.productId,
-              'price': item.cartBasePrice,
-              'quantity': item.quantity ?? 1,
+              'qty': item.quantity ?? 1,
             })
         .toList();
 
-    if (orderItems.isEmpty) {
+    if (cpList.isEmpty) {
       clearPreview();
       return;
     }
 
     isPreviewLoading.value = true;
     try {
+      final couponName = discount.value?['name'] ?? '';
+      if (couponName.isEmpty) {
+        clearPreview();
+        return;
+      }
+
       final response = await http.post(
-        Uri.parse(Configss.firstUserDiscountPreview),
+        Uri.parse(Configss.applyCoupon),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $authToken',
         },
-        body: jsonEncode({'orderItems': orderItems}),
+        body: jsonEncode({
+          'code': couponName,
+          'orderSource': 'app',
+          'cartItems': cpList,
+        }),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         if (data is Map) {
-          previewApplied.value = data['applied'] == true;
+          previewApplied.value = data['valid'] == true;
           previewDiscountAmount.value = _toDouble(data['discountAmount']);
-          previewEligibleSubtotal.value = _toDouble(data['eligibleSubtotal']);
-          final rawDiscount = data['discount'];
+          previewEligibleSubtotal.value = _toDouble(data['totalEligibleAmount']);
+          final rawDiscount = data['coupon'];
           previewDiscount.value = rawDiscount is Map
               ? Map<String, dynamic>.from(rawDiscount)
               : null;
@@ -278,8 +286,25 @@ class FirstUserDiscountController extends GetxController {
       return const ProductCardDeal(showBadge: true, showPriceCut: false);
     }
 
-    final discountType = currentDiscount['discountType']?.toString();
-    final discountValue = _toDouble(currentDiscount['discountValue']);
+    String? discountType = currentDiscount['discountType']?.toString();
+    double discountValue = _toDouble(currentDiscount['discountValue']);
+
+    final rules = currentDiscount['rules'];
+    if (rules is List && rules.isNotEmpty) {
+      final matchingRule = rules.firstWhere(
+        (r) {
+          final minAmt = _toDouble(r['minCartAmount']);
+          final maxAmt = _toDouble(r['maxCartAmount']);
+          return basePrice >= minAmt && (maxAmt <= 0 || basePrice <= maxAmt);
+        },
+        orElse: () => rules.first,
+      );
+      if (matchingRule != null) {
+        discountType = matchingRule['discountType']?.toString();
+        discountValue = _toDouble(matchingRule['discountValue']);
+      }
+    }
+
     var rawDiscount = 0.0;
     if (discountType == 'percentage') {
       rawDiscount = basePrice * (discountValue / 100);

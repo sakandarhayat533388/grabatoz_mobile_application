@@ -24,6 +24,7 @@ class CartNotifier extends GetxController {
 
   var cartOtherInfoList = <CartOtherInfo>[];
   final postCouponList = [].obs;
+  final appliedCouponCode = ''.obs;
   int get totalItems {
     return cartOtherInfoList.fold(0, (sum, item) => sum + (item.quantity ?? 0));
   }
@@ -73,14 +74,26 @@ class CartNotifier extends GetxController {
   Future<Map<String, dynamic>?> applyCouponRe(
       String couponCode, List cpList) async {
     final String baseUrl = Configss.applyCoupon;
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
     try {
-      var bodyobj = {"code": couponCode, "cartItems": cpList};
+      var bodyobj = {
+        "code": couponCode,
+        "orderSource": "app",
+        "cartItems": cpList
+      };
+
+      final Map<String, String> headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token != null && token.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
       var response = await http.post(
         Uri.parse(baseUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: headers,
         body: jsonEncode(bodyobj),
       );
 
@@ -225,7 +238,12 @@ class CartNotifier extends GetxController {
       List cpList, BuildContext context) async {
     EasyLoading.show(status: 'Applying Coupon...');
 
-    var couponData = await applyCouponRe(couponCode, cpList);
+    List dynamicCpList = cartOtherInfoList.map((item) => {
+      "product": item.productId,
+      "qty": item.quantity,
+    }).toList();
+
+    var couponData = await applyCouponRe(couponCode, dynamicCpList);
 
     if (couponData == null) {
       EasyLoading.dismiss();
@@ -234,20 +252,10 @@ class CartNotifier extends GetxController {
       return;
     }
 
-    double discountValue =
-        double.tryParse(couponData['coupon']['discountValue'].toString()) ??
-            0.0;
-    String discountType =
-        couponData['coupon']['discountType']; // 'fixed' or 'percentage'
+    double discountAmount =
+        double.tryParse(couponData['discountAmount'].toString()) ?? 0.0;
 
     double originalTotal = cartTotalPriceF();
-    double discountAmount = 0.0;
-
-    if (discountType == 'percentage') {
-      discountAmount = (discountValue / 100) * originalTotal;
-    } else if (discountType == 'fixed') {
-      discountAmount = discountValue;
-    }
 
     // Ensure discount doesn't exceed total
     if (discountAmount > originalTotal) {
@@ -260,6 +268,7 @@ class CartNotifier extends GetxController {
     discountAmountApplied.value =
         double.parse(discountAmount.toStringAsFixed(2));
     totalAmount.value = double.parse(finalTotal.toStringAsFixed(2));
+    appliedCouponCode.value = couponCode;
 
     // Clear field & update UI
     couponController.clear();
@@ -272,7 +281,6 @@ class CartNotifier extends GetxController {
 
     print("✅ Coupon Applied: $couponCode");
     print("🔹 Original Total: $originalTotal");
-    print("🔹 Discount Type: $discountType");
     print("🔹 Discount Amount: ${discountAmountApplied.value}");
     print("🔹 Final Total: ${totalAmount.value}");
   }
@@ -313,6 +321,7 @@ class CartNotifier extends GetxController {
     // coupon.clear();
     discountAmountApplied.value = 0.0;
     totalAmount.value = 0.0;
+    appliedCouponCode.value = '';
     update();
   }
 

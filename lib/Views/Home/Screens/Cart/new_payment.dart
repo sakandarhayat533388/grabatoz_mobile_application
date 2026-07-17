@@ -647,6 +647,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final payableTotal =
         _payableTotalAfterFirstOrderDiscount(totalBeforeDiscount);
 
+    String? couponCode;
+    if (firstOrderDiscount > 0 && Get.isRegistered<FirstUserDiscountController>()) {
+      final discountController = Get.find<FirstUserDiscountController>();
+      couponCode = discountController.previewDiscount.value?['code'] ??
+          discountController.discount.value?['name'];
+    } else if (_cartNotifier.appliedCouponCode.value.isNotEmpty) {
+      couponCode = _cartNotifier.appliedCouponCode.value;
+    }
+
     final Map<String, dynamic> orderData = {
       "orderSource": "app",
       "orderItems": composedOrderItems,
@@ -665,6 +674,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       "originalTotalPrice": totalBeforeDiscount.toDouble(),
       "appDiscountAmount": firstOrderDiscount,
       "appDiscountPreviewApplied": firstOrderDiscount > 0,
+      "couponCode": couponCode,
       "paymentMethod": paymentMethod,
       "actualPaymentMethod": paymentMethod,
       "customerNotes": customerNotes
