@@ -82,7 +82,7 @@ class AuthController extends GetxController {
     final prefs = await SharedPreferences.getInstance();
     userID.value = prefs.getString('userId') ?? ''; // Convert to String
     token.value = prefs.getString('token') ?? ''; // Convert to String
-    fullName.value = prefs.getString('userName') ?? ''; // Convert to String
+    fullName.value = prefs.getString('userName]') ?? ''; // Convert to String
     email.value = prefs.getString('userEmail') ?? ''; // Convert to String
 
     update();

@@ -259,53 +259,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
           )
         else ...[
-          if (allowedPaymentMethods.contains('tamara'))
-            _buildPaymentTile(
-              value: 'Tamara',
-              title: 'Tamara',
-              subtitle: 'Buy now, pay later in 3 installments',
-              logo: 'assets/images/tmara.png',
-            ),
-          if (allowedPaymentMethods.contains('tabby'))
-            _buildPaymentTile(
-              value: 'Tabby',
-              title: 'Tabby',
-              subtitle: 'Split your purchase into 4 payments',
-              logo: 'assets/images/tabby.jpg',
-            ),
-          if (allowedPaymentMethods.contains('card'))
-            _buildPaymentTile(
-              value: 'Card',
-              title: 'Pay By Card',
-              subtitle: 'Credit/Debit card payment',
-              logo: 'assets/images/master.jpg',
-            ),
-          if (allowedPaymentMethods.contains('cod'))
-            _buildPaymentTile(
-              value: 'COD',
-              title: 'Cash On Delivery',
-              subtitle: 'Pay when you receive your order',
-              logo: 'assets/image ',
-            ),
-          if (allowedPaymentMethods.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Center(
-                child: Text(
-                  "No payment methods are available for the items in your cart. Please contact support.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.red, fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-              ),
-            ),
+          _buildGroupedPaymentSection(),
         ],
-        Obx(() {
-          _paymentChargesCtrl.activeCharges.length;
-          _paymentChargesCtrl.isLoading.value;
-          final total = _paymentChargesCtrl.totalFor(_selectedPaymentMethodKey);
-          if (total <= 0) return const SizedBox.shrink();
-          return _buildPaymentChargeBreakdown();
-        }),
+        // Payment charges box removed per user request
         Obx(() {
           _paymentChargesCtrl.activeCharges.length;
           _paymentChargesCtrl.isLoading.value;
@@ -664,7 +620,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       "pickupDetails": pickupDetails,
       "itemsPrice": (itemsPrice).toDouble(),
       "shippingPrice": standardShippingPrice.toDouble(),
-      "deliveryChargeId": isCodPayment ? null : _deliveryCtrl.selectedId.value,
+      "deliveryChargeId": deliveryType == 'home' ? _deliveryCtrl.selectedId.value : null,
       "codFee": codFee,
       "codShippingFee": codShippingFee,
       "paymentChargeId": paymentCharge?.id,
@@ -684,14 +640,18 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     log('Token present: ${_usercontroller.token.value.isNotEmpty}');
     log('Order payload: ${jsonEncode(orderData)}');
 
+    final Map<String, String> requestHeaders = {
+      'Content-Type': 'application/json',
+      'X-Order-Source': 'app',
+    };
+    if (_usercontroller.token.value.isNotEmpty && !isGuestOrder) {
+      requestHeaders['Authorization'] = 'Bearer ${_usercontroller.token.value}';
+    }
+
     try {
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${_usercontroller.token.value}',
-          'X-Order-Source': 'app',
-        },
+        headers: requestHeaders,
         body: jsonEncode(orderData),
       );
       _usercontroller.iscardLoading.value = false;
@@ -1447,12 +1407,91 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     );
   }
 
-  Widget _buildPaymentTile({
+  Widget _buildGroupedPaymentSection() {
+    final List<Map<String, dynamic>> active = [];
+
+    if (allowedPaymentMethods.contains('card')) {
+      active.add({
+        'value': 'Card',
+        'title': 'Debit/Credit Card',
+        'logo': _buildCardLogos(),
+        'expand': _buildPaymentOptionExpandContent('Card', "You'll be redirected to Debit/Credit Card to complete your purchase."),
+      });
+    }
+    if (allowedPaymentMethods.contains('tabby')) {
+      active.add({
+        'value': 'Tabby',
+        'title': 'Pay later with Tabby',
+        'logo': _buildTabbyLogo(),
+        'expand': _buildPaymentOptionExpandContent('Tabby', "You'll be redirected to Tabby to complete your purchase."),
+      });
+    }
+    if (allowedPaymentMethods.contains('tamara')) {
+      active.add({
+        'value': 'Tamara',
+        'title': 'Tamara - Monthly payments. Sharia compliant',
+        'logo': _buildTamaraLogo(),
+        'expand': _buildPaymentOptionExpandContent('Tamara', "You'll be redirected to Tamara to complete your purchase."),
+      });
+    }
+    if (allowedPaymentMethods.contains('cod')) {
+      active.add({
+        'value': 'COD',
+        'title': 'Cash on Delivery (COD)',
+        'logo': const SizedBox.shrink(),
+        'expand': _buildPaymentOptionExpandContent('COD', "Pay with cash upon delivery."),
+      });
+    }
+
+    if (active.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        child: Center(
+          child: Text(
+            "No payment methods are available for the items in your cart. Please contact support.",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.red, fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(11),
+        child: Column(
+          children: List.generate(active.length, (index) {
+            final item = active[index];
+            return _buildPaymentOption(
+              value: item['value'],
+              title: item['title'],
+              logoWidget: item['logo'],
+              isFirst: index == 0,
+              isLast: index == active.length - 1,
+              expandContent: item['expand'],
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOption({
     required String value,
     required String title,
-    required String subtitle,
-    required String logo,
+    required Widget logoWidget,
+    required bool isFirst,
+    required bool isLast,
+    Widget? expandContent,
   }) {
+    final bool isSelected = selectedMethod == value;
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -1461,67 +1500,238 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         });
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 5),
-        // width: MediaQuery.of(context).size.width / 2 - 22,
-        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: selectedMethod == value ? Colors.green.shade50 : Colors.white,
-          border: Border.all(
-            color:
-                selectedMethod == value ? Colors.green : Colors.grey.shade300,
-            width: 1.5,
-          ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            Container(
-              height: 20,
-              width: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: selectedMethod == value ? kPrimaryColor : Colors.black,
-                  width: 1.8,
+          color: isSelected ? const Color(0xFFF8FAFC) : Colors.white,
+          border: isSelected
+              ? Border.all(color: const Color(0xFF2563EB), width: 1.5)
+              : Border(
+                  bottom: isLast
+                      ? BorderSide.none
+                      : BorderSide(color: Colors.grey.shade200, width: 1),
                 ),
+          borderRadius: isSelected
+              ? (isFirst && isLast
+                  ? BorderRadius.circular(11)
+                  : isFirst
+                      ? const BorderRadius.vertical(top: Radius.circular(11))
+                      : isLast
+                          ? const BorderRadius.vertical(bottom: Radius.circular(11))
+                          : BorderRadius.zero)
+              : BorderRadius.zero,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  height: 20,
+                  width: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade400,
+                      width: 1.8,
+                    ),
+                  ),
+                  child: isSelected
+                      ? Center(
+                          child: Container(
+                            height: 10,
+                            width: 10,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF2563EB),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                logoWidget,
+              ],
+            ),
+            if (isSelected && expandContent != null) ...[
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.only(left: 34),
+                child: expandContent,
               ),
-              child: selectedMethod == value
-                  ? Center(
-                      child: Container(
-                        height: 10,
-                        width: 10,
-                        decoration: const BoxDecoration(
-                          color: kPrimaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(fontSize: 11)),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            Image.asset(
-              logo,
-              height: 28,
-              width: 40,
-              errorBuilder: (context, error, stackTrace) => Icon(Icons.payment),
-              fit: BoxFit.contain,
-            ),
+            ]
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildCardLogos() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildLogoBadge('assets/images/visa.png'),
+        const SizedBox(width: 4),
+        _buildLogoBadge('assets/images/master.jpg'),
+        const SizedBox(width: 4),
+        Container(
+          height: 18,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: const Center(
+            child: Text(
+              'SAMSUNG\npay',
+              style: TextStyle(
+                fontSize: 4,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+                height: 1.1,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Container(
+          height: 18,
+          width: 26,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F766E),
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: const Center(
+            child: Icon(Icons.credit_card_outlined, color: Colors.white, size: 10),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTabbyLogo() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFF3DF2B4),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Text(
+        'tabby',
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF003822),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTamaraLogo() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogoBadge(String assetPath) {
+    return Container(
+      height: 18,
+      width: 26,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(3),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(2),
+        child: Image.asset(
+          assetPath,
+          fit: BoxFit.cover,
+          errorBuilder: (context, _, __) => const Icon(Icons.credit_card, size: 12),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentOptionExpandContent(String value, String defaultRedirectText) {
+    final methodKey = _mapPaymentMethod(value);
+    return Obx(() {
+      _paymentChargesCtrl.activeCharges.length;
+      _paymentChargesCtrl.isLoading.value;
+
+      final currentCharge = _paymentChargesCtrl.chargeFor(methodKey);
+      final currentChargesList = currentCharge?.charges ?? <PaymentChargeLine>[];
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            defaultRedirectText,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+          if (currentChargesList.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            ...currentChargesList.map((charge) {
+              String formattedText = '• ${charge.name}';
+              if (charge.name.toLowerCase().contains('%') || charge.name.toLowerCase().contains('fee')) {
+                formattedText = '• ${charge.name} (AED ${charge.amount.toStringAsFixed(2)})';
+              } else {
+                formattedText = '• ${charge.name}: AED ${charge.amount.toStringAsFixed(2)}';
+              }
+              return Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  formattedText,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.red,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }),
+          ],
+        ],
+      );
+    });
   }
 
   // Build orderItems in backend expected format (used when controller list is empty)
@@ -1529,17 +1739,27 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final List<Map<String, dynamic>> items = [];
     for (final item in _cartNotifier.cartOtherInfoList) {
       try {
-        final orderItem = {
+        final Map<String, dynamic> orderItem = {
           "product": item.productId,
-          "name": item.productName ?? '',
           "quantity": (item.quantity ?? 1),
-          "price": item.cartBasePrice,
-          "image": item.productImage ?? '',
         };
 
-        if (item.selectedColorIndex != null) {
-          orderItem["selectedColorIndex"] = item.selectedColorIndex;
-          orderItem["selectedColorData"] = item.selectedColorData ?? {};
+        // Standard legacy fields for backward compatibility with other endpoints
+        orderItem["name"] = item.productName ?? '';
+        orderItem["price"] = item.cartBasePrice;
+        orderItem["image"] = item.productImage ?? '';
+
+        if (item.isProtection == true) {
+          orderItem["isProtection"] = true;
+          orderItem["protectionFor"] = item.protectionFor;
+          orderItem["protectionData"] = item.protectionData;
+        } else {
+          if (item.selectedColorIndex != null) {
+            orderItem["selectedColorIndex"] = item.selectedColorIndex;
+          }
+          if (item.selectedDosIndex != null) {
+            orderItem["selectedDosIndex"] = item.selectedDosIndex;
+          }
         }
 
         items.add(orderItem);

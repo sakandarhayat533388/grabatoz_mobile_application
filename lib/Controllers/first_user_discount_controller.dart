@@ -12,15 +12,17 @@ class ProductCardDeal {
   final bool showPriceCut;
   final double? originalPrice;
   final double? discountedPrice;
+  final String badgeText;
 
   const ProductCardDeal({
     required this.showBadge,
     required this.showPriceCut,
     this.originalPrice,
     this.discountedPrice,
+    this.badgeText = '',
   });
 
-  static const none = ProductCardDeal(showBadge: false, showPriceCut: false);
+  static const none = ProductCardDeal(showBadge: false, showPriceCut: false, badgeText: '');
 }
 
 class FirstUserDiscountController extends GetxController {
@@ -33,12 +35,13 @@ class FirstUserDiscountController extends GetxController {
   final reason = ''.obs;
   final hasAnyOrder = false.obs;
   final discount = Rxn<Map<String, dynamic>>();
+  final statusChecked = false.obs;
+
   final previewApplied = false.obs;
   final previewDiscountAmount = 0.0.obs;
   final previewEligibleSubtotal = 0.0.obs;
   final previewDiscount = Rxn<Map<String, dynamic>>();
   // Track whether loadStatus() has been called and returned at least once
-  final statusChecked = false.obs;
 
   Future<String?> _token() async {
     final prefs = await SharedPreferences.getInstance();
@@ -148,6 +151,85 @@ class FirstUserDiscountController extends GetxController {
     }
   }
 
+  static double calculateDiscount({
+    required List<dynamic> cartItems,
+    required Map<String, dynamic> discountObj,
+  }) {
+    final appliesTo = discountObj['appliesTo']?.toString();
+    double eligibleSubtotal = 0.0;
+
+    for (final item in cartItems) {
+      final productId = (item.productId ?? '').toString();
+      if (productId.isEmpty) continue;
+
+      var matchesScope = appliesTo == 'all';
+      if (!matchesScope && appliesTo == 'products') {
+        final products = discountObj['products'];
+        if (products is List) {
+          matchesScope = products.any((p) {
+            final pid = (p is Map ? (p['_id'] ?? p['id']) : p).toString();
+            return pid == productId;
+          });
+        }
+      }
+
+      if (matchesScope) {
+        eligibleSubtotal += (item.cartBasePrice ?? 0.0) * (item.quantity ?? 1);
+      }
+    }
+
+    double calculatedDiscount = 0.0;
+    final rules = discountObj['rules'];
+    if (rules is List && rules.isNotEmpty) {
+      for (final rule in rules) {
+        if (rule is Map) {
+          final minAmt = _toDoubleHelper(rule['minCartAmount']);
+          final maxAmt = _toDoubleHelper(rule['maxCartAmount']);
+          if (eligibleSubtotal >= minAmt &&
+              (maxAmt <= 0 || eligibleSubtotal <= maxAmt)) {
+            final discountType = rule['discountType']?.toString();
+            final discountValue = _toDoubleHelper(rule['discountValue']);
+            if (discountType == 'percentage') {
+              calculatedDiscount = eligibleSubtotal * (discountValue / 100);
+            } else if (discountType == 'fixed') {
+              calculatedDiscount = discountValue;
+            }
+            break;
+          }
+        }
+      }
+    } else {
+      // Legacy flat fields fallback
+      final minOrderAmount = _toDoubleHelper(discountObj['minOrderAmount'] ??
+          discountObj['minPurchase'] ??
+          discountObj['minAmount'] ??
+          discountObj['minimumOrderValue']);
+      if (eligibleSubtotal >= minOrderAmount) {
+        final discountType = discountObj['discountType']?.toString();
+        final discountValue = _toDoubleHelper(
+            discountObj['discountValue'] ?? discountObj['discount']);
+        if (discountType == 'percentage') {
+          calculatedDiscount = eligibleSubtotal * (discountValue / 100);
+        } else if (discountType == 'fixed') {
+          calculatedDiscount = discountValue;
+        }
+        final maxDiscountAmount =
+            _toDoubleHelper(discountObj['maxDiscountAmount']);
+        if (maxDiscountAmount > 0 && calculatedDiscount > maxDiscountAmount) {
+          calculatedDiscount = maxDiscountAmount;
+        }
+      }
+    }
+
+    return double.parse(calculatedDiscount.toStringAsFixed(2));
+  }
+
+  static double _toDoubleHelper(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0.0;
+  }
+
   Future<void> previewCart(List<dynamic> cartItems) async {
     final authToken = await _token();
     if (authToken == null ||
@@ -158,59 +240,27 @@ class FirstUserDiscountController extends GetxController {
       return;
     }
 
-    final cpList = cartItems
-        .where((item) =>
-            (item.productId ?? '').isNotEmpty &&
-            (item.quantity ?? 0) > 0)
-        .map((item) => {
-              'product': item.productId,
-              'qty': item.quantity ?? 1,
-            })
-        .toList();
-
-    if (cpList.isEmpty) {
+    final currentDiscount = discount.value;
+    if (currentDiscount == null) {
       clearPreview();
       return;
     }
 
     isPreviewLoading.value = true;
     try {
-      final couponName = discount.value?['name'] ?? '';
-      if (couponName.isEmpty) {
-        clearPreview();
-        return;
-      }
-
-      final response = await http.post(
-        Uri.parse(Configss.applyCoupon),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $authToken',
-        },
-        body: jsonEncode({
-          'code': couponName,
-          'orderSource': 'app',
-          'cartItems': cpList,
-        }),
+      final calculatedDiscount = calculateDiscount(
+        cartItems: cartItems,
+        discountObj: currentDiscount,
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = jsonDecode(response.body);
-        if (data is Map) {
-          previewApplied.value = data['valid'] == true;
-          previewDiscountAmount.value = _toDouble(data['discountAmount']);
-          previewEligibleSubtotal.value = _toDouble(data['totalEligibleAmount']);
-          final rawDiscount = data['coupon'];
-          previewDiscount.value = rawDiscount is Map
-              ? Map<String, dynamic>.from(rawDiscount)
-              : null;
-        }
-      } else if (response.statusCode == 401 || response.statusCode == 403) {
-        clearAll();
-      } else {
-        clearPreview();
-        log('First user discount preview failed: ${response.statusCode} ${response.body}');
-      }
+      final totalEligibleAmount = cartItems.fold<double>(0.0, (sum, item) {
+        return sum + (item.cartBasePrice ?? 0.0) * (item.quantity ?? 1);
+      });
+
+      previewApplied.value = calculatedDiscount > 0;
+      previewDiscountAmount.value = calculatedDiscount;
+      previewEligibleSubtotal.value = totalEligibleAmount;
+      previewDiscount.value = currentDiscount;
     } catch (e) {
       clearPreview();
       log('First user discount preview error: $e');
@@ -241,9 +291,9 @@ class FirstUserDiscountController extends GetxController {
       return ProductCardDeal.none;
     }
 
-    // Guest (no auth session) → always show badge, no price cut
+    // Guest (no auth session) → return none
     if (!hasAuthSession.value) {
-      return const ProductCardDeal(showBadge: true, showPriceCut: false);
+      return ProductCardDeal.none;
     }
 
     // Logged-in user not eligible or missing discount info → hide badge
@@ -278,12 +328,12 @@ class FirstUserDiscountController extends GetxController {
     final regularPrice = _toDouble(product['price']);
     final basePrice = offerPrice > 0 ? offerPrice : regularPrice;
     if (basePrice <= 0) {
-      return const ProductCardDeal(showBadge: true, showPriceCut: false);
+      return ProductCardDeal.none;
     }
 
     final minOrderAmount = _toDouble(currentDiscount['minOrderAmount']);
     if (minOrderAmount > basePrice) {
-      return const ProductCardDeal(showBadge: true, showPriceCut: false);
+      return ProductCardDeal.none;
     }
 
     String? discountType = currentDiscount['discountType']?.toString();
@@ -320,11 +370,19 @@ class FirstUserDiscountController extends GetxController {
     final discountedPrice =
         (basePrice - effectiveDiscount).clamp(0.0, basePrice).toDouble();
 
+    String badgeText = '';
+    if (discountType == 'percentage') {
+      badgeText = '${discountValue.toStringAsFixed(0)}% OFF';
+    } else if (discountType == 'fixed') {
+      badgeText = 'AED ${discountValue.toStringAsFixed(0)} OFF';
+    }
+
     return ProductCardDeal(
-      showBadge: true,
+      showBadge: badgeText.isNotEmpty,
       showPriceCut: discountedPrice < basePrice,
       originalPrice: regularPrice > 0 ? regularPrice : basePrice,
       discountedPrice: discountedPrice,
+      badgeText: badgeText,
     );
   }
 }

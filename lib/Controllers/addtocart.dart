@@ -91,11 +91,14 @@ class CartNotifier extends GetxController {
         headers['Authorization'] = 'Bearer $token';
       }
 
+      print('🔍 [Coupon Validate] Request Payload: ${jsonEncode(bodyobj)}');
       var response = await http.post(
         Uri.parse(baseUrl),
         headers: headers,
         body: jsonEncode(bodyobj),
       );
+      print('🔍 [Coupon Validate] Response Status: ${response.statusCode}');
+      print('🔍 [Coupon Validate] Response Body: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body.toString());
@@ -252,8 +255,24 @@ class CartNotifier extends GetxController {
       return;
     }
 
-    double discountAmount =
-        double.tryParse(couponData['discountAmount'].toString()) ?? 0.0;
+    double discountAmount = 0.0;
+    if (couponData['coupon'] is Map) {
+      final couponObj = Map<String, dynamic>.from(couponData['coupon']);
+      if (couponObj['rules'] is List && (couponObj['rules'] as List).isNotEmpty) {
+        if (Get.isRegistered<FirstUserDiscountController>()) {
+          discountAmount = FirstUserDiscountController.calculateDiscount(
+            cartItems: cartOtherInfoList,
+            discountObj: couponObj,
+          );
+        } else {
+          discountAmount = double.tryParse(couponData['discountAmount'].toString()) ?? 0.0;
+        }
+      } else {
+        discountAmount = double.tryParse(couponData['discountAmount'].toString()) ?? 0.0;
+      }
+    } else {
+      discountAmount = double.tryParse(couponData['discountAmount'].toString()) ?? 0.0;
+    }
 
     double originalTotal = cartTotalPriceF();
 
@@ -418,6 +437,10 @@ class CartOtherInfo {
   DateTime? addedToCartTime;
   int? selectedColorIndex;
   Map<String, dynamic>? selectedColorData;
+  int? selectedDosIndex;
+  bool? isProtection;
+  String? protectionFor;
+  String? protectionData;
 
   List<dynamic>? attributesName;
   List<dynamic>? selectedAttributes;
@@ -438,6 +461,10 @@ class CartOtherInfo {
     this.addedToCartTime,
     this.selectedColorIndex,
     this.selectedColorData,
+    this.selectedDosIndex,
+    this.isProtection,
+    this.protectionFor,
+    this.protectionData,
   }) {
     variationId = variationId?.toInt();
   }
@@ -465,6 +492,12 @@ class CartOtherInfo {
     selectedColorData = json['selectedColorData'] is Map
         ? Map<String, dynamic>.from(json['selectedColorData'])
         : null;
+    selectedDosIndex = json['selectedDosIndex'] is int
+        ? json['selectedDosIndex']
+        : int.tryParse((json['selectedDosIndex'] ?? '').toString());
+    isProtection = json['isProtection'] == true;
+    protectionFor = json['protectionFor'];
+    protectionData = json['protectionData'];
     addedToCartTime = json['addedToCartTime'] != null
         ? DateTime.parse(json['addedToCartTime'])
         : null;
@@ -490,6 +523,10 @@ class CartOtherInfo {
     data['selectedAttributes'] = selectedAttributes;
     data['selectedColorIndex'] = selectedColorIndex;
     data['selectedColorData'] = selectedColorData;
+    data['selectedDosIndex'] = selectedDosIndex;
+    data['isProtection'] = isProtection;
+    data['protectionFor'] = protectionFor;
+    data['protectionData'] = protectionData;
     // Store addedToCartTime as a String (ISO8601 format)
     data['addedToCartTime'] = addedToCartTime?.toIso8601String();
 

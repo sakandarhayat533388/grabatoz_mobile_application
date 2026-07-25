@@ -215,7 +215,7 @@ class PopupHelper {
 
                         // 5. Store Buttons Row
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0),
+                          padding: const EdgeInsets.fromLTRB(20, 6, 20, 24),
                           child: Row(
                             children: [
                               Expanded(
@@ -234,34 +234,6 @@ class PopupHelper {
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-
-                        // 6. Continue to Website Button
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                          child: SizedBox(
-                            width: double.infinity,
-                            height: 44,
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: Colors.grey.shade300, width: 1.5),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              child: Text(
-                                popup.continueButtonText ?? 'Continue to Website',
-                                style: const TextStyle(
-                                  color: Colors.black54,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
                           ),
                         ),
                       ],
@@ -356,11 +328,13 @@ class PopupHelper {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isApple ? Icons.apple : Icons.play_arrow_rounded,
-              color: kdefwhiteColor,
-              size: isApple ? 22 : 20,
-            ),
+            isApple
+                ? const Icon(
+                    Icons.apple,
+                    color: kdefwhiteColor,
+                    size: 22,
+                  )
+                : const GooglePlayColoredIcon(size: 20),
             const SizedBox(width: 4),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,6 +364,76 @@ class PopupHelper {
       ),
     );
   }
+}
+
+class GooglePlayColoredIcon extends StatelessWidget {
+  final double size;
+  const GooglePlayColoredIcon({super.key, this.size = 24.0});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _GooglePlayLogoPainter(),
+      ),
+    );
+  }
+}
+
+class _GooglePlayLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+
+    // Define vertices for standard Play Store logo
+    final pTopLeft = Offset(w * 0.15, h * 0.08);
+    final pBottomLeft = Offset(w * 0.15, h * 0.92);
+    final pRightTip = Offset(w * 0.88, h * 0.5);
+
+    final pTopRightSplit = Offset(w * 0.65, h * 0.35);
+    final pBottomRightSplit = Offset(w * 0.65, h * 0.65);
+
+    final pCenter = Offset(w * 0.45, h * 0.5);
+
+    // 1. Blue (Left)
+    final pathBlue = Path()
+      ..moveTo(pTopLeft.dx, pTopLeft.dy)
+      ..lineTo(pBottomLeft.dx, pBottomLeft.dy)
+      ..lineTo(pCenter.dx, pCenter.dy)
+      ..close();
+    canvas.drawPath(pathBlue, Paint()..color = const Color(0xFF00C6FF)..style = PaintingStyle.fill);
+
+    // 2. Red (Top)
+    final pathRed = Path()
+      ..moveTo(pTopLeft.dx, pTopLeft.dy)
+      ..lineTo(pTopRightSplit.dx, pTopRightSplit.dy)
+      ..lineTo(pCenter.dx, pCenter.dy)
+      ..close();
+    canvas.drawPath(pathRed, Paint()..color = const Color(0xFFFF3A44)..style = PaintingStyle.fill);
+
+    // 3. Green (Bottom)
+    final pathGreen = Path()
+      ..moveTo(pBottomLeft.dx, pBottomLeft.dy)
+      ..lineTo(pBottomRightSplit.dx, pBottomRightSplit.dy)
+      ..lineTo(pCenter.dx, pCenter.dy)
+      ..close();
+    canvas.drawPath(pathGreen, Paint()..color = const Color(0xFF00E676)..style = PaintingStyle.fill);
+
+    // 4. Yellow (Right)
+    final pathYellow = Path()
+      ..moveTo(pTopRightSplit.dx, pTopRightSplit.dy)
+      ..lineTo(pRightTip.dx, pRightTip.dy)
+      ..lineTo(pBottomRightSplit.dx, pBottomRightSplit.dy)
+      ..lineTo(pCenter.dx, pCenter.dy)
+      ..close();
+    canvas.drawPath(pathYellow, Paint()..color = const Color(0xFFFFD600)..style = PaintingStyle.fill);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 // Custom Painter for dashed rectangle border

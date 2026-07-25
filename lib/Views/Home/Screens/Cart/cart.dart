@@ -77,21 +77,6 @@ class _CartState extends State<Cart> {
         : cartNotifier.totalAmount.value;
   }
 
-  double _guestRegistrationDiscountAmount(
-    CartNotifier cartNotifier,
-    AuthController authProvider,
-  ) {
-    if (authProvider.userID.value.isNotEmpty ||
-        cartNotifier.cartOtherInfoList.isEmpty) {
-      return 0.0;
-    }
-
-    final cartTotal = _couponAdjustedCartTotal(cartNotifier);
-    final discount = cartTotal *
-        (FirstUserDiscountController.guestCardDiscountPercent / 100);
-    return double.parse(discount.clamp(0.0, cartTotal).toStringAsFixed(2));
-  }
-
   double _appOrderDiscountAmount(
     CartNotifier cartNotifier,
     AuthController authProvider,
@@ -104,7 +89,7 @@ class _CartState extends State<Cart> {
       }
     }
 
-    return _guestRegistrationDiscountAmount(cartNotifier, authProvider);
+    return 0.0;
   }
 
   // ADD: Local product fetch to avoid undefined ApiServices error

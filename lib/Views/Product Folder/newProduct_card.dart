@@ -599,11 +599,11 @@ class _NewProductCardState extends State<NewProductCard> {
                                             border: Border.all(
                                                 color: kPrimaryColor),
                                           ),
-                                          child: const Text(
-                                            '10%  Extra Discount',
+                                          child: Text(
+                                            deal.badgeText,
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               color: Color(0xFF166534),
                                               fontSize: 7,
                                               fontWeight: FontWeight.bold,

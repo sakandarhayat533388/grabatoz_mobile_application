@@ -430,36 +430,38 @@ class OrderDetailScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              offset: const Offset(0, -2),
-              blurRadius: 8,
-            ),
-          ],
-        ),
-        child: ElevatedButton.icon(
-          onPressed: () {
-            Get.to(() => InvoicePreviewScreen(order: order));
-          },
-          icon: const Icon(Icons.print_outlined, color: Colors.white),
-          label: const Text(
-            "Print / Download Invoice",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          padding: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                offset: const Offset(0, -2),
+                blurRadius: 8,
+              ),
+            ],
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: kdefgreenColor,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Get.to(() => InvoicePreviewScreen(order: order));
+            },
+            icon: const Icon(Icons.print_outlined, color: Colors.white),
+            label: const Text(
+              "Print / Download Invoice",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kdefgreenColor,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
           ),
         ),

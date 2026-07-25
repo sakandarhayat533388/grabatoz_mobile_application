@@ -210,10 +210,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     final state = _authController.editStateController.text.trim();
     bool changed = false;
 
-    // Only parse if phone has country code and is different from what we already have
-    if (phone.isNotEmpty &&
-        phone.startsWith('+') &&
-        completePhoneNumber != phone) {
+    // Parse and set country if phone number is different from what we already have
+    if (phone.isNotEmpty && completePhoneNumber != phone) {
       // Parse country code from phone number
       _parseAndSetCountry(phone);
       changed = true;
