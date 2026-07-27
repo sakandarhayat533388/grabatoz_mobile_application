@@ -166,15 +166,15 @@ class _LoginState extends State<Login> {
                                   onChanged: authProvider.validateLoginPassword,
                                   obsecure: authProvider.isPasswordObscure,
                                   suffix: GestureDetector(
-                                    child: Icon(
-                                      authProvider.isPasswordObscure
-                                          ? Icons.lock
-                                          : Icons.lock_open,
-                                      color: kdefgreyColor,
-                                    ),
                                     onTap: () {
                                       authProvider.togglePasswordVisibility();
                                     },
+                                    child: Icon(
+                                      authProvider.isPasswordObscure
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                      color: kdefwhiteColor,
+                                    ),
                                   ),
                                   hintText: 'Password',
                                 ),

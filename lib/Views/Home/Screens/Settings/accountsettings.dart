@@ -20,6 +20,7 @@ import '../../../../Utils/packages.dart';
 import '../../../../Widgets/footertile.dart';
 import '../../../../Widgets/socialicon.dart';
 import '../../../Auth/signup.dart';
+import 'Modules/profile_menu_screen.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -261,34 +262,13 @@ class _SettingsState extends State<Settings> {
                   margin: EdgeInsets.zero,
                   child: Column(
                     children: [
-                      GetBuilder<AuthController>(builder: (
-                        authprovider,
-                      ) {
+                      GetBuilder<AuthController>(builder: (authprovider) {
                         if (authprovider.userID.value.isNotEmpty) {
                           return Column(
                             children: [
                               ListTile(
                                 minLeadingWidth: 0,
-                                onTap: () async {
-                                  SharedPreferences sp =
-                                      await SharedPreferences.getInstance();
-                                  // Get.to(() => DummyView(
-                                  //       url:
-                                  //           "https://championfootballer-client.vercel.app/",
-                                  //     ));
-                                  String token = sp.getString('token') ?? '';
-                                  log('the token is ${token}');
-                                  var result = await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => EditProfile()),
-                                  );
-
-                                  if (result == true) {
-                                    setState(
-                                        () {}); // Refresh FutureBuilder when returning
-                                  }
-                                },
+                                onTap: () => Get.to(() => const ProfileMenuScreen()),
                                 leading: Image.asset("assets/icons/profile.png",
                                     color: kSecondaryColor,
                                     width: 20,
@@ -313,84 +293,6 @@ class _SettingsState extends State<Settings> {
                           return Container();
                         }
                       }),
-
-                      // Consumer<AuthProvider>(
-                      //   builder: (ctx, authprovider, child) {
-                      //     if (authprovider.isLoggedIn) {
-                      //       return Column(
-                      //         children: [
-                      //           ListTile(
-                      //             minLeadingWidth: 0,
-                      //             onTap: () {
-                      //               context.route(SavedAddressesScreen());
-                      //             },
-                      //             leading: Image.asset(
-                      //                 "assets/icons/location.png",
-                      //                 color: kSecondaryColor,
-                      //                 width: 20,
-                      //                 height: 20),
-                      //             title: const Text('Manage Address',
-                      //                 style: TextStyle(
-                      //                     fontSize: 12,
-                      //                     fontWeight: FontWeight.w600)),
-                      //             trailing: const Icon(
-                      //               Icons.arrow_forward_ios,
-                      //               color: kSecondaryColor,
-                      //               size: 16,
-                      //             ),
-                      //           ),
-                      //           Divider(
-                      //             height: 0,
-                      //             color: Colors.grey.withValues(alpha: .2),
-                      //           ),
-                      //         ],
-                      //       );
-                      //     } else {
-                      //       return Container();
-                      //     }
-                      //   },
-                      // ),
-
-                      // Consumer<AuthProvider>(builder: (ctx, authprovider, child) {
-                      //   if (authprovider.isLoggedIn) {
-                      //     return Column(
-                      //       children: [
-                      //         ListTile(
-                      //           minLeadingWidth: 0,
-                      //           onTap: () async {
-                      //             final prefs =
-                      //                 await SharedPreferences.getInstance();
-                      //             String? userId = prefs
-                      //                 .getInt('userId')
-                      //                 ?.toString(); // Retrieve user ID
-                      //             context.route(PaymentMethodScreen(
-                      //               userId: userId!,
-                      //             ));
-                      //           },
-                      //           leading: Image.asset("assets/icons/payment.png",
-                      //               color: kSecondaryColor,
-                      //               width: 20,
-                      //               height: 20),
-                      //           title: const Text('Payment Cards',
-                      //               style: TextStyle(
-                      //                   fontSize: 12,
-                      //                   fontWeight: FontWeight.w600)),
-                      //           trailing: const Icon(
-                      //             Icons.arrow_forward_ios,
-                      //             color: kSecondaryColor,
-                      //             size: 16,
-                      //           ),
-                      //         ),
-                      //         Divider(
-                      //           height: 0,
-                      //           color: Colors.grey.withValues(alpha: .2),
-                      //         ),
-                      //       ],
-                      //     );
-                      //   } else {
-                      //     return Container();
-                      //   }
-                      // }),
 
                       //wishlist
                       GetBuilder<AuthController>(builder: (

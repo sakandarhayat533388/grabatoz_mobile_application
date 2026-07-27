@@ -283,15 +283,15 @@ class _SignUpState extends State<SignUp> {
                                       authProvider.validateSignupPassword,
                                   obsecure: authProvider.isPasswordObscure,
                                   suffix: GestureDetector(
-                                    child: Icon(
-                                      authProvider.isPasswordObscure
-                                          ? Icons.lock
-                                          : Icons.lock_open,
-                                      color: kdefwhiteColor,
-                                    ),
                                     onTap: () {
                                       authProvider.togglePasswordVisibility();
                                     },
+                                    child: Icon(
+                                      authProvider.isPasswordObscure
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                      color: kdefwhiteColor,
+                                    ),
                                   ),
                                   hintText: 'Password',
                                 ),

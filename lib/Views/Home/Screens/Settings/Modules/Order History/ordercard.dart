@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
+import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Utils/image_helper.dart';
+import 'package:graba2z/Views/Product%20Folder/newProductDetails.dart';
 
 import '../../../../../../Utils/packages.dart';
 
@@ -81,9 +86,168 @@ class OrderCard extends StatelessWidget {
     );
   }
 
+  Future<void> _openProductDetails(
+    BuildContext context,
+    String productId,
+    String fallbackName,
+    String fallbackImage,
+    double fallbackPrice,
+  ) async {
+    if (productId.isEmpty) {
+      Get.snackbar('Warning', 'Missing product ID');
+      return;
+    }
+
+    try {
+      EasyLoading.show(status: 'Loading product details...');
+      final uri = Uri.parse('${Configss.baseUrl}/api/products/$productId');
+      final res = await http.get(uri);
+      if (res.statusCode != 200) {
+        throw Exception('Failed to fetch product ($productId): ${res.statusCode}');
+      }
+      final body = json.decode(res.body);
+      final product = (body is Map && body['data'] is Map)
+          ? body['data'] as Map<String, dynamic>
+          : (body is Map && body['product'] is Map)
+              ? body['product'] as Map<String, dynamic>
+              : (body is Map<String, dynamic> ? body : <String, dynamic>{});
+
+      if (product.isEmpty) throw Exception('Unexpected product payload');
+
+      // Extract/massage data for NewProductDetails
+      List images = [];
+      final rawImages = product['images'] ??
+          product['gallery'] ??
+          product['imageUrls'] ??
+          product['productImages'] ??
+          product['galleryImages'] ??
+          product['image'];
+      if (rawImages is List) {
+        images = rawImages
+            .map((e) {
+              if (e is String) return e;
+              if (e is Map && e['url'] is String) return e['url'];
+              return null;
+            })
+            .whereType<String>()
+            .where((s) => s.isNotEmpty)
+            .toList();
+      } else if (rawImages is String && rawImages.isNotEmpty) {
+        images = [rawImages];
+      }
+      if (images.isEmpty) {
+        images = [
+          fallbackImage.isNotEmpty
+              ? fallbackImage
+              : "https://i.postimg.cc/SsWYSvq6/noimage.png"
+        ];
+      }
+
+      List specs = [];
+      final rawSpecs = product['specs'] ?? product['specifications'];
+      if (rawSpecs is List) specs = rawSpecs;
+
+      List reviews = [];
+      final rawReviews = product['reviews'] ?? product['productReviews'];
+      if (rawReviews is List) reviews = rawReviews;
+
+      String name = product['name']?.toString() ?? fallbackName;
+
+      String brandName = '';
+      final brandField = product['brand'] ?? product['brandName'];
+      if (brandField is Map) {
+        brandName = brandField['name']?.toString() ?? '';
+      } else if (brandField is String) {
+        brandName = brandField;
+      }
+
+      String categoryName = '';
+      String categoryId = '';
+      dynamic categoryField = product['parentCategory'] ??
+          product['parentCategoryId'] ??
+          product['category'] ??
+          product['categoryId'] ??
+          product['categories'];
+
+      if (categoryField is Map) {
+        categoryName = categoryField['name']?.toString() ?? categoryName;
+        final catIdVal = categoryField['_id'] ?? categoryField['id'];
+        categoryId = (catIdVal ?? '').toString();
+      } else if (categoryField is String) {
+        categoryId = categoryField;
+        if ((product['categoryName'] ?? '').toString().isNotEmpty) {
+          categoryName = product['categoryName'].toString();
+        }
+      } else if (categoryField is List) {
+        for (final c in categoryField) {
+          if (c is Map) {
+            final cid = (c['_id'] ?? c['id'])?.toString();
+            if (cid != null && cid.isNotEmpty) {
+              categoryId = cid;
+              categoryName = c['name']?.toString() ?? categoryName;
+              break;
+            }
+          } else if (c is String && c.isNotEmpty) {
+            categoryId = c;
+            break;
+          }
+        }
+      }
+
+      if (categoryName.isEmpty) {
+        categoryName = product['categoryName']?.toString() ?? categoryName;
+      }
+
+      String sku = product['sku']?.toString() ?? product['model']?.toString() ?? '';
+      String offerPrice = product['offerPrice']?.toString() ?? product['salePrice']?.toString() ?? '';
+      String price = product['price']?.toString() ?? product['regularPrice']?.toString() ?? fallbackPrice.toString();
+      String stockStatus = product['stockStatus']?.toString() ??
+          ((product['stock'] is num && (product['stock'] as num) > 0)
+              ? 'Available'
+              : 'Out of Stock');
+      String stockCount = (product['stock'] ??
+              product['countInStock'] ??
+              product['stockCount'] ??
+              product['quantity'] ??
+              '')
+          .toString();
+      String description = product['description']?.toString() ?? product['longDescription']?.toString() ?? '';
+      String shortdesc = product['shortdesc']?.toString() ?? product['shortDescription']?.toString() ?? '';
+      List<dynamic> colorVariations = product['colorVariations'] is List ? List<dynamic>.from(product['colorVariations']) : [];
+      List<dynamic> variations = product['variations'] is List ? List<dynamic>.from(product['variations']) : [];
+      List<dynamic> availableModels = product['availableModels'] is List ? List<dynamic>.from(product['availableModels']) : [];
+
+      EasyLoading.dismiss();
+      Get.to(() => NewProductDetails(
+            images: images,
+            specs: specs,
+            reviews: reviews,
+            productId: productId,
+            name: name,
+            brandName: brandName,
+            categoryName: categoryName,
+            categoryId: categoryId,
+            sku: sku,
+            offerPrice: offerPrice,
+            price: price,
+            stockStatus: stockStatus,
+            stockCount: stockCount,
+            description: description,
+            shortdesc: shortdesc,
+            colorVariations: colorVariations,
+            variations: variations,
+            availableModels: availableModels,
+          ));
+    } catch (e) {
+      EasyLoading.dismiss();
+      debugPrint('Error fetching product details: $e');
+      Get.snackbar('Error', 'Failed to load product details: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Extract first product name and image safely
+    // Extract first product name, image, and ID safely
     Map<String, dynamic>? firstItem;
     if (orderItems.isNotEmpty) {
       try {
@@ -93,13 +257,28 @@ class OrderCard extends StatelessWidget {
 
     String productName = 'Order Item';
     String productImage = '';
+    String productId = '';
+    double itemPrice = 0.0;
+
     if (firstItem != null) {
       productName = firstItem['name'] ?? '';
       productImage = firstItem['image'] ?? '';
+      itemPrice = double.tryParse(firstItem['price']?.toString() ?? '0') ?? 0.0;
+
       if (firstItem['product'] is Map) {
         final productMap = Map<String, dynamic>.from(firstItem['product']);
         if (productName.isEmpty) productName = productMap['name'] ?? '';
         if (productImage.isEmpty) productImage = productMap['image'] ?? '';
+        productId = (productMap['_id'] ?? productMap['id'] ?? '').toString();
+        if (itemPrice == 0.0) {
+          itemPrice = double.tryParse(productMap['price']?.toString() ?? '0') ?? 0.0;
+        }
+      } else if (firstItem['product'] != null) {
+        productId = firstItem['product'].toString();
+      }
+
+      if (productId.isEmpty) {
+        productId = (firstItem['productId'] ?? firstItem['_id'] ?? '').toString();
       }
     }
 
@@ -164,7 +343,21 @@ class OrderCard extends StatelessWidget {
                         ],
                       ),
                       // Status Badge
-                      _buildStatusBadge(status),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text(
+                            "Order Status",
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: kmediumblackColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          _buildStatusBadge(status),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -250,38 +443,47 @@ class OrderCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Product Image Thumbnail
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                            color: Colors.grey.withValues(alpha: 0.15),
-                          ),
+                      GestureDetector(
+                        onTap: () => _openProductDetails(
+                          context,
+                          productId,
+                          productName,
+                          productImage,
+                          itemPrice,
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(9),
-                          child: CachedNetworkImage(
-                            imageUrl: ImageHelper.getUrl(productImage),
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: Colors.grey.withValues(alpha: 0.05),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
+                        child: Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: Colors.grey.withValues(alpha: 0.15),
+                            ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(9),
+                            child: CachedNetworkImage(
+                              imageUrl: ImageHelper.getUrl(productImage),
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey.withValues(alpha: 0.05),
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            errorWidget: (context, url, error) => const Icon(
-                              Icons.shopping_bag_outlined,
-                              color: kmediumblackColor,
-                              size: 28,
+                              errorWidget: (context, url, error) => const Icon(
+                                Icons.shopping_bag_outlined,
+                                color: kmediumblackColor,
+                                size: 28,
+                              ),
                             ),
                           ),
                         ),
@@ -292,15 +494,25 @@ class OrderCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              productName,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: kdefblackColor,
-                                fontWeight: FontWeight.w600,
-                                height: 1.3,
+                            GestureDetector(
+                              onTap: () => _openProductDetails(
+                                context,
+                                productId,
+                                productName,
+                                productImage,
+                                itemPrice,
+                              ),
+                              child: Text(
+                                productName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: kdefblackColor,
+                                  fontWeight: FontWeight.normal,
+                                  decoration: TextDecoration.underline,
+                                  height: 1.3,
+                                ),
                               ),
                             ),
                             if (hasMoreItems) ...[

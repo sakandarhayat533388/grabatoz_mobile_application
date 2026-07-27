@@ -12,6 +12,9 @@ import 'package:graba2z/Configs/config.dart';
 
 import '../Home/Screens/Deals Screen/dealsview.dart';
 import '../Home/Screens/Search Screen/searchscreensecond.dart';
+import '../Home/Screens/Shop Screen/Shop.dart';
+import '../Home/Screens/banner redirect/bannerredirect.dart';
+import '../Product Folder/new_all_products.dart';
 
 class AllCategoriesScreen extends StatefulWidget {
   const AllCategoriesScreen({super.key});
@@ -161,14 +164,15 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
                     children: [
                       GestureDetector(
                         onTap: () {
-                          Get.to(() => offerDeals(
-                            slug: generateSlug(category.name ?? ''),
-                            displayTitle: category.name ?? '',
-                          ));
-                          // Get.to(() => NewAllProduct(
-                          //       id: category.sId ?? '',
-                          //       parentType: "parentCategory",
-                          //     ));
+                          final targetId = (category.slug != null && category.slug!.isNotEmpty)
+                              ? category.slug!
+                              : (category.sId != null && category.sId!.isNotEmpty)
+                                  ? category.sId!
+                                  : generateSlug(category.name ?? '');
+                          Get.to(() => bannerProduct(
+                                brandname: targetId,
+                                displayTitle: category.name ?? '',
+                              ));
                         },
                         child: Container(
                           decoration: BoxDecoration(

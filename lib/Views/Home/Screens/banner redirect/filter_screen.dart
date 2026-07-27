@@ -80,12 +80,12 @@ class _FilterDrawerState extends State<FilterDrawer> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Brands Section
-                    _buildBrandsSection(),
-                    const SizedBox(height: 24),
-
                     // Categories Section
                     _buildCategoriesSection(),
+                    const SizedBox(height: 24),
+
+                    // Brands Section
+                    _buildBrandsSection(),
                     const SizedBox(height: 24),
                   ],
                 ),

@@ -62,71 +62,83 @@ class HomeController extends GetxController {
 
   Future<List<SubCategoryModel>> getSubcategory() async {
     isCateloading.value = true;
-    String url = "${Configss.getSubCategories}";
-    var response = await http.get(Uri.parse(url));
-    isCateloading.value = false;
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      subcategory.clear();
-      filterSubcategory.clear();
-      filterSubcategory.add(defaultSubCategory);
-      for (Map<String, dynamic> i in data) {
-        subcategory.add(SubCategoryModel.fromJson(i));
-        filterSubcategory.add(SubCategoryModel.fromJson(i));
+    try {
+      String url = "${Configss.getSubCategories}";
+      var response = await http.get(Uri.parse(url));
+      isCateloading.value = false;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        subcategory.clear();
+        filterSubcategory.clear();
+        filterSubcategory.add(defaultSubCategory);
+        for (Map<String, dynamic> i in data) {
+          subcategory.add(SubCategoryModel.fromJson(i));
+          filterSubcategory.add(SubCategoryModel.fromJson(i));
+        }
+        update();
+        return subcategory;
+      } else {
+        print('Failed to fetch subcategories: ${response.body}');
+        return subcategory;
       }
-      update();
-      return subcategory;
-    } else {
-      print('Failed to fetch subcategories: ${response.body}');
+    } catch (e) {
+      isCateloading.value = false;
+      print('⚠️ Network error fetching subcategories: $e');
       return subcategory;
     }
   }
 
-
-
   Future<List<categoriesModel>> getCategory() async {
     isCateloading.value = true;
-    String url = "${Configss.getAllCategories}";
-    var response = await http.get(Uri.parse(url));
-    isCateloading.value = false;
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      category.clear();
-      filterCategory.clear();
-      for (Map<String, dynamic> i in data) {
-        category.add(categoriesModel.fromJson(i));
-        filterCategory.add(categoriesModel.fromJson(i));
-      }
-      if (category.isNotEmpty) {
-        selectedCategoryId.value = category.first.sId ?? '';
-        if (category.length > 7) {
-            firstCategoryName.value = category[5].name ?? '';
-            secondCategoryName.value = category[7].name ?? '';
-            firstId.value = category[5].sId ?? '';
-            secondId.value = category[7].sId ?? '';
-        } else if (category.length > 5) {
-            firstCategoryName.value = category[5].name ?? '';
-            firstId.value = category[5].sId ?? '';
-            if(category.length > 6) {
-                 secondCategoryName.value = category[6].name ?? '';
-                 secondId.value = category[6].sId ?? '';
-            } else {
-                 secondCategoryName.value = category.last.name ?? '';
-                 secondId.value = category.last.sId ?? '';
-            }
-        } else if (category.isNotEmpty) {
-            firstCategoryName.value = category.first.name ?? '';
-            firstId.value = category.first.sId ?? '';
-            secondCategoryName.value = category.first.name ?? '';
-            secondId.value = category.first.sId ?? '';
+    try {
+      String url = "${Configss.getAllCategories}";
+      var response = await http.get(Uri.parse(url));
+      isCateloading.value = false;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        category.clear();
+        filterCategory.clear();
+        for (Map<String, dynamic> i in data) {
+          if (i['isActive'] != false && i['isDeleted'] != true && i['status'] != 'inactive') {
+            category.add(categoriesModel.fromJson(i));
+            filterCategory.add(categoriesModel.fromJson(i));
+          }
         }
-        getHomeCategoryProducts();
-        getsecondHomeCategoryProducts();
+        if (category.isNotEmpty) {
+          selectedCategoryId.value = category.first.sId ?? '';
+          if (category.length > 7) {
+              firstCategoryName.value = category[5].name ?? '';
+              secondCategoryName.value = category[7].name ?? '';
+              firstId.value = category[5].sId ?? '';
+              secondId.value = category[7].sId ?? '';
+          } else if (category.length > 5) {
+              firstCategoryName.value = category[5].name ?? '';
+              firstId.value = category[5].sId ?? '';
+              if(category.length > 6) {
+                   secondCategoryName.value = category[6].name ?? '';
+                   secondId.value = category[6].sId ?? '';
+              } else {
+                   secondCategoryName.value = category.last.name ?? '';
+                   secondId.value = category.last.sId ?? '';
+              }
+          } else if (category.isNotEmpty) {
+              firstCategoryName.value = category.first.name ?? '';
+              firstId.value = category.first.sId ?? '';
+              secondCategoryName.value = category.first.name ?? '';
+              secondId.value = category.first.sId ?? '';
+          }
+          getHomeCategoryProducts();
+          getsecondHomeCategoryProducts();
+        }
+        update();
+        return category;
+      } else {
+        print('Failed to fetch categories: ${response.body}');
+        return category;
       }
-      update();
-      return category;
-    } else {
-      print('Failed to fetch categories: ${response.body}');
+    } catch (e) {
+      isCateloading.value = false;
+      print('⚠️ Network error fetching categories: $e');
       return category;
     }
   }
@@ -136,20 +148,24 @@ class HomeController extends GetxController {
   getHomeCategoryProducts() async {
     if (firstId.value.isEmpty) return;
     isprobyCateloaded.value = true;
-    // This specific method still uses limit=5 for its original purpose 
-    // if it's tied to specific UI elements expecting only a few items unrelated to fetchProductsForCategory.
-    String url = "${Configss.searchAll}?parentCategory=${firstId.value}&limit=5"; 
-    var response = await http.get(Uri.parse(url));
-    isprobyCateloaded.value = false;
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      if (responseData['success'] == true && responseData['data'] is List) {
-        productBycategory.assignAll(responseData['data']);
+    try {
+      String url = "${Configss.searchAll}?parentCategory=${firstId.value}&limit=5"; 
+      var response = await http.get(Uri.parse(url));
+      isprobyCateloaded.value = false;
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true && responseData['data'] is List) {
+          productBycategory.assignAll(responseData['data']);
+        } else {
+          productBycategory.clear();
+        }
       } else {
         productBycategory.clear();
       }
-    } else {
+    } catch (e) {
+      isprobyCateloaded.value = false;
       productBycategory.clear();
+      log('⚠️ Exception in getHomeCategoryProducts: $e');
     }
     update();
   }
@@ -157,19 +173,24 @@ class HomeController extends GetxController {
   getsecondHomeCategoryProducts() async {
     if (secondId.value.isEmpty) return;
     isprobyCateloaded2.value = true;
-    // Similarly, this specific method uses limit=5.
-    String url = "${Configss.searchAll}?parentCategory=${secondId.value}&limit=5";
-    var response = await http.get(Uri.parse(url));
-    isprobyCateloaded2.value = false;
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      if (responseData['success'] == true && responseData['data'] is List) {
-        productBycategory2.assignAll(responseData['data']);
+    try {
+      String url = "${Configss.searchAll}?parentCategory=${secondId.value}&limit=5";
+      var response = await http.get(Uri.parse(url));
+      isprobyCateloaded2.value = false;
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true && responseData['data'] is List) {
+          productBycategory2.assignAll(responseData['data']);
+        } else {
+          productBycategory2.clear();
+        }
       } else {
         productBycategory2.clear();
       }
-    } else {
+    } catch (e) {
+      isprobyCateloaded2.value = false;
       productBycategory2.clear();
+      log('⚠️ Exception in getsecondHomeCategoryProducts: $e');
     }
     update();
   }
@@ -496,18 +517,24 @@ class HomeController extends GetxController {
   getRelatedProducts(String cateId) async {
     if (cateId.isEmpty) return;
     isrelatedLoading.value = true;
-    String url = "${Configss.searchAll}?parentCategory=${cateId}&limit=10";
-    var response = await http.get(Uri.parse(url));
-    isrelatedLoading.value = false;
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      if (responseData['success'] == true && responseData['data'] is List) {
-        relatedProducts.assignAll(responseData['data']);
+    try {
+      String url = "${Configss.searchAll}?parentCategory=${cateId}&limit=10";
+      var response = await http.get(Uri.parse(url));
+      isrelatedLoading.value = false;
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['success'] == true && responseData['data'] is List) {
+          relatedProducts.assignAll(responseData['data']);
+        } else {
+          relatedProducts.clear();
+        }
       } else {
         relatedProducts.clear();
       }
-    } else {
+    } catch (e) {
+      isrelatedLoading.value = false;
       relatedProducts.clear();
+      print("⚠️ Exception in getRelatedProducts: $e");
     }
   }
 

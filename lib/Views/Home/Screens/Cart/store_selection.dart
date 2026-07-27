@@ -25,13 +25,42 @@ class _StoreSelectionScreenState extends State<StoreSelectionScreen> {
 
   // Country dial code to ISO code mapping
   final Map<String, String> dialCodeToCountry = {
-    '+971': 'AE', '+966': 'SA', '+968': 'OM', '+974': 'QA', '+973': 'BH',
-    '+965': 'KW', '+91': 'IN', '+92': 'PK', '+44': 'GB', '+1': 'US',
-    '+63': 'PH', '+20': 'EG', '+962': 'JO', '+961': 'LB', '+86': 'CN',
-    '+81': 'JP', '+82': 'KR', '+49': 'DE', '+33': 'FR', '+39': 'IT',
-    '+34': 'ES', '+61': 'AU', '+55': 'BR', '+7': 'RU', '+90': 'TR',
-    '+27': 'ZA', '+234': 'NG', '+254': 'KE', '+880': 'BD', '+94': 'LK',
-    '+977': 'NP', '+60': 'MY', '+65': 'SG', '+62': 'ID', '+66': 'TH', '+84': 'VN',
+    '+971': 'AE',
+    '+966': 'SA',
+    '+968': 'OM',
+    '+974': 'QA',
+    '+973': 'BH',
+    '+965': 'KW',
+    '+91': 'IN',
+    '+92': 'PK',
+    '+44': 'GB',
+    '+1': 'US',
+    '+63': 'PH',
+    '+20': 'EG',
+    '+962': 'JO',
+    '+961': 'LB',
+    '+86': 'CN',
+    '+81': 'JP',
+    '+82': 'KR',
+    '+49': 'DE',
+    '+33': 'FR',
+    '+39': 'IT',
+    '+34': 'ES',
+    '+61': 'AU',
+    '+55': 'BR',
+    '+7': 'RU',
+    '+90': 'TR',
+    '+27': 'ZA',
+    '+234': 'NG',
+    '+254': 'KE',
+    '+880': 'BD',
+    '+94': 'LK',
+    '+977': 'NP',
+    '+60': 'MY',
+    '+65': 'SG',
+    '+62': 'ID',
+    '+66': 'TH',
+    '+84': 'VN',
   };
 
   final List<Map<String, String>> stores = [
@@ -74,7 +103,7 @@ class _StoreSelectionScreenState extends State<StoreSelectionScreen> {
   }
 
   UserController _userController = Get.put(UserController());
-  
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -175,7 +204,7 @@ class _StoreSelectionScreenState extends State<StoreSelectionScreen> {
                     print('   - title: ${store['title']}');
                     print('   - address: ${store['address']}');
                     print('   - phone: ${store['phone']}');
-                    
+
                     setState(() {
                       // Set all values directly without nullable operators
                       if (_userController.selectedStoreIndex != null) {
@@ -183,18 +212,23 @@ class _StoreSelectionScreenState extends State<StoreSelectionScreen> {
                       }
                       _userController.storeId.value = store['storeId'] ?? '';
                       _userController.storeName.value = store['title'] ?? '';
-                      _userController.storeAddress.value = store['address'] ?? '';
+                      _userController.storeAddress.value =
+                          store['address'] ?? '';
                       _userController.storePhone.value = store['phone'] ?? '';
-                      
+
                       // Verify values were set immediately
                       print('✅ Values set in controller:');
-                      print('   - selectedStoreIndex: ${_userController.selectedStoreIndex?.value}');
+                      print(
+                          '   - selectedStoreIndex: ${_userController.selectedStoreIndex?.value}');
                       print('   - storeId: "${_userController.storeId.value}"');
-                      print('   - storeName: "${_userController.storeName.value}"');
-                      print('   - storeAddress: "${_userController.storeAddress.value}"');
-                      print('   - storePhone: "${_userController.storePhone.value}"');
+                      print(
+                          '   - storeName: "${_userController.storeName.value}"');
+                      print(
+                          '   - storeAddress: "${_userController.storeAddress.value}"');
+                      print(
+                          '   - storePhone: "${_userController.storePhone.value}"');
                     });
-                    
+
                     log('Store selection completed: ${val}');
                   },
                   title: Text(

@@ -280,24 +280,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
       final rawOfferPrice = productData['offerPrice'];
       final rawPrice = productData['price'];
 
-      List<String> imagesForDetails = [];
-      final rawGalleryImages = productData['galleryImages'];
-      if (rawGalleryImages is List) {
-        for (var img in rawGalleryImages) {
-          if (img is String && img.isNotEmpty) {
-            imagesForDetails.add(img);
-          }
-        }
-      }
-      if (imagesForDetails.isEmpty) {
-        final rawMainImage = productData['image'];
-        if (rawMainImage is String && rawMainImage.isNotEmpty) {
-          imagesForDetails.add(rawMainImage);
-        }
-      }
-      if (imagesForDetails.isEmpty) {
-        imagesForDetails.add('https://i.postimg.cc/SsWYSvq6/noimage.png');
-      }
+      List<String> imagesForDetails = ImageHelper.extractProductImages(productData);
 
       // Extract specs
       List<dynamic> specsForDetails = [];

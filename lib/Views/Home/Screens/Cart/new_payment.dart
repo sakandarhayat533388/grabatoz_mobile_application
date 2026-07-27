@@ -69,28 +69,21 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   double _totalBeforeDiscountForSelectedMethod(double baseTotal) {
     final paymentChargeTotal =
         _paymentChargesCtrl.totalFor(_selectedPaymentMethodKey);
-    if (!_isCodSelected) return baseTotal + paymentChargeTotal;
-
-    final standardShipping = _standardShippingAppliedToCurrentCart();
-
-    return ((baseTotal - standardShipping).clamp(0.0, double.infinity) +
-            paymentChargeTotal)
-        .toDouble();
+    return (baseTotal + paymentChargeTotal).toDouble();
   }
 
   double _standardShippingAppliedToCurrentCart() {
+    if (!_usercontroller.isHomeDelivery.value) {
+      return 0.0;
+    }
     final currentSubtotal = subtotal > 0
         ? subtotal
         : _cartNotifier.cartOtherInfoList.fold(
             0.0,
             (sum, item) => sum + (item.cartBasePrice * (item.quantity ?? 0)),
           );
-
-    if (!_usercontroller.isHomeDelivery.value || currentSubtotal > 500) {
-      return 0.0;
-    }
-
-    return _deliveryCtrl.selectedCharge;
+    final fee = _deliveryCtrl.calculateShippingFee(currentSubtotal);
+    return fee ?? 0.0;
   }
 
   double _currentBaseTotalBeforePaymentCharges() {
@@ -177,23 +170,28 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       if (response.statusCode == 200) {
         final rawData = jsonDecode(response.body);
         log('Resolve payment methods response: $rawData');
-        
+
         List<String> resolved = [];
         if (rawData is List) {
-          resolved = rawData.map((e) => e.toString().toLowerCase().trim()).toList();
+          resolved =
+              rawData.map((e) => e.toString().toLowerCase().trim()).toList();
         } else if (rawData is Map) {
-          final methods = rawData['allowedMethods'] ?? rawData['paymentMethods'] ?? rawData['data'];
+          final methods = rawData['allowedMethods'] ??
+              rawData['paymentMethods'] ??
+              rawData['data'];
           if (methods is List) {
-            resolved = methods.map((e) => e.toString().toLowerCase().trim()).toList();
+            resolved =
+                methods.map((e) => e.toString().toLowerCase().trim()).toList();
           }
         }
 
         if (resolved.isNotEmpty) {
           setState(() {
             allowedPaymentMethods = resolved;
-            
+
             // Auto-select the first available method if current selection is not allowed
-            final currentMapped = _mapPaymentMethod(selectedMethod).toLowerCase();
+            final currentMapped =
+                _mapPaymentMethod(selectedMethod).toLowerCase();
             if (!allowedPaymentMethods.contains(currentMapped)) {
               if (allowedPaymentMethods.contains('cod')) {
                 selectedMethod = 'COD';
@@ -205,9 +203,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 selectedMethod = 'Tamara';
               } else {
                 final first = allowedPaymentMethods.first;
-                if (first == 'cod') selectedMethod = 'COD';
-                else if (first == 'card') selectedMethod = 'Card';
-                else if (first == 'tabby') selectedMethod = 'Tabby';
+                if (first == 'cod')
+                  selectedMethod = 'COD';
+                else if (first == 'card')
+                  selectedMethod = 'Card';
+                else if (first == 'tabby')
+                  selectedMethod = 'Tabby';
                 else if (first == 'tamara') selectedMethod = 'Tamara';
               }
             }
@@ -302,7 +303,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             ? _usercontroller.homeNameController.text.trim()
                             : _usercontroller.fullName.value.trim();
 
-                        final currentMapped = _mapPaymentMethod(selectedMethod).toLowerCase();
+                        final currentMapped =
+                            _mapPaymentMethod(selectedMethod).toLowerCase();
                         if (allowedPaymentMethods.contains(currentMapped)) {
                           if (_usercontroller.isHomeDelivery.value) {
                             SharedPreferences prefs =
@@ -592,19 +594,18 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final codFee = isCodPayment ? _codHandlingCharge(paymentMethod) : 0.0;
     final codShippingFee =
         isCodPayment ? _codShippingCharge(paymentMethod) : 0.0;
+    final computedShippingFee =
+        _deliveryCtrl.calculateShippingFee(itemsPrice);
     final standardShippingInput =
-        deliveryType == 'home' && itemsPrice <= 500 ? shippingPrice : 0.0;
-    final standardShippingPrice = isCodPayment ? 0.0 : standardShippingInput;
-    final totalBeforeDiscount = isCodPayment
-        ? ((totalPrice - standardShippingInput).clamp(0.0, double.infinity) +
-                paymentChargeTotal)
-            .toDouble()
-        : (totalPrice + paymentChargeTotal).toDouble();
+        deliveryType == 'home' ? (computedShippingFee ?? 0.0) : 0.0;
+    final standardShippingPrice = standardShippingInput;
+    final totalBeforeDiscount = (totalPrice + paymentChargeTotal).toDouble();
     final payableTotal =
         _payableTotalAfterFirstOrderDiscount(totalBeforeDiscount);
 
     String? couponCode;
-    if (firstOrderDiscount > 0 && Get.isRegistered<FirstUserDiscountController>()) {
+    if (firstOrderDiscount > 0 &&
+        Get.isRegistered<FirstUserDiscountController>()) {
       final discountController = Get.find<FirstUserDiscountController>();
       couponCode = discountController.previewDiscount.value?['code'] ??
           discountController.discount.value?['name'];
@@ -620,7 +621,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       "pickupDetails": pickupDetails,
       "itemsPrice": (itemsPrice).toDouble(),
       "shippingPrice": standardShippingPrice.toDouble(),
-      "deliveryChargeId": deliveryType == 'home' ? _deliveryCtrl.selectedId.value : null,
+      "deliveryChargeId":
+          deliveryType == 'home' ? _deliveryCtrl.selectedId.value : null,
       "codFee": codFee,
       "codShippingFee": codShippingFee,
       "paymentChargeId": paymentCharge?.id,
@@ -809,7 +811,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
     final name = (customer?['name'] as String? ?? '').trim();
     final email = (customer?['email'] as String? ?? '').trim();
-    final phone = _formatPhoneForTabby((customer?['phone'] as String? ?? '').trim());
+    final phone =
+        _formatPhoneForTabby((customer?['phone'] as String? ?? '').trim());
 
     final List<Map<String, dynamic>> items = _buildTabbyItemsFromCart();
     final shippingAddress = _buildTabbyAddress();
@@ -1122,8 +1125,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         : currentSubtotal;
     final savings =
         (originalTotal - currentSubtotal).clamp(0.0, double.infinity);
-    final standardShipping =
-        _isCodSelected ? 0.0 : _standardShippingAppliedToCurrentCart();
+    final standardShipping = _standardShippingAppliedToCurrentCart();
     final paymentChargeLines =
         _paymentChargesCtrl.linesFor(_selectedPaymentMethodKey);
     final firstOrderDiscount = _firstOrderDiscountAmount();
@@ -1202,13 +1204,16 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               color: Colors.black,
             ),
           ),
-          const SizedBox(height: 12),
-          _buildSummaryRowWithStyle(
-            "Shipping",
-            standardShipping > 0
-                ? "AED ${standardShipping.toStringAsFixed(2)}"
-                : "Free",
-          ),
+          if (_usercontroller.isHomeDelivery.value &&
+              _deliveryCtrl.hasActiveDeliveryCharges) ...[
+            _buildSummaryRowWithStyle(
+              "Shipping",
+              standardShipping > 0
+                  ? "AED ${standardShipping.toStringAsFixed(2)}"
+                  : "Free",
+            ),
+            const SizedBox(height: 12),
+          ],
           if (paymentChargeLines.isNotEmpty) ...[
             const SizedBox(height: 12),
             ...paymentChargeLines.map(
@@ -1248,7 +1253,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
             const SizedBox(height: 12),
           ],
-          _buildSummaryRowWithStyle("VAT Included", "Included"),
+          _buildSummaryRowWithStyle(
+            "VAT Included",
+            "✓",
+            valueStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
           const SizedBox(height: 16),
           const Divider(color: Colors.black12, height: 1),
           const SizedBox(height: 16),
@@ -1415,7 +1428,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         'value': 'Card',
         'title': 'Debit/Credit Card',
         'logo': _buildCardLogos(),
-        'expand': _buildPaymentOptionExpandContent('Card', "You'll be redirected to Debit/Credit Card to complete your purchase."),
+        'expand': _buildPaymentOptionExpandContent('Card',
+            "You'll be redirected to Debit/Credit Card to complete your purchase."),
       });
     }
     if (allowedPaymentMethods.contains('tabby')) {
@@ -1423,7 +1437,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         'value': 'Tabby',
         'title': 'Pay later with Tabby',
         'logo': _buildTabbyLogo(),
-        'expand': _buildPaymentOptionExpandContent('Tabby', "You'll be redirected to Tabby to complete your purchase."),
+        'expand': _buildPaymentOptionExpandContent('Tabby',
+            "You'll be redirected to Tabby to complete your purchase."),
       });
     }
     if (allowedPaymentMethods.contains('tamara')) {
@@ -1431,7 +1446,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         'value': 'Tamara',
         'title': 'Tamara - Monthly payments. Sharia compliant',
         'logo': _buildTamaraLogo(),
-        'expand': _buildPaymentOptionExpandContent('Tamara', "You'll be redirected to Tamara to complete your purchase."),
+        'expand': _buildPaymentOptionExpandContent('Tamara',
+            "You'll be redirected to Tamara to complete your purchase."),
       });
     }
     if (allowedPaymentMethods.contains('cod')) {
@@ -1439,7 +1455,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         'value': 'COD',
         'title': 'Cash on Delivery (COD)',
         'logo': const SizedBox.shrink(),
-        'expand': _buildPaymentOptionExpandContent('COD', "Pay with cash upon delivery."),
+        'expand': _buildPaymentOptionExpandContent(
+            'COD', "Pay with cash upon delivery."),
       });
     }
 
@@ -1450,7 +1467,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           child: Text(
             "No payment methods are available for the items in your cart. Please contact support.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.red, fontSize: 14, fontWeight: FontWeight.w500),
+            style: TextStyle(
+                color: Colors.red, fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ),
       );
@@ -1515,7 +1533,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   : isFirst
                       ? const BorderRadius.vertical(top: Radius.circular(11))
                       : isLast
-                          ? const BorderRadius.vertical(bottom: Radius.circular(11))
+                          ? const BorderRadius.vertical(
+                              bottom: Radius.circular(11))
                           : BorderRadius.zero)
               : BorderRadius.zero,
         ),
@@ -1531,7 +1550,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: isSelected ? const Color(0xFF2563EB) : Colors.grey.shade400,
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : Colors.grey.shade400,
                       width: 1.8,
                     ),
                   ),
@@ -1614,7 +1635,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             borderRadius: BorderRadius.circular(3),
           ),
           child: const Center(
-            child: Icon(Icons.credit_card_outlined, color: Colors.white, size: 10),
+            child:
+                Icon(Icons.credit_card_outlined, color: Colors.white, size: 10),
           ),
         ),
       ],
@@ -1685,20 +1707,23 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         child: Image.asset(
           assetPath,
           fit: BoxFit.cover,
-          errorBuilder: (context, _, __) => const Icon(Icons.credit_card, size: 12),
+          errorBuilder: (context, _, __) =>
+              const Icon(Icons.credit_card, size: 12),
         ),
       ),
     );
   }
 
-  Widget _buildPaymentOptionExpandContent(String value, String defaultRedirectText) {
+  Widget _buildPaymentOptionExpandContent(
+      String value, String defaultRedirectText) {
     final methodKey = _mapPaymentMethod(value);
     return Obx(() {
       _paymentChargesCtrl.activeCharges.length;
       _paymentChargesCtrl.isLoading.value;
 
       final currentCharge = _paymentChargesCtrl.chargeFor(methodKey);
-      final currentChargesList = currentCharge?.charges ?? <PaymentChargeLine>[];
+      final currentChargesList =
+          currentCharge?.charges ?? <PaymentChargeLine>[];
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1711,10 +1736,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             const SizedBox(height: 6),
             ...currentChargesList.map((charge) {
               String formattedText = '• ${charge.name}';
-              if (charge.name.toLowerCase().contains('%') || charge.name.toLowerCase().contains('fee')) {
-                formattedText = '• ${charge.name} (AED ${charge.amount.toStringAsFixed(2)})';
+              if (charge.name.toLowerCase().contains('%') ||
+                  charge.name.toLowerCase().contains('fee')) {
+                formattedText =
+                    '• ${charge.name} (AED ${charge.amount.toStringAsFixed(2)})';
               } else {
-                formattedText = '• ${charge.name}: AED ${charge.amount.toStringAsFixed(2)}';
+                formattedText =
+                    '• ${charge.name}: AED ${charge.amount.toStringAsFixed(2)}';
               }
               return Padding(
                 padding: const EdgeInsets.only(top: 2),

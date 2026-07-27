@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:easy_stepper/easy_stepper.dart';
 import 'package:get/get.dart';
 import 'package:graba2z/Configs/config.dart';
+import 'package:graba2z/Controllers/address_controller.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/checkout_controller.dart';
 import 'package:graba2z/Controllers/deliveryController.dart';
@@ -29,6 +30,7 @@ class CheckoutStepper extends StatefulWidget {
 
 class _CheckoutStepperState extends State<CheckoutStepper> {
   String userEmail = '';
+  String? _selectedAddressId;
   bool isCodeSent = false;
   bool isVerifying = true;
   TextEditingController otpController = TextEditingController();
@@ -83,44 +85,73 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
   };
 
   // Parse phone number and detect country
-  void _parseAndSetCountry(String phone) {
-    if (phone.isEmpty || _isParsingPhone) return;
+  void _parseAndSetCountry(String rawPhone) {
+    if (rawPhone.trim().isEmpty || _isParsingPhone) return;
 
-    _isParsingPhone = true; // Set flag to prevent recursive calls
+    _isParsingPhone = true;
 
-    String cleanPhone = phone.trim();
-    if (!cleanPhone.startsWith('+')) {
-      cleanPhone = '+$cleanPhone';
+    String text = rawPhone.trim();
+    if (text.startsWith('00')) {
+      text = '+${text.substring(2)}';
     }
 
-    // Try to find matching country code (longest match first)
+    // Extract all digits, preserving leading plus sign if present
+    final StringBuffer digitsBuf = StringBuffer();
+    final bool hasPlus = text.startsWith('+');
+    for (int i = 0; i < text.length; i++) {
+      if (RegExp(r'\d').hasMatch(text[i])) {
+        digitsBuf.write(text[i]);
+      }
+    }
+    final String digits = digitsBuf.toString();
+    if (digits.isEmpty) {
+      _isParsingPhone = false;
+      return;
+    }
+
+    String formattedFull = hasPlus ? '+$digits' : digits;
+    if (!formattedFull.startsWith('+')) {
+      formattedFull = '+$formattedFull';
+    }
+
     String detectedCountry = 'AE';
     String detectedDialCode = '+971';
+    String nationalNumber = digits;
 
-    // Sort by length descending to match longer codes first (+971 before +97)
     final sortedCodes = dialCodeToCountry.keys.toList()
       ..sort((a, b) => b.length.compareTo(a.length));
 
+    bool matched = false;
     for (String dialCode in sortedCodes) {
-      if (cleanPhone.startsWith(dialCode)) {
+      if (formattedFull.startsWith(dialCode)) {
         detectedCountry = dialCodeToCountry[dialCode]!;
         detectedDialCode = dialCode;
-
-        // Extract just the number part (without country code)
-        String numberPart = cleanPhone.substring(dialCode.length);
-        _userController.homePhoneController.text = numberPart;
-
+        final dialDigits = dialCode.replaceAll('+', '');
+        nationalNumber = digits.substring(dialDigits.length);
+        matched = true;
         break;
       }
     }
 
+    if (!matched) {
+      detectedCountry = 'AE';
+      detectedDialCode = '+971';
+      nationalNumber = digits;
+    }
+
+    // Strip leading zero for national number (e.g. 0505033860 -> 505033860)
+    while (nationalNumber.startsWith('0')) {
+      nationalNumber = nationalNumber.substring(1);
+    }
+
     initialCountryCode = detectedCountry;
     selectedCountryCode = detectedDialCode;
-    completePhoneNumber = cleanPhone;
+    completePhoneNumber = '$detectedDialCode$nationalNumber';
+    _userController.homePhoneController.text = nationalNumber;
 
     if (mounted) setState(() {});
 
-    _isParsingPhone = false; // Reset flag
+    _isParsingPhone = false;
   }
 
   bool checkguest = true;
@@ -143,15 +174,24 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
       ? Get.find<AuthController>()
       : Get.put(AuthController(), permanent: true);
 
+  final AddressController _addressController = Get.isRegistered<AddressController>()
+      ? Get.find<AddressController>()
+      : Get.put(AddressController());
+
+  final DeliveryController _deliveryCtrl = Get.isRegistered<DeliveryController>()
+      ? Get.find<DeliveryController>()
+      : Get.put(DeliveryController());
+
   @override
   void initState() {
     super.initState();
     if (widget.isforguest) {
       _resetGuestCheckoutState();
+    } else {
+      _addressController.fetchAddresses();
     }
     getUserInformation();
-    final deliveryCtrl = Get.put(DeliveryController());
-    deliveryCtrl.fetchMethods();
+    _deliveryCtrl.fetchMethods();
     final paymentChargesCtrl = Get.isRegistered<PaymentChargesController>()
         ? Get.find<PaymentChargesController>()
         : Get.put(PaymentChargesController());
@@ -391,10 +431,11 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     }
   }
 
-  // Pull data from AuthController (used in Edit Profile) into checkout fields
   void _prefillFromProfile() {
     try {
-      final phone = _authController.editPhoneController.text.trim();
+      final phone = _authController.editPhoneController.text.trim().isNotEmpty
+          ? _authController.editPhoneController.text.trim()
+          : _userController.homePhoneController.text.trim();
       if (phone.isNotEmpty) {
         // Parse phone and detect country code
         _parseAndSetCountry(phone);
@@ -521,7 +562,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "name": name,
-          "email": email,
+          "email": email.trim().toLowerCase(),
           "phone": phone.trim(),
           "address": {
             "address": address,
@@ -676,24 +717,33 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
 
   String? selectedSubCategoryId;
   final UserController _userController = Get.put(UserController());
+  void _handleBackPress() {
+    if (_userController.activeStep.value > 0) {
+      setState(() {
+        _userController.activeStep.value--;
+      });
+    } else {
+      Navigator.pop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Re-sync state every time widget rebuilds (when returning from Edit Profile)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currentState = _userController.state.value;
-      final authState = _authController.editStateController.text;
-      if (currentState != authState && mounted) {
-        _userController.state.value = authState;
-        setState(() {});
-        print("🔄 Force synced state on rebuild: '$authState'");
-      }
-    });
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Checkout"),
-        surfaceTintColor: Colors.white,
-      ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBackPress();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _handleBackPress,
+          ),
+          title: const Text("Checkout"),
+          surfaceTintColor: Colors.white,
+        ),
       body: SafeArea(
         child: Column(
           children: [
@@ -731,7 +781,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildStepContent() {
@@ -745,11 +796,12 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
         return _shippingStep();
       case 1:
         return NewSummaryView(
-          addressCustomer:
-              "${_userController.street.value.replaceAll('"', '')}, "
-              "${_userController.city.value.replaceAll('"', '')}, "
-              "${_userController.state.value.replaceAll('"', '')}, "
-              "${_userController.zipcode.value.replaceAll('"', '')}",
+          addressCustomer: [
+            _userController.street.value.replaceAll('"', '').trim(),
+            _userController.city.value.replaceAll('"', '').trim(),
+            _userController.state.value.replaceAll('"', '').trim(),
+            _userController.zipcode.value.replaceAll('"', '').trim(),
+          ].where((s) => s.isNotEmpty).join(', '),
           companyAddress: _userController.storeAddress.value,
           companyName: _userController.storeName.value,
           customerEmail: userEmail,
@@ -796,17 +848,32 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                 : kdefblackColor,
                           ),
                         ),
-                        4.0.heightbox,
-                        Text(
-                          'Free',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: _userController.isHomeDelivery.value
-                                ? kdefwhiteColor
-                                : kPrimaryColor,
-                          ),
-                        ),
+                        Obx(() {
+                          if (!_deliveryCtrl.hasActiveDeliveryCharges) {
+                            return const SizedBox.shrink();
+                          }
+                          final subtotal = _cartNotifier.cartOtherInfoList
+                              .fold(0.0, (s, i) => s + (i.productPrice ?? 0.0) * (i.quantity ?? 1));
+                          final fee = _deliveryCtrl.calculateShippingFee(subtotal);
+                          final text = (fee == null || fee == 0.0)
+                              ? 'Free'
+                              : 'AED ${fee.toStringAsFixed(2)}';
+                          return Column(
+                            children: [
+                              4.0.heightbox,
+                              Text(
+                                text,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: _userController.isHomeDelivery.value
+                                      ? kdefwhiteColor
+                                      : kPrimaryColor,
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
                         4.0.heightbox,
                         Text(
                           "Deliver at doorstep",
@@ -1053,10 +1120,17 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       showDropdownIcon: true,
                       dropdownTextStyle: const TextStyle(fontSize: 14),
                       onChanged: (PhoneNumber phone) {
+                        final dial = phone.countryCode.startsWith('+')
+                            ? phone.countryCode
+                            : '+${phone.countryCode}';
+                        String numOnly = phone.number.trim();
+                        while (numOnly.startsWith('0')) {
+                          numOnly = numOnly.substring(1);
+                        }
                         setState(() {
-                          completePhoneNumber = phone.completeNumber;
-                          selectedCountryCode = '+${phone.countryCode}';
-                          if (phone.number.isEmpty) {
+                          selectedCountryCode = dial.isNotEmpty ? dial : '+971';
+                          completePhoneNumber = '$selectedCountryCode$numOnly';
+                          if (numOnly.isEmpty) {
                             _homePhoneError = 'Phone is required';
                           } else {
                             _homePhoneError = null;
@@ -1064,123 +1138,20 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         });
                       },
                       onCountryChanged: (country) {
+                        final dial = country.dialCode.startsWith('+')
+                            ? country.dialCode
+                            : '+${country.dialCode}';
+                        String numOnly = _userController.homePhoneController.text.trim();
+                        while (numOnly.startsWith('0')) {
+                          numOnly = numOnly.substring(1);
+                        }
                         setState(() {
-                          selectedCountryCode = '+${country.dialCode}';
+                          selectedCountryCode = dial;
+                          completePhoneNumber = '$selectedCountryCode$numOnly';
                         });
                       },
                     ),
-                    const SizedBox(height: 16),
-                    Obx(
-                      () => _userController.street.value.isNotEmpty
-                          ? Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                border: Border.all(color: Colors.grey.shade400),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text("Shipping Address",
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold)),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                      "${_userController.street.value.replaceAll('"', '')}, "
-                                      "${_userController.city.value.replaceAll('"', '')}, "
-                                      "${_userController.state.value.replaceAll('"', '')}, "
-                                      "${_userController.zipcode.value.replaceAll('"', '')}"),
-                                  Row(
-                                    children: [
-                                      TextButton(
-                                        onPressed: () {
-                                          showModalBottomSheet(
-                                            context: context,
-                                            isScrollControlled: true,
-                                            backgroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.vertical(
-                                                      top: Radius.circular(20)),
-                                            ),
-                                            builder: (context) =>
-                                                AddressDetailsBottomSheet(
-                                              isforGuest: widget.isforguest,
-                                              phone: _userController
-                                                  .homePhoneController.text
-                                                  .toString(),
-                                              existingStreet:
-                                                  _userController.street.value,
-                                              existingCity:
-                                                  _userController.city.value,
-                                              existingState:
-                                                  _userController.state.value,
-                                              existingZipCode:
-                                                  _userController.zipcode.value,
-                                            ),
-                                          );
-                                        },
-                                        child: const Text("Edit Address"),
-                                      ),
-                                      TextButton(
-                                        onPressed: () async {
-                                          // Clear from checkout controller
-                                          _userController.street.value = '';
-                                          _userController.city.value = '';
-                                          _userController.state.value = '';
-                                          _userController.zipcode.value = '';
-
-                                          // Also clear from AuthController for Edit Profile sync
-                                          _authController.editaddressController
-                                              .clear();
-                                          _authController.editcityController
-                                              .clear();
-                                          _authController.editzipcodeController
-                                              .clear();
-                                          _authController.editStateController
-                                              .clear();
-
-                                          // Update observable values
-                                          _authController.address.value = '';
-
-                                          // Clear from SharedPreferences to prevent reload
-                                          final prefs = await SharedPreferences
-                                              .getInstance();
-                                          await prefs.remove('user_address');
-                                          await prefs.remove('user_zipCode');
-                                          await prefs.remove('user_city');
-                                          await prefs.remove('user_state');
-
-                                          // IMPORTANT: Update backend API to persist the removal
-                                          await _authController.sendUserData(
-                                            phone: _authController
-                                                .editPhoneController.text,
-                                            name: _authController
-                                                .editNameController.text,
-                                            email: _authController
-                                                .editemailController.text,
-                                            street: '',
-                                            city: '',
-                                            state: '',
-                                            zipCode: '',
-                                            country: 'UAE',
-                                            showSuccessMessage: false,
-                                          );
-                                        },
-                                        child: const Text(
-                                          "Remove Address",
-                                          style: TextStyle(color: Colors.red),
-                                        ),
-                                      ),
-                                    ],
-                                  )
-                                ],
-                              ),
-                            )
-                          : SizedBox.fromSize(),
-                    ),
+                    _buildSavedAddressSelection(),
                     const SizedBox(height: 20),
                   ],
                 )
@@ -1228,49 +1199,74 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   _authController.editPhoneController.text = fullPhoneNumber;
                   _authController.phoneNumber.value = fullPhoneNumber;
 
-                  if (_userController.street.value.isEmpty &&
-                      _userController.activeStep.value == 0) {
-                    // Save phone to backend BEFORE showing address form
+                  if (_selectedAddressId == null ||
+                      _userController.street.value.trim().isEmpty) {
+                    Get.snackbar(
+                      'Warning',
+                      'Please select or add a delivery address to continue',
+                      backgroundColor: Colors.red,
+                      colorText: Colors.white,
+                      snackPosition: SnackPosition.TOP,
+                    );
+                    return;
+                  }
+
+                  if (widget.isforguest &&
+                      !await _registerGuestAccount(fullPhoneNumber)) {
+                    return;
+                  }
+
+                  // Update phone number in the selected address if user changed it
+                  if (_selectedAddressId != null &&
+                      _selectedAddressId != 'profile_default' &&
+                      _addressController.addresses
+                          .any((a) => a.id == _selectedAddressId)) {
+                    final selectedAddr = _addressController.addresses
+                        .firstWhere((a) => a.id == _selectedAddressId);
+                    if (selectedAddr.phone.trim() != fullPhoneNumber.trim()) {
+                      final updatedPayload = {
+                        "name": selectedAddr.name,
+                        "phone": fullPhoneNumber.trim(),
+                        "email": selectedAddr.email,
+                        "address": selectedAddr.address,
+                        "city": selectedAddr.city,
+                        "state": selectedAddr.state,
+                        "zipCode": selectedAddr.zipCode,
+                        "isDefault": selectedAddr.isDefault,
+                      };
+                      await _addressController.updateAddress(
+                          selectedAddr.id, updatedPayload);
+                    }
+                  }
+                  // Sync phone and address to edit profile before continuing
+                  _syncToAuthController();
+
+                  if (!widget.isforguest) {
                     await _authController.sendUserData(
                       phone: fullPhoneNumber,
                       name: _authController.editNameController.text,
                       email: _authController.editemailController.text,
-                      street: _authController.editaddressController.text,
-                      city: _authController.editcityController.text,
-                      state: _authController.editStateController.text,
-                      zipCode: _authController.editzipcodeController.text,
+                      street: _userController.street.value,
+                      city: _userController.city.value,
+                      state: _userController.state.value,
+                      zipCode: _userController.zipcode.value,
                       country: 'UAE',
                       showSuccessMessage: false,
                     );
-
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
-                      builder: (context) => AddressDetailsBottomSheet(
-                        isforGuest: widget.isforguest,
-                        phone: homePhone,
-                      ),
-                    );
-                  } else {
-                    if (widget.isforguest &&
-                        !await _registerGuestAccount(fullPhoneNumber)) {
-                      return;
-                    }
-                    // Sync phone and address to edit profile before continuing
-                    _syncToAuthController();
-
-                    setState(() {
-                      _userController.activeStep.value = 1;
-                    });
                   }
+
+                  setState(() {
+                    _userController.activeStep.value = 1;
+                  });
                 } else {
                   final pickupPhone =
                       _userController.phoneController.text.trim();
+                  
+                  // Use full phone number with country code
+                  String fullPickupPhone = pickupPhone;
+                  if (fullPickupPhone.isNotEmpty && !fullPickupPhone.startsWith('+')) {
+                    fullPickupPhone = '$selectedCountryCode$fullPickupPhone';
+                  }
 
                   // Debug current state
                   print('🔍 Continue button pressed for pickup');
@@ -1314,14 +1310,14 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   print('✅ All validations passed');
 
                   // Sync phone to edit profile first
-                  _authController.editPhoneController.text = pickupPhone;
-                  _authController.phoneNumber.value = pickupPhone;
+                  _authController.editPhoneController.text = fullPickupPhone;
+                  _authController.phoneNumber.value = fullPickupPhone;
 
                   if (_userController.street.value.isEmpty &&
                       _userController.activeStep.value == 0) {
                     // Save phone to backend BEFORE showing address form
                     await _authController.sendUserData(
-                      phone: pickupPhone,
+                      phone: fullPickupPhone,
                       name: _authController.editNameController.text,
                       email: _authController.editemailController.text,
                       street: _authController.editaddressController.text,
@@ -1342,18 +1338,32 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       ),
                       builder: (context) => AddressDetailsBottomSheet(
                         isforGuest: widget.isforguest,
-                        phone: pickupPhone,
+                        phone: fullPickupPhone,
                       ),
                     );
                   } else {
                     // Sync phone and address to edit profile before continuing
                     final prefs = await SharedPreferences.getInstance();
-                    await prefs.setString('guest_phone', pickupPhone);
+                    await prefs.setString('guest_phone', fullPickupPhone);
                     if (widget.isforguest &&
-                        !await _registerGuestAccount(pickupPhone)) {
+                        !await _registerGuestAccount(fullPickupPhone)) {
                       return;
                     }
                     _syncToAuthController();
+
+                    if (!widget.isforguest) {
+                      await _authController.sendUserData(
+                        phone: fullPickupPhone,
+                        name: _authController.editNameController.text,
+                        email: _authController.editemailController.text,
+                        street: _userController.street.value,
+                        city: _userController.city.value,
+                        state: _userController.state.value,
+                        zipCode: _userController.zipcode.value,
+                        country: 'UAE',
+                        showSuccessMessage: false,
+                      );
+                    }
 
                     setState(() {
                       _userController.activeStep.value = 1;
@@ -1370,6 +1380,819 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
           const SizedBox(height: 10),
         ],
       ),
+    );
+  }
+
+  Widget _buildSavedAddressSelection() {
+    if (widget.isforguest) {
+      return Obx(
+        () => _userController.street.value.isNotEmpty
+            ? Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  border: Border.all(color: Colors.grey.shade400),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Shipping Address",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 5),
+                    Text(
+                        "${_userController.street.value.replaceAll('"', '')}, "
+                        "${_userController.city.value.replaceAll('"', '')}, "
+                        "${_userController.state.value.replaceAll('"', '')}, "
+                        "${_userController.zipcode.value.replaceAll('"', '')}"),
+                    Row(
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.white,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(20)),
+                              ),
+                              builder: (context) => AddressDetailsBottomSheet(
+                                isforGuest: widget.isforguest,
+                                phone: _userController.homePhoneController.text
+                                    .toString(),
+                                existingStreet: _userController.street.value,
+                                existingCity: _userController.city.value,
+                                existingState: _userController.state.value,
+                                existingZipCode: _userController.zipcode.value,
+                              ),
+                            );
+                          },
+                          child: const Text("Edit Address"),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              )
+            : const SizedBox(),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFCFDFB),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.location_on_outlined, color: kPrimaryColor, size: 20),
+              SizedBox(width: 8),
+              Text(
+                "Select Saved Address",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: kSecondaryColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Obx(() {
+            if (_addressController.isLoading.value) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+
+            final addresses = List<AddressModel>.from(_addressController.addresses);
+
+            // If API addresses list is empty but profile has an address, show it as a saved address card
+            if (addresses.isEmpty && _userController.street.value.trim().isNotEmpty) {
+              addresses.add(
+                AddressModel(
+                  id: 'profile_default',
+                  name: 'Primary Address',
+                  phone: completePhoneNumber,
+                  email: userEmail,
+                  address: _userController.street.value,
+                  city: _userController.city.value,
+                  state: _userController.state.value.isNotEmpty
+                      ? _userController.state.value
+                      : 'Dubai',
+                  zipCode: _userController.zipcode.value,
+                  isDefault: true,
+                ),
+              );
+            }
+
+            if (addresses.isNotEmpty) {
+              final hasSelected = _selectedAddressId != null &&
+                  addresses.any((a) => a.id == _selectedAddressId);
+
+              if (!hasSelected) {
+                final defaultAddr = addresses.firstWhere(
+                  (a) => a.isDefault,
+                  orElse: () => addresses.first,
+                );
+                _selectedAddressId = defaultAddr.id;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _selectAddressForCheckout(defaultAddr);
+                });
+              }
+            } else {
+              _selectedAddressId = null;
+            }
+
+            if (addresses.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(14),
+                  border:
+                      Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.location_off_outlined,
+                        size: 36, color: Colors.grey[400]),
+                    const SizedBox(height: 6),
+                    Text(
+                      "No saved addresses found.",
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700]),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "Add a new address below to continue your order.",
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: addresses.map((addr) {
+                  final isSelected = addr.id == _selectedAddressId ||
+                      (_selectedAddressId == null && addr.isDefault) ||
+                      (_selectedAddressId == null &&
+                          _userController.street.value == addr.address);
+
+                  return GestureDetector(
+                    onTap: () {
+                      _selectedAddressId = addr.id;
+                      _selectAddressForCheckout(addr);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 220,
+                      margin: const EdgeInsets.only(right: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? kPrimaryColor.withValues(alpha: 0.05)
+                            : kdefwhiteColor,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isSelected
+                              ? kPrimaryColor
+                              : Colors.grey.withValues(alpha: 0.25),
+                          width: isSelected ? 1.8 : 1,
+                        ),
+                        boxShadow: [
+                          if (isSelected)
+                            BoxShadow(
+                              color: kPrimaryColor.withValues(alpha: 0.08),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  addr.name.isNotEmpty ? addr.name : "Address",
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: kSecondaryColor,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  InkWell(
+                                    onTap: () {
+                                      _openCheckoutAddAddressDialog(
+                                          address: addr);
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: Icon(
+                                        Icons.edit_outlined,
+                                        color: isSelected
+                                            ? kPrimaryColor
+                                            : Colors.grey[600],
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                  if (isSelected) ...[
+                                    const SizedBox(width: 4),
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      color: kPrimaryColor,
+                                      size: 20,
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            addr.address,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[700],
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            "${addr.city}${addr.city.isNotEmpty && addr.state.isNotEmpty ? ', ' : ''}${addr.state}",
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              height: 1.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            );
+          }),
+          const SizedBox(height: 14),
+          InkWell(
+            onTap: () => _openCheckoutAddAddressDialog(),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: kPrimaryColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: kPrimaryColor.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add_circle_outline,
+                      color: kPrimaryColor, size: 18),
+                  SizedBox(width: 8),
+                  Text(
+                    "Add New Address",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _selectAddressForCheckout(AddressModel addr) {
+    _selectedAddressId = addr.id;
+    _userController.street.value = addr.address;
+    _userController.city.value = addr.city;
+    _userController.state.value = addr.state;
+    _userController.zipcode.value = addr.zipCode;
+
+    // Sync to AuthController as well so listeners/rebuilds stay 100% in sync
+    _authController.editaddressController.text = addr.address;
+    _authController.editcityController.text = addr.city;
+    _authController.editStateController.text = addr.state;
+    _authController.editzipcodeController.text = addr.zipCode;
+
+    if (addr.phone.isNotEmpty) {
+      _parseAndSetCountry(addr.phone);
+    }
+    if (mounted) setState(() {});
+  }
+
+  void _openCheckoutAddAddressDialog({AddressModel? address}) {
+    final isEdit = address != null;
+    final nameController = TextEditingController(text: address?.name ?? '');
+    final phoneController = TextEditingController(
+        text: (address != null && address.phone.isNotEmpty)
+            ? address.phone
+            : completePhoneNumber);
+    final emailController = TextEditingController(
+        text: (address != null && address.email.isNotEmpty)
+            ? address.email
+            : (userEmail.isNotEmpty ? userEmail : _authController.email.value));
+    final streetController = TextEditingController(text: address?.address ?? '');
+    final cityController = TextEditingController(text: address?.city ?? '');
+    final zipController = TextEditingController(text: address?.zipCode ?? '');
+
+    String selectedState = (address != null && address.state.isNotEmpty)
+        ? address.state
+        : 'Select State';
+    bool isDefault = address?.isDefault ?? false;
+
+    final List<String> uaeStates = [
+      'Select State',
+      'Abu Dhabi',
+      'Ajman',
+      'Al Ain',
+      'Dubai',
+      'Fujairah',
+      'Ras Al Khaimah',
+      'Sharjah',
+      'Umm al-Qaywain',
+    ];
+
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Dialog(
+              backgroundColor: Colors.white,
+              insetPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 550),
+                padding: const EdgeInsets.all(20),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            isEdit ? "Edit Address Details" : "Add Address Details",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.close,
+                                color: Colors.grey, size: 22),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      const Text("ADDRESS LABEL *",
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: nameController,
+                        style: const TextStyle(fontSize: 13),
+                        decoration: InputDecoration(
+                          hintText: "e.g. Home, Office, Work",
+                          hintStyle:
+                              const TextStyle(color: Colors.grey, fontSize: 13),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: kPrimaryColor, width: 1.5)),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // PHONE *
+                      const Text("PHONE *",
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor)),
+                      const SizedBox(height: 6),
+                      IntlPhoneField(
+                        key: ValueKey(initialCountryCode),
+                        initialCountryCode: initialCountryCode,
+                        initialValue: _digitsOnly(
+                            _userController.homePhoneController.text),
+                        style: const TextStyle(fontSize: 13),
+                        dropdownTextStyle:
+                            const TextStyle(fontSize: 13),
+                        disableLengthCheck: true,
+                        dropdownIconPosition: IconPosition.trailing,
+                        flagsButtonPadding:
+                            const EdgeInsets.only(left: 10),
+                        showDropdownIcon: true,
+                        decoration: InputDecoration(
+                          hintText: "Phone Number",
+                          hintStyle: const TextStyle(
+                              color: Colors.grey, fontSize: 13),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: kPrimaryColor, width: 1.5)),
+                        ),
+                        onChanged: (phone) {
+                          phoneController.text = phone.completeNumber;
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // EMAIL
+                      const Text("EMAIL",
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: emailController,
+                        readOnly: true,
+                        style: TextStyle(
+                            fontSize: 13, color: Colors.grey[700]),
+                        decoration: InputDecoration(
+                          hintText: "sakandarhayat388@gmail.com",
+                          hintStyle: const TextStyle(
+                              color: Colors.grey, fontSize: 13),
+                          filled: true,
+                          fillColor: const Color(0xFFF1F3F5),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // ADDRESS STREET *
+                      const Text("ADDRESS STREET *",
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: streetController,
+                        style: const TextStyle(fontSize: 13),
+                        decoration: InputDecoration(
+                          hintText: "Street name, Villa/Apartment details",
+                          hintStyle:
+                              const TextStyle(color: Colors.grey, fontSize: 13),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                  color: kPrimaryColor, width: 1.5)),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // STATE / EMIRATE *
+                      const Text("STATE / EMIRATE *",
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor)),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedState,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                        ),
+                        items: uaeStates
+                            .map((st) => DropdownMenuItem(
+                                value: st,
+                                child: Text(st,
+                                    style: const TextStyle(
+                                        fontSize: 13))))
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setDialogState(
+                                () => selectedState = val);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
+                      // CITY *
+                      const Text("CITY *",
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: cityController,
+                        style: const TextStyle(fontSize: 13),
+                        decoration: InputDecoration(
+                          hintText: "City",
+                          hintStyle: const TextStyle(
+                              color: Colors.grey, fontSize: 13),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      const Text("ZIP CODE / POST CODE",
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor)),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: zipController,
+                        style: const TextStyle(fontSize: 13),
+                        decoration: InputDecoration(
+                          hintText: "00000",
+                          hintStyle:
+                              const TextStyle(color: Colors.grey, fontSize: 13),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      InkWell(
+                        onTap: () =>
+                            setDialogState(() => isDefault = !isDefault),
+                        borderRadius: BorderRadius.circular(4),
+                        child: Row(
+                          children: [
+                            Checkbox(
+                              value: isDefault,
+                              activeColor: kPrimaryColor,
+                              onChanged: (val) => setDialogState(
+                                  () => isDefault = val ?? false),
+                            ),
+                            const Text("Set as Default Address",
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: kSecondaryColor)),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 14),
+                                side: BorderSide(
+                                    color: Colors.grey.withValues(alpha: 0.4)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text("Cancel",
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: kSecondaryColor)),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Obx(() => _addressController.isSaving.value
+                                ? const Center(
+                                    child: CircularProgressIndicator())
+                                : ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: kPrimaryColor,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 14),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                    ),
+                                    onPressed: () async {
+                                      final labelVal =
+                                          nameController.text.trim();
+                                      final streetVal =
+                                          streetController.text.trim();
+                                      final cityVal =
+                                          cityController.text.trim();
+
+                                      if (labelVal.isEmpty) {
+                                        Get.snackbar("Warning",
+                                            "Address Label is required",
+                                            backgroundColor: Colors.orange,
+                                            colorText: Colors.white);
+                                        return;
+                                      }
+                                      if (streetVal.isEmpty) {
+                                        Get.snackbar("Warning",
+                                            "Address Street is required",
+                                            backgroundColor: Colors.orange,
+                                            colorText: Colors.white);
+                                        return;
+                                      }
+
+                                      final payload = {
+                                        "name": labelVal,
+                                        "phone": phoneController.text
+                                                .trim()
+                                                .isNotEmpty
+                                            ? phoneController.text.trim()
+                                            : completePhoneNumber,
+                                        "email": emailController.text.trim(),
+                                        "address": streetVal,
+                                        "city": cityVal.isNotEmpty
+                                            ? cityVal
+                                            : "Dubai",
+                                        "state": selectedState == 'Select State'
+                                            ? 'Dubai'
+                                            : selectedState,
+                                        "zipCode":
+                                            zipController.text.trim().isNotEmpty
+                                                ? zipController.text.trim()
+                                                : "00000",
+                                        "isDefault": isDefault,
+                                      };
+
+                                      bool ok;
+                                      if (address != null) {
+                                        ok = await _addressController
+                                            .updateAddress(address.id, payload);
+                                      } else {
+                                        ok = await _addressController
+                                            .addAddress(payload);
+                                      }
+                                      if (ok && mounted) {
+                                        Navigator.pop(context);
+                                        if (address != null) {
+                                          _selectedAddressId = address.id;
+                                        }
+                                        _userController.street.value = streetVal;
+                                        _userController.city.value =
+                                            cityVal.isNotEmpty
+                                                ? cityVal
+                                                : "Dubai";
+                                        _userController.state.value =
+                                            selectedState == 'Select State'
+                                                ? 'Dubai'
+                                                : selectedState;
+                                        _userController.zipcode.value =
+                                            zipController.text.trim().isNotEmpty
+                                                ? zipController.text.trim()
+                                                : "00000";
+                                        if (phoneController.text.trim().isNotEmpty) {
+                                          _parseAndSetCountry(phoneController.text.trim());
+                                        }
+                                        setState(() {});
+                                      }
+                                    },
+                                    child: Text(
+                                        isEdit ? "Update Address" : "Save Address",
+                                        style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white)),
+                                  )),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

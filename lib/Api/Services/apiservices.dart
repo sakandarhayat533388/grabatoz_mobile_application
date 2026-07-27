@@ -111,7 +111,7 @@ class ApiServiceController extends GetxController {
       final response = await http.post(
         Uri.parse(Configss.forgotPassword),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email}),
+        body: json.encode({'email': email.trim().toLowerCase()}),
       );
 
       if (response.statusCode == 200) {

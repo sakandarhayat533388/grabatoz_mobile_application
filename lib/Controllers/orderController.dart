@@ -17,23 +17,33 @@ class OrderController extends GetxController {
     isloading.value = true;
     final url = Uri.parse(Configss.getOrders);
 
-    final response = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-    isloading.value = false;
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      print('API Response: $data');
-      activeOrders.value = data;
-      // return data;
-    } else {
-      print('Error: ${response.statusCode}');
-      print('Response body: ${response.body}');
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      isloading.value = false;
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('API Response: $data');
+        if (data is List) {
+          activeOrders.value = data;
+        } else {
+          activeOrders.value = [];
+        }
+      } else {
+        print('Error: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        activeOrders.value = [];
+      }
+    } catch (e) {
+      isloading.value = false;
+      activeOrders.value = [];
+      print("⚠️ Error fetching orders: $e");
     }
   }
 }

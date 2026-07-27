@@ -62,7 +62,7 @@ class _OtpScreenState extends State<OtpScreen> {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "email": widget.email,
+          "email": widget.email.trim().toLowerCase(),
         }),
       );
 
@@ -120,7 +120,7 @@ class _OtpScreenState extends State<OtpScreen> {
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "email": widget.email,
+          "email": widget.email.trim().toLowerCase(),
           "code": otp,
         }),
       );
@@ -135,12 +135,6 @@ class _OtpScreenState extends State<OtpScreen> {
         final authProvider = Get.isRegistered<AuthController>()
             ? Get.find<AuthController>()
             : Get.put(AuthController());
-        await authProvider.login(widget.email, widget.password, false);
-      } else {
-        // Error response
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(data['message'] ?? "Invalid OTP")),
-        );
       }
     } catch (e) {
       EasyLoading.dismiss();

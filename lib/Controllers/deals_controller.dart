@@ -13,13 +13,16 @@ class DealsController extends GetxController {
   final Map<String, String> brandCache = {};
   final Map<String, String> categoryCache = {};
 
+  var offerCategories = <dynamic>[].obs;
+  var offerBrands = <dynamic>[].obs;
+
   Future<void> fetchDealsProducts({
     required String? slug,
   }) async {
     try {
       isLoading(true);
 
-      final url = "https://api.grabatoz.ae/api/offer-products/page/$slug";
+      final url = Configss.getOfferProducts(slug ?? 'hot-deals');
 
       final response = await http.get(Uri.parse(url)).timeout(
         const Duration(seconds: 10),
@@ -296,5 +299,41 @@ class DealsController extends GetxController {
       developer.log("Error fetching category name: $e\nStacktrace: $s", name: "GetCategoryName");
     }
     return '';
+  }
+
+  /// Fetch offer categories for a page slug according to API docs: GET /api/offer-categories/page/:slug
+  Future<void> fetchOfferCategories(String slug) async {
+    try {
+      final url = Configss.getOfferCategories(slug);
+      final response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: 10),
+      );
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded is List) {
+          offerCategories.value = decoded;
+        }
+      }
+    } catch (e) {
+      developer.log("Error fetching offer categories: $e", name: "FetchOfferCategories");
+    }
+  }
+
+  /// Fetch offer brands for a page slug according to API docs: GET /api/offer-brands/page/:slug
+  Future<void> fetchOfferBrands(String slug) async {
+    try {
+      final url = Configss.getOfferBrands(slug);
+      final response = await http.get(Uri.parse(url)).timeout(
+        const Duration(seconds: 10),
+      );
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        if (decoded is List) {
+          offerBrands.value = decoded;
+        }
+      }
+    } catch (e) {
+      developer.log("Error fetching offer brands: $e", name: "FetchOfferBrands");
+    }
   }
 }

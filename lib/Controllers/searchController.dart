@@ -62,7 +62,14 @@ class SearchScController extends GetxController {
     // Build query params safely
     final Map<String, String> params = {};
     if (sortby.isNotEmpty) params['sortBy'] = sortby;
-    if (brandName.isNotEmpty && brandId.isNotEmpty) params[brandName] = brandId;
+    if (brandName.isNotEmpty && brandId.isNotEmpty) {
+      if (brandName == 'parentCategory' || brandName == 'category') {
+        params['category'] = brandId;
+        params['parentCategory'] = brandId;
+      } else {
+        params[brandName] = brandId;
+      }
+    }
     if (firstName.isNotEmpty && firstValue.isNotEmpty) params[firstName] = firstValue;
     if (secondName.isNotEmpty && secondValue.isNotEmpty) params[secondName] = secondValue;
     if (minPrice > 0) params['minPrice'] = minPrice.toStringAsFixed(0);

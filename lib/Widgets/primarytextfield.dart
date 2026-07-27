@@ -67,6 +67,7 @@ class PrimaryTextField extends StatelessWidget {
             cursorHeight: 20,
             controller: controller,
             keyboardType: keyboardType,
+            textAlignVertical: TextAlignVertical.center,
             style: TextStyle(
               color: textColor ?? kdefwhiteColor,
               fontSize: 16,
@@ -79,17 +80,19 @@ class PrimaryTextField extends StatelessWidget {
                 FilteringTextInputFormatter.digitsOnly,
             ],
             decoration: InputDecoration(
-              suffix: suffix,
+              isDense: true,
+              suffixIcon: suffix,
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: 40,
+                minHeight: 40,
+              ),
               hintText: hintText,
               hintStyle: TextStyle(
                   color: hinttextColor ?? Colors.white70,
                   fontSize: 14,
                   fontWeight: FontWeight.w600),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.only(
-                left: 8,
-                // bottom: suffix != null ? 8 : 0,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
             ),
             validator: (value) {
               if (keyboardType == TextInputType.number &&

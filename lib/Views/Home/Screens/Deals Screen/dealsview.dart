@@ -445,17 +445,30 @@ class _offerDealsState extends State<offerDeals> {
         brandNameMap[brandId] = brandName;
       }
 
-      // Extract category
-      final category = product['category'];
-      if (category is Map<String, dynamic>) {
-        final categoryId = category['_id']?.toString();
-        final categoryName = category['name']?.toString();
-        if (categoryId != null && categoryId.isNotEmpty && categoryName != null && categoryName.isNotEmpty) {
-          categoryNameMap[categoryId] = categoryName;
+      // Extract deepest category level
+      final candidates = [
+        product['subcategory4'] ?? product['subCategory4'],
+        product['subcategory3'] ?? product['subCategory3'],
+        product['subcategory2'] ?? product['subCategory2'],
+        product['subcategory'] ?? product['subCategory'],
+        product['category'],
+        product['parentCategory'],
+      ];
+
+      Map<String, dynamic>? deepestCategory;
+      for (final cat in candidates) {
+        if (cat is Map) {
+          final id = (cat['_id'] ?? cat['id'])?.toString();
+          final name = cat['name']?.toString();
+          if (id != null && id.isNotEmpty && name != null && name.isNotEmpty) {
+            deepestCategory = {'id': id, 'name': name};
+            break; // Stop at deepest level found
+          }
         }
-      } else if (category is String && category.isNotEmpty) {
-        final categoryName = product['categoryName']?.toString() ?? 'Unknown Category';
-        categoryNameMap[category] = categoryName;
+      }
+
+      if (deepestCategory != null) {
+        categoryNameMap[deepestCategory['id']!] = deepestCategory['name']!;
       }
     }
 
@@ -510,25 +523,54 @@ class _offerDealsState extends State<offerDeals> {
         if (!brandMatches) continue;
       }
 
-      // Check category filter
+      // Check category filter (matches any of the candidate category levels)
       if (filterByCategory) {
-        final category = product['category'];
-        String? categoryId;
-
-        if (category is Map<String, dynamic>) {
-          categoryId = category['_id']?.toString();
-        } else if (category is String) {
-          categoryId = category;
+        final catIds = <String>[];
+        final checkFields = [
+          product['parentCategory'],
+          product['category'],
+          product['subcategory'] ?? product['subCategory'],
+          product['subcategory2'] ?? product['subCategory2'],
+          product['subcategory3'] ?? product['subCategory3'],
+          product['subcategory4'] ?? product['subCategory4'],
+        ];
+        for (final cat in checkFields) {
+          if (cat is Map) {
+            final id = (cat['_id'] ?? cat['id'])?.toString();
+            if (id != null && id.isNotEmpty) catIds.add(id);
+          } else if (cat is String && cat.isNotEmpty) {
+            catIds.add(cat);
+          }
         }
-
-        final categoryMatches = categoryId != null && _selectedCategoryIds.contains(categoryId);
-        if (!categoryMatches) continue;
+        
+        final hasMatch = catIds.any((id) => _selectedCategoryIds.contains(id));
+        if (!hasMatch) continue;
       }
 
       filtered.add(product);
     }
 
     return filtered;
+  }
+
+  String get _effectiveDisplayTitle {
+    final title = widget.displayTitle?.trim();
+    if (title != null &&
+        title.isNotEmpty &&
+        title.toLowerCase() != 'test' &&
+        !title.toLowerCase().contains('section') &&
+        !title.toLowerCase().contains('banner')) {
+      return title;
+    }
+    final s = widget.slug ?? '';
+    if (s.isNotEmpty) {
+      return s
+          .replaceAll('-', ' ')
+          .split(' ')
+          .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
+          .join(' ');
+    }
+    return 'Deals';
   }
 
   @override
@@ -547,7 +589,7 @@ class _offerDealsState extends State<offerDeals> {
             );
           },
         ),
-        titleText: widget.displayTitle ?? "Deals",
+        titleText: _effectiveDisplayTitle,
           actionicon: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -745,7 +787,7 @@ class _offerDealsState extends State<offerDeals> {
                       (context, index) {
                         final product = products[index];
                         return DealsProductCard(
-                          offerName: widget.displayTitle.toString(),
+                          offerName: _effectiveDisplayTitle,
                           productList: product,
                           onAddedToCart: _showAddedToCartPopup,
                         );

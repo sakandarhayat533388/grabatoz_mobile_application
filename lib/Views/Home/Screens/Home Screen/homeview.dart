@@ -14,12 +14,17 @@ import 'package:http/http.dart' as http;
 import 'package:graba2z/Views/Categories%20Folder/allcategoriesscreen.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/cart.dart';
 import 'package:graba2z/Views/Home/Screens/Home%20Screen/horizontal_scrolling_products.dart';
+import 'package:graba2z/Views/Home/Screens/Shop%20Screen/Shop.dart';
 import 'package:graba2z/Views/Product%20Folder/new_all_products.dart';
 import 'package:graba2z/Views/Brand%20Folder/allbrandscreen.dart';
 import 'package:graba2z/Views/Brand%20Folder/brandcard.dart';
 import 'package:graba2z/Widgets/homecaresoule.dart';
 import '../../../../Utils/packages.dart';
 import 'package:graba2z/Configs/config.dart';
+import 'package:graba2z/Api/Models/category_slider_item.dart';
+import 'package:graba2z/Controllers/dynamic_section_controller.dart';
+import 'package:graba2z/Widgets/HomeSections/home_section_builder.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeScreenView extends StatefulWidget {
   const HomeScreenView({super.key});
@@ -33,9 +38,12 @@ enum RedirectType { brand, category, none }
 class _HomeScreenViewState extends State<HomeScreenView> {
   final HomeController _homeController = Get.put(HomeController());
   final BrandController _brandController = Get.put(BrandController());
+  final DynamicSectionController _dynamicSectionController =
+      Get.put(DynamicSectionController());
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _categoriesSectionKey = GlobalKey();
-  final HomeSliderController _sliderController = Get.put(HomeSliderController());
+  final HomeSliderController _sliderController =
+      Get.put(HomeSliderController());
 
   static const String _asusSectionBrandId = '687609800de49396755b8ffa';
   static const String _hpSectionBrandId = '687609800de49396755b8ffe';
@@ -180,6 +188,175 @@ class _HomeScreenViewState extends State<HomeScreenView> {
     return "";
   }
 
+  /// Click Handling Logic for Category Slider Items:
+  /// - Agar item Custom hai (redirectUrl present hai) -> Directly redirectUrl open/navigate karein.
+  /// - Agar item Category hai (slug present hai) -> App ki Category Products list screen par open karein (slug pass karke).
+  void _handleCategorySliderClick(CategorySliderItem item) {
+    if (item.type == 'custom' &&
+        item.redirectUrl != null &&
+        item.redirectUrl!.trim().isNotEmpty) {
+      final link = item.redirectUrl!.trim();
+      final uri = Uri.tryParse(link);
+
+      if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+        if (link.contains('/product-category/') ||
+            link.contains('/offers/') ||
+            link.contains('?brand=')) {
+          _navigateInternalLink(link, item.name);
+        } else {
+          launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } else {
+        _navigateInternalLink(link, item.name);
+      }
+    } else {
+      final categoryTargetId = (item.slug != null && item.slug!.trim().isNotEmpty)
+          ? item.slug!.trim()
+          : (item.id != null && item.id!.trim().isNotEmpty)
+              ? item.id!.trim()
+              : generateSlug(item.name ?? '');
+
+      Get.to(() => bannerProduct(
+            brandname: categoryTargetId,
+            displayTitle: item.name ?? '',
+          ));
+    }
+  }
+
+  void _navigateInternalLink(String link, String? fallbackTitle) {
+    final uri = Uri.tryParse(link);
+    final brand = uri?.queryParameters['brand'];
+
+    if (brand != null && brand.isNotEmpty) {
+      Get.to(() => bannerProduct(
+            brandname: brand,
+            displayTitle: brand,
+          ));
+      return;
+    }
+
+    if (link.contains("offers/") || link.contains("/offers/")) {
+      String offerSlug = "";
+      if (link.contains("/offers/")) {
+        offerSlug = link.split("/offers/").last.split("?").first;
+      } else {
+        offerSlug = link.split("offers/").last.split("?").first;
+      }
+      offerSlug = offerSlug.replaceAll("/", "");
+
+      String autoTitle = offerSlug
+          .replaceAll("-", " ")
+          .split(' ')
+          .map((word) => word.isNotEmpty
+              ? '${word[0].toUpperCase()}${word.substring(1)}'
+              : '')
+          .join(' ');
+
+      final isGeneric = fallbackTitle == null ||
+          fallbackTitle.trim().isEmpty ||
+          fallbackTitle.trim().toLowerCase() == 'test' ||
+          fallbackTitle.toLowerCase().contains("section") ||
+          fallbackTitle.toLowerCase().contains("banner");
+
+      final displayTitle = isGeneric ? autoTitle : fallbackTitle.trim();
+
+      Get.to(() => offerDeals(
+            slug: offerSlug,
+            displayTitle: displayTitle,
+          ));
+      return;
+    }
+
+    if (link.contains("/product-category/")) {
+      final cleanLink = link.split('?').first;
+      final parts = cleanLink.split("/product-category/");
+      if (parts.length > 1) {
+        final subParts =
+            parts[1].split("/").where((p) => p.isNotEmpty).toList();
+        if (subParts.isNotEmpty) {
+          final catSlug = subParts.last;
+          Get.to(() => bannerProduct(
+                brandname: catSlug,
+                displayTitle: fallbackTitle ?? catSlug,
+              ));
+          return;
+        }
+      }
+    }
+
+    if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https')) {
+      launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Widget _buildDynamicSectionForOrder(int targetOrder) {
+    return Obx(() {
+      if (_dynamicSectionController.isLoadingSections.value &&
+          _dynamicSectionController.activeSections.isEmpty) {
+        if (targetOrder == 1) {
+          return Container(
+            margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            child: AspectRatio(
+              aspectRatio: 3.2,
+              child: Shimmer.fromColors(
+                baseColor: Colors.grey.shade300,
+                highlightColor: Colors.grey.shade100,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      }
+
+      final matchingSections =
+          _dynamicSectionController.activeSections.where((section) {
+        if (targetOrder == 1) {
+          return section.order <= 1;
+        }
+        if (targetOrder >= 6) {
+          return section.order >= 6;
+        }
+        return section.order == targetOrder;
+      }).toList();
+
+      if (matchingSections.isEmpty) {
+        return const SizedBox.shrink();
+      }
+
+      return Column(
+        children: matchingSections.map((section) {
+          return HomeSectionBuilder(
+            section: section,
+            onCardTap: (linkUrl, cardTitle) {
+              _navigateInternalLink(
+                linkUrl,
+                (cardTitle != null && cardTitle.trim().isNotEmpty)
+                    ? cardTitle.trim()
+                    : section.name,
+              );
+            },
+          );
+        }).toList(),
+      );
+    });
+  }
+
+  String _getSliderImageUrl(String? rawImage) {
+    if (rawImage == null || rawImage.isEmpty) return '';
+    if (rawImage.startsWith('http://') || rawImage.startsWith('https://')) {
+      return rawImage;
+    }
+    if (rawImage.startsWith('/')) {
+      return Configss.baseUrl + rawImage;
+    }
+    return '${Configss.baseUrl}/$rawImage';
+  }
 
   double getResponsiveProductCardHeight(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -275,13 +452,14 @@ class _HomeScreenViewState extends State<HomeScreenView> {
     _brandsAutoLoopStarted = true;
     _autoScrollBrandsLoop();
   }
+
   String generateSlug(String text) {
     return text
-        .toLowerCase()                        // CAPITAL → lowercase
-        .trim()                              // start/end spaces remove
+        .toLowerCase() // CAPITAL → lowercase
+        .trim() // start/end spaces remove
         .replaceAll(RegExp(r'[^\w\s-]'), '') // special characters remove
-        .replaceAll(RegExp(r'\s+'), '-')     // spaces → hyphen
-        .replaceAll(RegExp(r'-+'), '-');     // multiple hyphens → single
+        .replaceAll(RegExp(r'\s+'), '-') // spaces → hyphen
+        .replaceAll(RegExp(r'-+'), '-'); // multiple hyphens → single
   }
 
   Future<void> _autoScrollBrandsLoop() async {
@@ -348,7 +526,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                     Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder:(context) => SearchScreenSecond()));
+                            builder: (context) => SearchScreenSecond()));
                   },
                   icon: const Icon(Icons.search,
                       color: kdefwhiteColor, size: 28)),
@@ -445,13 +623,22 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                         return const Center(child: CircularProgressIndicator());
                       }
 
-                      if (homeCtrl.category.isEmpty) {
+                      final List<CategorySliderItem> items =
+                          homeCtrl.sliderItems.isNotEmpty
+                              ? homeCtrl.sliderItems
+                              : homeCtrl.category
+                                  .map((c) => CategorySliderItem(
+                                        id: c.sId,
+                                        name: c.name,
+                                        image: c.image,
+                                        slug: c.slug,
+                                        type: 'category',
+                                      ))
+                                  .toList();
+
+                      if (items.isEmpty) {
                         return const SizedBox.shrink();
                       }
-
-                      final itemCount = homeCtrl.category.length >= 6
-                          ? 6
-                          : homeCtrl.category.length;
 
                       return SizedBox(
                         height: 120,
@@ -460,33 +647,37 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                             return SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               physics: const BouncingScrollPhysics(),
-                              padding: defaultPadding(horizontal: 8, vertical: 5),
+                              padding:
+                                  defaultPadding(horizontal: 8, vertical: 5),
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(
                                   minWidth: constraints.maxWidth - 16,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: List.generate(itemCount, (index) {
-                                    final category = homeCtrl.category[index];
+                                  children:
+                                      List.generate(items.length, (index) {
+                                    final item = items[index];
+                                    final imageUrl =
+                                        _getSliderImageUrl(item.image);
                                     return Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
                                       child: Column(
                                         children: [
                                           GestureDetector(
-                                            onTap: () {
-                                              Get.to(() => offerDeals(
-                                                slug: generateSlug(category.name ?? ''),
-                                                displayTitle: category.name ?? '',
-                                              ));
-                                            },
+                                            onTap: () =>
+                                                _handleCategorySliderClick(
+                                                    item),
                                             child: Container(
                                               decoration: BoxDecoration(
                                                 color: kdefgreyColor,
-                                                borderRadius: BorderRadius.circular(6),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
                                                 boxShadow: [
                                                   BoxShadow(
-                                                    color: Colors.black.withValues(alpha: 0.1),
+                                                    color: Colors.black
+                                                        .withValues(alpha: 0.1),
                                                     offset: const Offset(0, 2),
                                                     blurRadius: 3,
                                                     spreadRadius: 1,
@@ -494,9 +685,10 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                                                 ],
                                               ),
                                               child: CachedNetworkImage(
-                                                imageUrl:
-                                                Configss.baseUrl + (category.image ?? ''),
-                                                imageBuilder: (context, imageProvider) => Container(
+                                                imageUrl: imageUrl,
+                                                imageBuilder:
+                                                    (context, imageProvider) =>
+                                                        Container(
                                                   height: 65,
                                                   width: 60,
                                                   decoration: BoxDecoration(
@@ -506,26 +698,36 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                                                     ),
                                                   ),
                                                 ),
-                                                placeholder: (context, url) => SizedBox(
+                                                placeholder: (context, url) =>
+                                                    SizedBox(
                                                   height: 65,
                                                   width: 60,
                                                   child: Shimmer.fromColors(
-                                                    baseColor: Colors.grey.shade300,
-                                                    highlightColor: Colors.grey.shade100,
+                                                    baseColor:
+                                                        Colors.grey.shade300,
+                                                    highlightColor:
+                                                        Colors.grey.shade100,
                                                     child: Container(
                                                       decoration: BoxDecoration(
                                                         color: Colors.grey,
-                                                        borderRadius: BorderRadius.circular(6),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
                                                       ),
                                                     ),
                                                   ),
                                                 ),
-                                                errorWidget: (context, url, error) => Container(
+                                                errorWidget:
+                                                    (context, url, error) =>
+                                                        Container(
                                                   height: 65,
                                                   width: 60,
                                                   decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(6),
-                                                    image: const DecorationImage(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            6),
+                                                    image:
+                                                        const DecorationImage(
                                                       image: AssetImage(
                                                           'assets/images/noimage.png'),
                                                       fit: BoxFit.contain,
@@ -537,11 +739,11 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                                           ),
                                           8.0.heightbox,
                                           Text(
-                                            (category.name?.characters
-                                                .take(12)
-                                                .toString() ??
-                                                '') +
-                                                ((category.name?.length ?? 0) > 12
+                                            ((item.name ?? '')
+                                                    .characters
+                                                    .take(12)
+                                                    .toString()) +
+                                                (((item.name?.length ?? 0) > 12)
                                                     ? '...'
                                                     : ''),
                                             style: const TextStyle(
@@ -564,6 +766,9 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                       );
                     },
                   ),
+
+                  // --- Dynamic Home Sections (Order 1: Under Categories) ---
+                  _buildDynamicSectionForOrder(1),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -714,6 +919,8 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                       onAddedToCart: _showAddedToCartPopup, // ADD
                     );
                   }),
+                  // --- Dynamic Home Sections (Order 2: Under Featured Products) ---
+                  _buildDynamicSectionForOrder(2),
                   const SizedBox(height: 10),
 
                   Padding(
@@ -812,7 +1019,8 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                       onAddedToCart: _showAddedToCartPopup, // ADD
                     );
                   }),
-
+                  // --- Dynamic Home Sections (Order 3: Under HP Products) ---
+                  _buildDynamicSectionForOrder(3),
                   const SizedBox(height: 10),
 
                   Padding(
@@ -907,6 +1115,8 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                       onAddedToCart: _showAddedToCartPopup, // ADD
                     );
                   }),
+                  // --- Dynamic Home Sections (Order 4: Under Accessories) ---
+                  _buildDynamicSectionForOrder(4),
                   const SizedBox(height: 10),
 
                   Padding(
@@ -1050,6 +1260,8 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                       onAddedToCart: _showAddedToCartPopup, // ADD
                     );
                   }),
+                  // --- Dynamic Home Sections (Order 5: Under Networking) ---
+                  _buildDynamicSectionForOrder(5),
                   const SizedBox(height: 10),
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -1408,9 +1620,9 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                                       child: Center(
                                         child: BrandCard(
                                           id: (brand['_id'] ?? '').toString(),
-                                          imageUrl: ImageHelper.getUrl(
-                                                      brand['logo'])
-                                              .toString(),
+                                          imageUrl:
+                                              ImageHelper.getUrl(brand['logo'])
+                                                  .toString(),
                                           name: (brand['name'] ?? 'No Name')
                                               .toString(),
                                           width:
@@ -1428,6 +1640,8 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                       ),
                     );
                   }),
+                  // --- Dynamic Home Sections (Order 6+: Under Brands / Page Bottom) ---
+                  _buildDynamicSectionForOrder(6),
                   40.0.heightbox,
                 ],
               ),

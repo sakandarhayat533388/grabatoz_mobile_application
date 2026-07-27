@@ -1,14 +1,273 @@
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:graba2z/Utils/image_helper.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:intl/intl.dart';
 import 'package:graba2z/Views/Home/Screens/Settings/Modules/Order%20History/invoice_preview_screen.dart';
+import 'package:graba2z/Controllers/addtocart.dart';
+import 'package:graba2z/Views/Home/Screens/Cart/cart.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:graba2z/Configs/config.dart';
+import 'package:graba2z/Views/Product%20Folder/newProductDetails.dart';
 
 class OrderDetailScreen extends StatelessWidget {
   final Map<String, dynamic> order;
 
   const OrderDetailScreen({super.key, required this.order});
+
+  Future<Map<String, dynamic>> _fetchProductById(String productId) async {
+    final uri = Uri.parse('${Configss.baseUrl}/api/products/$productId');
+    final res = await http.get(uri);
+    if (res.statusCode != 200) {
+      throw Exception(
+          'Failed to fetch product ($productId): ${res.statusCode}');
+    }
+    final body = json.decode(res.body);
+    final product = (body is Map && body['data'] is Map)
+        ? body['data'] as Map<String, dynamic>
+        : (body is Map && body['product'] is Map)
+            ? body['product'] as Map<String, dynamic>
+            : (body is Map<String, dynamic> ? body : <String, dynamic>{});
+    if (product.isEmpty) throw Exception('Unexpected product payload');
+    return product;
+  }
+
+  Future<void> _openProductDetails(
+      BuildContext context,
+      String productId,
+      String fallbackName,
+      String fallbackImage,
+      double fallbackPrice) async {
+    if (productId.isEmpty) {
+      Get.snackbar('Warning', 'Missing product ID');
+      return;
+    }
+
+    try {
+      EasyLoading.show(status: 'Loading product details...');
+      final product = await _fetchProductById(productId);
+
+      // Extract/massage data for NewProductDetails
+      List images = [];
+      final rawImages = product['images'] ??
+          product['gallery'] ??
+          product['imageUrls'] ??
+          product['productImages'] ??
+          product['galleryImages'] ??
+          product['image'];
+      if (rawImages is List) {
+        images = rawImages
+            .map((e) {
+              if (e is String) return e;
+              if (e is Map && e['url'] is String) return e['url'];
+              return null;
+            })
+            .whereType<String>()
+            .where((s) => s.isNotEmpty)
+            .toList();
+      } else if (rawImages is String && rawImages.isNotEmpty) {
+        images = [rawImages];
+      }
+      if (images.isEmpty) {
+        images = [
+          fallbackImage.isNotEmpty
+              ? fallbackImage
+              : "https://i.postimg.cc/SsWYSvq6/noimage.png"
+        ];
+      }
+
+      List specs = [];
+      final rawSpecs = product['specs'] ?? product['specifications'];
+      if (rawSpecs is List) specs = rawSpecs;
+
+      List reviews = [];
+      final rawReviews = product['reviews'] ?? product['productReviews'];
+      if (rawReviews is List) reviews = rawReviews;
+
+      String name = product['name']?.toString() ?? fallbackName;
+
+      String brandName = '';
+      final brandField = product['brand'] ?? product['brandName'];
+      if (brandField is Map) {
+        brandName = brandField['name']?.toString() ?? '';
+      } else if (brandField is String) {
+        brandName = brandField;
+      }
+
+      String categoryName = '';
+      String categoryId = '';
+      dynamic categoryField = product['parentCategory'] ??
+          product['parentCategoryId'] ??
+          product['category'] ??
+          product['categoryId'] ??
+          product['categories'];
+
+      if (categoryField is Map) {
+        categoryName = categoryField['name']?.toString() ?? categoryName;
+        final catIdVal = categoryField['_id'] ?? categoryField['id'];
+        categoryId = (catIdVal ?? '').toString();
+      } else if (categoryField is String) {
+        categoryId = categoryField;
+        if ((product['categoryName'] ?? '').toString().isNotEmpty) {
+          categoryName = product['categoryName'].toString();
+        }
+      } else if (categoryField is List) {
+        for (final c in categoryField) {
+          if (c is Map) {
+            final cid = (c['_id'] ?? c['id'])?.toString();
+            if (cid != null && cid.isNotEmpty) {
+              categoryId = cid;
+              categoryName = c['name']?.toString() ?? categoryName;
+              break;
+            }
+          } else if (c is String && c.isNotEmpty) {
+            categoryId = c;
+            break;
+          }
+        }
+      }
+
+      if (categoryName.isEmpty) {
+        categoryName = product['categoryName']?.toString() ?? categoryName;
+      }
+
+      String sku =
+          product['sku']?.toString() ?? product['model']?.toString() ?? '';
+      String offerPrice = product['offerPrice']?.toString() ??
+          product['salePrice']?.toString() ??
+          '';
+      String price = product['price']?.toString() ??
+          product['regularPrice']?.toString() ??
+          fallbackPrice.toString();
+      String stockStatus = product['stockStatus']?.toString() ??
+          ((product['stock'] is num && (product['stock'] as num) > 0)
+              ? 'Available'
+              : 'Out of Stock');
+      String stockCount = (product['stock'] ??
+              product['countInStock'] ??
+              product['stockCount'] ??
+              product['quantity'] ??
+              '')
+          .toString();
+      String description = product['description']?.toString() ??
+          product['longDescription']?.toString() ??
+          '';
+      String shortdesc = product['shortdesc']?.toString() ??
+          product['shortDescription']?.toString() ??
+          '';
+      List<dynamic> colorVariations = product['colorVariations'] is List
+          ? List<dynamic>.from(product['colorVariations'])
+          : [];
+      List<dynamic> variations = product['variations'] is List
+          ? List<dynamic>.from(product['variations'])
+          : [];
+      List<dynamic> availableModels = product['availableModels'] is List
+          ? List<dynamic>.from(product['availableModels'])
+          : [];
+
+      EasyLoading.dismiss();
+      Get.to(() => NewProductDetails(
+            images: images,
+            specs: specs,
+            reviews: reviews,
+            productId: productId,
+            name: name,
+            brandName: brandName,
+            categoryName: categoryName,
+            categoryId: categoryId,
+            sku: sku,
+            offerPrice: offerPrice,
+            price: price,
+            stockStatus: stockStatus,
+            stockCount: stockCount,
+            description: description,
+            shortdesc: shortdesc,
+            colorVariations: colorVariations,
+            variations: variations,
+            availableModels: availableModels,
+          ));
+    } catch (e) {
+      EasyLoading.dismiss();
+      debugPrint('Error fetching product details: $e');
+      Get.snackbar('Error', 'Failed to load product details: $e');
+    }
+  }
+
+  Future<void> _handleOrderAgain(BuildContext context) async {
+    try {
+      EasyLoading.show(status: 'Reconstructing Cart...');
+
+      final cartNotifier = Get.find<CartNotifier>();
+
+      // Resolve userId
+      String? userId;
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        userId = prefs.getString('userId')?.toString();
+      } catch (_) {}
+
+      final orderItems = List<Map<String, dynamic>>.from(order['orderItems'] ?? []);
+
+      // Filter out protection items
+      final nonProtectionItems = orderItems.where((item) => item['isProtection'] != true).toList();
+
+      if (nonProtectionItems.isEmpty) {
+        EasyLoading.dismiss();
+        Get.snackbar('Info', 'No items in this order are eligible to be ordered again.');
+        return;
+      }
+
+      // Map and add each item to local cart
+      for (final item in nonProtectionItems) {
+        final product = item['product'] is Map ? Map<String, dynamic>.from(item['product']) : null;
+        final productId = product?['_id'] ?? product?['id'] ?? item['product']?.toString() ?? '';
+
+        if (productId.isEmpty) continue;
+
+        final productName = item['name'] ?? product?['name'] ?? 'Order Item';
+        final productImage = item['image'] ?? product?['image'] ?? '';
+
+        final double itemPrice = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
+        final int qty = int.tryParse(item['quantity']?.toString() ?? '1') ?? 1;
+
+        // Parse selected color and DOS data
+        final int? selectedColorIndex = item['selectedColorIndex'] != null
+            ? int.tryParse(item['selectedColorIndex'].toString())
+            : null;
+        final Map<String, dynamic>? selectedColorData = item['selectedColorData'] is Map
+            ? Map<String, dynamic>.from(item['selectedColorData'])
+            : null;
+        final int? selectedDosIndex = item['selectedDosIndex'] != null
+            ? int.tryParse(item['selectedDosIndex'].toString())
+            : null;
+
+        final cartItem = CartOtherInfo(
+          productId: productId,
+          productName: productName,
+          productImage: productImage,
+          productPrice: itemPrice,
+          originalPrice: itemPrice,
+          quantity: qty,
+          selectedColorIndex: selectedColorIndex,
+          selectedColorData: selectedColorData,
+          selectedDosIndex: selectedDosIndex,
+          isProtection: false,
+        );
+
+        // Add to local cart via notifier, suppress intermediate notification popups
+        await cartNotifier.addItemInfo(cartItem, userId, showNotification: false);
+      }
+
+      EasyLoading.dismiss();
+      EasyLoading.showSuccess('Cart reconstructed successfully!');
+
+      // Navigate to Cart screen
+      Get.to(() => const Cart());
+    } catch (e) {
+      EasyLoading.dismiss();
+      Get.snackbar('Error', 'Failed to reconstruct cart: $e');
+    }
+  }
 
   String formatPlacedDate(String dateStr) {
     try {
@@ -164,95 +423,99 @@ class OrderDetailScreen extends StatelessWidget {
                     double.tryParse(item['price']?.toString() ?? '0') ?? 0;
                 String itemPriceFormatted = itemPrice.toStringAsFixed(2);
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                final productId =
+                    product['_id'] ?? product['id'] ?? item['product']?.toString() ?? '';
+
+                return InkWell(
+                  onTap: () => _openProductDetails(
+                    context,
+                    productId,
+                    productName,
+                    productImage,
+                    itemPrice,
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Image
-                      Container(
-                        width: 70,
-                        height: 70,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: Colors.grey.withValues(alpha: 0.15)),
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(11),
-                          child: Image.network(
-                            ImageHelper.getUrl(productImage),
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                              Icons.shopping_bag_outlined,
-                              color: kmediumblackColor,
-                              size: 28,
-                            ),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: Colors.grey.withValues(alpha: 0.15)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Image
+                        Container(
+                          width: 70,
+                          height: 70,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: Colors.grey.withValues(alpha: 0.15)),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Details (Name + Qty)
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              productName,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: kdefblackColor,
-                                height: 1.3,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              "Qty: ${item['quantity']}",
-                              style: const TextStyle(
-                                fontSize: 13,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(11),
+                            child: Image.network(
+                              ImageHelper.getUrl(productImage),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                Icons.shopping_bag_outlined,
                                 color: kmediumblackColor,
+                                size: 28,
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Price
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          const Text(
-                            "AED",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: kmediumblackColor,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        const SizedBox(width: 12),
+                        // Details (Name + Qty + Price)
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                productName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.normal,
+                                  decoration: TextDecoration.underline,
+                                  color: kdefblackColor,
+                                  height: 1.3,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Qty: ${item['quantity']}",
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: kmediumblackColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    "AED $itemPriceFormatted",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: kdefblackColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            itemPriceFormatted,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: kdefblackColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 );
               }),
@@ -443,26 +706,58 @@ class OrderDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          child: ElevatedButton.icon(
-            onPressed: () {
-              Get.to(() => InvoicePreviewScreen(order: order));
-            },
-            icon: const Icon(Icons.print_outlined, color: Colors.white),
-            label: const Text(
-              "Print / Download Invoice",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _handleOrderAgain(context),
+                  icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+                  label: const Text(
+                    "Order Again",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
               ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kdefgreenColor,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Get.to(() => InvoicePreviewScreen(order: order));
+                  },
+                  icon: const Icon(Icons.print_outlined, color: kdefgreenColor),
+                  label: const Text(
+                    "Print / Download Invoice",
+                    style: TextStyle(
+                      color: kdefgreenColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: kdefgreenColor, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

@@ -37,29 +37,51 @@ class ShopController extends GetxController {
       );
 
       developer.log("Fetching products: $uri", name: "FetchProducts");
-      final response = await http.get(uri);
+      var response = await http.get(uri);
+      List<dynamic>? productData;
+
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
-        final productData = _extractProductList(decoded);
+        productData = _extractProductList(decoded);
+      }
 
-        if (productData != null) {
-          final filtered = <dynamic>[];
-          for (final item in productData) {
-            if (item is Map<String, dynamic>) {
-              filtered.add(item);
-            } else if (item is Map) {
-              filtered.add(Map<String, dynamic>.from(item));
-            } else {
-              developer.log("Skipping non-map item: $item",
-                  name: "FetchProducts");
-            }
+      // Fallback if primary query returned 0 products
+      if ((productData == null || productData.isEmpty) &&
+          id != null &&
+          id.trim().isNotEmpty &&
+          makeIds.isEmpty &&
+          modelIds.isEmpty &&
+          seriesIds.isEmpty) {
+        final lower = (parentType ?? '').toLowerCase().trim();
+        final fallbackParam = (lower == 'subcategory') ? 'subCategory' : 'category';
+        final fallbackUri = Uri.parse(Configss.product)
+            .replace(queryParameters: {fallbackParam: id.trim()});
+        developer.log("Fallback fetching products: $fallbackUri", name: "FetchProducts");
+        final fallbackRes = await http.get(fallbackUri);
+        if (fallbackRes.statusCode == 200) {
+          final decoded = json.decode(fallbackRes.body);
+          final fallbackData = _extractProductList(decoded);
+          if (fallbackData != null && fallbackData.isNotEmpty) {
+            productData = fallbackData;
           }
-          productList.value = filtered;
-        } else {
-          productList.clear();
         }
+      }
+
+      if (productData != null) {
+        final filtered = <dynamic>[];
+        for (final item in productData) {
+          if (item is Map<String, dynamic>) {
+            filtered.add(item);
+          } else if (item is Map) {
+            filtered.add(Map<String, dynamic>.from(item));
+          } else {
+            developer.log("Skipping non-map item: $item",
+                name: "FetchProducts");
+          }
+        }
+        productList.value = filtered;
       } else {
-        Get.snackbar("Error", "Status ${response.statusCode}");
+        productList.clear();
       }
     } catch (e) {
       Get.snackbar("Error", e.toString());
@@ -142,10 +164,11 @@ class ShopController extends GetxController {
   }
 
   String? _productFilterParam(String? parentType) {
-    if (parentType == "subcategory") return "subcategory";
-    if (parentType == "parentCategory") return "parentCategory";
-    if (parentType == "brand") return "brand";
-    return null;
+    final lower = (parentType ?? '').toLowerCase().trim();
+    if (lower == 'subcategory') return 'subcategory';
+    if (lower == 'parentcategory' || lower == 'category') return 'parentCategory';
+    if (lower == 'brand') return 'brand';
+    return 'parentCategory';
   }
 
   List<dynamic>? _extractProductList(dynamic decoded) {

@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:graba2z/Controllers/orderController.dart';
+import 'package:graba2z/Views/Home/home.dart';
 import 'package:graba2z/Views/Home/Screens/Settings/Modules/Order%20History/order_details_view.dart';
 import 'package:graba2z/Views/Home/Screens/Settings/Modules/Order%20History/ordercard.dart';
 import 'package:graba2z/Views/Home/Screens/Settings/Modules/Order%20History/invoice_preview_screen.dart';
@@ -52,8 +53,87 @@ class ActiveOrdersTabState extends State<ActiveOrdersTab> {
                   );
                 },
               )
-            : Center(
-                child: Text('No Order Found'),
+            : SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: kPrimaryColor.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 80,
+                            color: kPrimaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        const Text(
+                          'No Orders Found',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "You haven't placed any orders yet. Explore our products and deals!",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (Get.isRegistered<BottomNavigationController>()) {
+                              Get.find<BottomNavigationController>().setTabIndex(0);
+                            } else {
+                              Get.put(BottomNavigationController()).setTabIndex(0);
+                            }
+                            Get.offAll(() => const Home());
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kPrimaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 3,
+                            shadowColor: kPrimaryColor.withValues(alpha: 0.4),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.shopping_bag_outlined, size: 20, color: Colors.white),
+                              SizedBox(width: 10),
+                              Text(
+                                "Continue Shopping",
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      ],
+                    ),
+                  ),
+                ),
               ));
   }
 

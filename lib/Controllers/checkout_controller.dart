@@ -34,13 +34,13 @@ class UserController extends GetxController {
   var phoneController = TextEditingController();
   var zipcode = ''.obs;
   RxInt? selectedStoreIndex = (-1).obs; // Changed back to -1 for no selection
-  
+
   @override
   void onInit() {
     super.onInit();
     // Ensure selectedStoreIndex is initialized
     selectedStoreIndex ??= (-1).obs;
-    
+
     // Debug initialization
     print('🔧 UserController.onInit()');
     print('   storeId initialized: ${storeId.value}');
@@ -52,15 +52,15 @@ class UserController extends GetxController {
 
   getUserInformation() async {
     SharedPreferences sp = await SharedPreferences.getInstance();
-    fullName.value = sp.getString('user_name') ?? '';
+    fullName.value = sp.getString('user_name') ?? sp.getString('userName') ?? '';
 
     if (fullName.value.isNotEmpty) {
       homeNameController.text = fullName.value;
     }
-    street.value = sp.getString('user_address') ?? '';
-    city.value = sp.getString('user_city') ?? '';
-    state.value = sp.getString('user_state') ?? '';
-    zipcode.value = sp.getString('user_zipCode') ?? '';
+    street.value = (sp.getString('user_address') ?? '').replaceAll('"', '');
+    city.value = (sp.getString('user_city') ?? '').replaceAll('"', '');
+    state.value = (sp.getString('user_state') ?? '').replaceAll('"', '');
+    zipcode.value = (sp.getString('user_zipCode') ?? '').replaceAll('"', '');
   }
 
   Future<void> saveAddress({
@@ -70,7 +70,7 @@ class UserController extends GetxController {
     required String state,
     required String zipCode,
     required String country,
-    String? name, // optional name mapping to "name" field
+    String? name,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -81,8 +81,7 @@ class UserController extends GetxController {
         Uri.parse(apiUrl),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization':
-              'Bearer ${token.value}', // Replace with dynamic token if needed
+          'Authorization': 'Bearer ${token.value}',
         },
         body: jsonEncode({
           if (name != null && name.isNotEmpty) "name": name,
@@ -96,11 +95,14 @@ class UserController extends GetxController {
           }
         }),
       );
-      log('the response is${response.statusCode}');
-      log('the response is${response.body}');
-      if (response.statusCode == 200) {
+      log('Address update HTTP ${response.statusCode}: ${response.body}');
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final prefs = await SharedPreferences.getInstance();
+
+        final resAddr = (data is Map && data['address'] is Map)
+            ? data['address'] as Map<String, dynamic>
+            : null;
 
         if ((data['name'] ?? '').toString().isNotEmpty) {
           await prefs.setString('user_name', data['name'].toString());
@@ -111,20 +113,21 @@ class UserController extends GetxController {
           fullName.value = name;
           homeNameController.text = fullName.value;
         }
-        await prefs.setString(
-            'user_address', jsonEncode(data['address']['street']));
-        await prefs.setString('user_city', jsonEncode(data['address']['city']));
-        await prefs.setString(
-            'user_zipCode', jsonEncode(data['address']['zipCode']));
-        await prefs.setString(
-            'user_state', jsonEncode(data['address']['state']));
-        // await prefs.setString('user_token', data['token']);
+
+        final streetStr = resAddr != null ? (resAddr['street'] ?? '').toString() : street;
+        final cityStr = resAddr != null ? (resAddr['city'] ?? '').toString() : city;
+        final zipStr = resAddr != null ? (resAddr['zipCode'] ?? '').toString() : zipCode;
+        final stateStr = resAddr != null ? (resAddr['state'] ?? '').toString() : state;
+
+        await prefs.setString('user_address', streetStr);
+        await prefs.setString('user_city', cityStr);
+        await prefs.setString('user_zipCode', zipStr);
+        await prefs.setString('user_state', stateStr);
+        await prefs.setString('user_phone', phone);
+
         getUserInformation();
         Get.back();
-        // Get.snackbar("Success", "Address updated successfully",
-        //     backgroundColor: Colors.green, colorText: Colors.white);
       } else {
-        // Get.snackbar("Error", "Failed to update address");
         final prefs = await SharedPreferences.getInstance();
 
         if (name != null && name.isNotEmpty) {
@@ -132,12 +135,12 @@ class UserController extends GetxController {
           fullName.value = name;
           homeNameController.text = fullName.value;
         }
-        await prefs.setString('user_address', jsonEncode(street));
-        await prefs.setString('user_city', jsonEncode(city));
-        await prefs.setString('user_zipCode', jsonEncode(zipCode));
-        await prefs.setString('user_state', jsonEncode(state));
+        await prefs.setString('user_address', street);
+        await prefs.setString('user_city', city);
+        await prefs.setString('user_zipCode', zipCode);
+        await prefs.setString('user_state', state);
+        await prefs.setString('user_phone', phone);
         Get.back();
-        // await prefs.setString('user_token', data['token']);
         getUserInformation();
       }
     } catch (e) {
@@ -147,5 +150,3 @@ class UserController extends GetxController {
     }
   }
 }
-
-

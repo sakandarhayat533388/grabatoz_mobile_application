@@ -321,31 +321,7 @@ class _NewProductCardState extends State<NewProductCard> {
       final rawOfferPrice = productData['offerPrice'];
       final rawPrice = productData['price'];
 
-      List<String> imagesForDetails = [];
-      final rawGalleryImages = productData['galleryImages'];
-      if (rawGalleryImages is List) {
-        for (var img in rawGalleryImages) {
-          if (img is String && img.isNotEmpty) {
-            imagesForDetails.add(img);
-          } else if (img != null) {
-            imagesForDetails.add(img.toString());
-          }
-        }
-      } else if (rawGalleryImages is String && rawGalleryImages.isNotEmpty) {
-        imagesForDetails.add(rawGalleryImages);
-      }
-
-      if (imagesForDetails.isEmpty) {
-        final mainProductImage = productData['image'];
-        if (mainProductImage is String && mainProductImage.isNotEmpty) {
-          imagesForDetails.add(mainProductImage);
-        }
-      }
-
-      // Ensure at least one placeholder if no images are found, so NewProductDetails doesn't crash.
-      if (imagesForDetails.isEmpty) {
-        imagesForDetails.add(placeholderImage);
-      }
+      List<String> imagesForDetails = ImageHelper.extractProductImages(productData);
 
       List<dynamic> specsForDetails = [];
       final rawSpecs = productData['specifications'];

@@ -1,10 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:flutter/services.dart';
-import 'package:graba2z/Views/Home/home.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
-import '../../../../../../Utils/packages.dart';
-import '../../../../../../Controllers/delete_account_controller.dart';
+import '../../../../../../Controllers/authController.dart';
+import '../../../../../../Utils/appcolors.dart';
+import '../../../../../../Widgets/customappbar.dart';
+import '../../../../../../Widgets/primarybutton.dart';
 
 class EditProfile extends StatefulWidget {
   const EditProfile({super.key});
@@ -14,77 +15,42 @@ class EditProfile extends StatefulWidget {
 }
 
 class EditProfileState extends State<EditProfile> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  bool isBottomSheetOpen = false;
-  bool isLoading = false;
-  String? _phoneError;
-  String selectedState = 'Select State';
-  
-  // Phone country code detection
+  final AuthController _authController = Get.find<AuthController>();
+  final TextEditingController _phoneDisplayController = TextEditingController();
+
   String completePhoneNumber = '';
   String selectedCountryCode = '+971';
   String initialCountryCode = 'AE';
-  bool _isParsingPhone = false; // Flag to prevent recursive parsing
-  final TextEditingController _phoneDisplayController = TextEditingController();
+  bool _isParsingPhone = false;
+  String? _phoneError;
 
-  // Country dial code to ISO code mapping
   final Map<String, String> dialCodeToCountry = {
     '+971': 'AE', '+966': 'SA', '+968': 'OM', '+974': 'QA', '+973': 'BH',
     '+965': 'KW', '+91': 'IN', '+92': 'PK', '+44': 'GB', '+1': 'US',
     '+63': 'PH', '+20': 'EG', '+962': 'JO', '+961': 'LB', '+86': 'CN',
     '+81': 'JP', '+82': 'KR', '+49': 'DE', '+33': 'FR', '+39': 'IT',
     '+34': 'ES', '+61': 'AU', '+55': 'BR', '+7': 'RU', '+90': 'TR',
-    '+27': 'ZA', '+234': 'NG', '+254': 'KE', '+880': 'BD', '+94': 'LK',
-    '+977': 'NP', '+60': 'MY', '+65': 'SG', '+62': 'ID', '+66': 'TH', '+84': 'VN',
   };
-
-  List<String> states = [
-    'Select State',
-    'Abu Dhabi',
-    'Ajman',
-    'Al Ain',
-    'Dubai',
-    'Fujairah',
-    'Ras Al Khaimah',
-    'Sharjah',
-    'Umm al-Qaywain',
-  ];
 
   @override
   void initState() {
     super.initState();
-    // Always reload fresh data when screen opens
     _authController.getUserProfileData();
-    
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final stateValue = _authController.editStateController.text;
-      if (stateValue.isNotEmpty && states.contains(stateValue)) {
-        setState(() {
-          selectedState = stateValue;
-        });
-      } else {
-        setState(() {
-          selectedState = 'Select State';
-        });
-      }
 
-      // Parse phone and detect country code
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       final phone = _authController.editPhoneController.text.trim();
       if (phone.isNotEmpty) {
         _parseAndSetCountry(phone);
       }
     });
-    
-    _authController.editStateController.addListener(_onStateChanged);
+
     _authController.editPhoneController.addListener(_onPhoneChanged);
   }
 
-  // Listen for phone changes from API
   void _onPhoneChanged() {
-    if (_isParsingPhone) return; // Prevent recursive calls
+    if (_isParsingPhone) return;
 
     final phone = _authController.editPhoneController.text.trim();
-    // Keep the visible field in sync with the stored full phone number.
     if (phone.isNotEmpty && completePhoneNumber != phone) {
       _parseAndSetCountry(phone);
     } else if (phone.isEmpty) {
@@ -96,18 +62,15 @@ class EditProfileState extends State<EditProfile> {
     }
   }
 
-  // Parse phone number and detect country
   void _parseAndSetCountry(String phone) {
     if (phone.isEmpty || _isParsingPhone) return;
-
-    _isParsingPhone = true; // Set flag to prevent recursive calls
+    _isParsingPhone = true;
 
     String cleanPhone = phone.trim().replaceAll(RegExp(r'[\s\-\(\)]'), '');
     if (!cleanPhone.startsWith('+')) {
       cleanPhone = '+$cleanPhone';
     }
 
-    // Sort by length descending to match longer codes first
     final sortedCodes = dialCodeToCountry.keys.toList()
       ..sort((a, b) => b.length.compareTo(a.length));
 
@@ -119,551 +82,403 @@ class EditProfileState extends State<EditProfile> {
         initialCountryCode = dialCodeToCountry[dialCode]!;
         selectedCountryCode = dialCode;
         completePhoneNumber = digitsOnlyNumber.isEmpty ? '' : cleanPhone;
-
-        // Show only the national number in the field; keep the full number separately.
         _phoneDisplayController.text = digitsOnlyNumber;
 
         if (mounted) setState(() {});
-
-        _isParsingPhone = false; // Reset flag
+        _isParsingPhone = false;
         return;
       }
     }
 
-    final digitsOnlyPhone = _digitsOnly(cleanPhone);
+    String digitsOnlyPhone = _digitsOnly(cleanPhone);
+    if (digitsOnlyPhone.startsWith('0')) {
+      digitsOnlyPhone = digitsOnlyPhone.substring(1);
+    }
+
+    initialCountryCode = 'AE';
+    selectedCountryCode = '+971';
     _phoneDisplayController.text = digitsOnlyPhone;
-    completePhoneNumber = digitsOnlyPhone.isEmpty ? '' : cleanPhone;
+    completePhoneNumber = digitsOnlyPhone.isEmpty ? '' : '+971$digitsOnlyPhone';
 
     if (mounted) setState(() {});
-
-    _isParsingPhone = false; // Reset flag if no match found
-  }
-
-  void _onStateChanged() {
-    final stateValue = _authController.editStateController.text;
-    if (stateValue.isEmpty) {
-      setState(() {
-        selectedState = 'Select State';
-      });
-    } else if (states.contains(stateValue)) {
-      setState(() {
-        selectedState = stateValue;
-      });
-    }
+    _isParsingPhone = false;
   }
 
   @override
   void dispose() {
-    _authController.editStateController.removeListener(_onStateChanged);
     _authController.editPhoneController.removeListener(_onPhoneChanged);
     _phoneDisplayController.dispose();
-    _verificationCodeController.dispose();
     super.dispose();
   }
 
-  AuthController _authController = Get.put(AuthController());
-  final DeleteAccountController _deleteAccountController = Get.put(DeleteAccountController());
-  final TextEditingController _verificationCodeController = TextEditingController();
-
   String _digitsOnly(String s) => s.replaceAll(RegExp(r'[^0-9]'), '');
 
-  bool _isValidUaePhone(String input) {
-    if (input.isEmpty) return true;
-    final d = _digitsOnly(input);
-    final numPart = d.startsWith('0') ? d.substring(1) : d;
-    return numPart.length == 9;
+  void _saveProfileChanges() {
+    final phone = _phoneDisplayController.text.trim();
+    if (phone.isNotEmpty && _digitsOnly(phone).length < 6) {
+      setState(() {
+        _phoneError = 'Enter a valid phone number';
+      });
+      Get.snackbar('Warning', 'Please enter a valid phone number',
+          backgroundColor: Colors.orange, colorText: Colors.white);
+      return;
+    }
+
+    final fullPhone = completePhoneNumber.isNotEmpty
+        ? completePhoneNumber
+        : (phone.isNotEmpty ? '$selectedCountryCode${_digitsOnly(phone)}' : '');
+
+    _authController.sendUserData(
+      name: _authController.editNameController.text.trim(),
+      email: _authController.editemailController.text.trim(),
+      phone: fullPhone,
+      gender: _authController.editGenderController.text.trim(),
+      dateOfBirth: _authController.editDobController.text.trim(),
+      showSuccessMessage: true,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        // Reload profile data when going back to discard unsaved changes
-        await _authController.getUserProfileData();
-        return true;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          await _authController.getUserProfileData();
+        }
       },
-      child: GestureDetector(
-        onTap: () {
-          if (isBottomSheetOpen) {
-            Navigator.pop(context);
-          }
-        },
-        child: Scaffold(
-          key: _scaffoldKey,
-          appBar: CustomAppBar(titleText: "Profile"),
-          body: isLoading
-              ? Center(child: CircularProgressIndicator())
-              : SafeArea(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _buildTextField("Full Name",
-                                  controller: _authController.editNameController),
-                              _buildTextField("Email",
-                                  controller: _authController.editemailController),
-                              _buildPhoneField(),
-                              _buildTextField("Address",
-                                  controller: _authController.editaddressController),
-                              _buildStateDropdown(),
-                              _buildTextField("City",
-                                  controller: _authController.editcityController),
-                              _buildTextField("Zip Code",
-                                  controller: _authController.editzipcodeController),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 20),
-                            child: Obx(
-                              () => _authController.isprofileUpdating.value
-                                  ? CircularProgressIndicator()
-                                  : PrimaryButton(
-                                      width: double.infinity,
-                                      buttonColor: kPrimaryColor,
-                                      textColor: kdefwhiteColor,
-                                      onPressFunction: () {
-                                        // Validate phone if entered
-                                        final phone = _phoneDisplayController.text.trim();
-                                        if (phone.isNotEmpty && _digitsOnly(phone).length < 6) {
-                                          setState(() {
-                                            _phoneError = 'Enter a valid phone number';
-                                          });
-                                          Get.snackbar('Warning', 'Please enter a valid phone number',
-                                              backgroundColor: Colors.red, colorText: Colors.white);
-                                          return;
-                                        }
-                                        
-                                        // Use complete phone number with country code
-                                        final fullPhone = completePhoneNumber.isNotEmpty
-                                            ? completePhoneNumber
-                                            : (phone.isNotEmpty ? '$selectedCountryCode${_digitsOnly(phone)}' : '');
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFBFBFD),
+        appBar: const CustomAppBar(titleText: "Edit Profile"),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Section
+              const Text(
+                "Edit Profile Details",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: kSecondaryColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Keep your personal information up to date.",
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 24),
 
-                                        _authController.sendUserData(
-                                          phone: fullPhone,
-                                          name: _authController.editNameController.text,
-                                          email: _authController.editemailController.text,
-                                          street: _authController.editaddressController.text,
-                                          city: _authController.editcityController.text,
-                                          state: selectedState == 'Select State' ? '' : selectedState,
-                                          zipCode: _authController.editzipcodeController.text,
-                                          country: 'UAE',
-                                          showSuccessMessage: true,
-                                        );
-                                      },
-                                      buttonText: "Update",
+              // Responsive Grid Form Layout
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final isWide = constraints.maxWidth > 550;
+                  return isWide
+                      ? Column(
+                          children: [
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildInputGroup(
+                                    label: "Full Name *",
+                                    child: _buildTextField(
+                                      controller: _authController.editNameController,
+                                      hintText: "Enter full name",
                                     ),
-                            )),
-                            Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 0),
-                          child: Text(
-                            "or",
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 20,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildInputGroup(
+                                    label: "Email Address *",
+                                    child: _buildTextField(
+                                      controller: _authController.editemailController,
+                                      hintText: "Enter email address",
+                                      keyboardType: TextInputType.emailAddress,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: 16),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildInputGroup(
+                                    label: "Phone Number",
+                                    child: _buildPhoneField(),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildInputGroup(
+                                    label: "Date of Birth",
+                                    child: _buildDobField(),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: _buildInputGroup(
+                                    label: "Gender",
+                                    child: _buildGenderDropdown(),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Expanded(child: SizedBox()),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildInputGroup(
+                              label: "Full Name *",
+                              child: _buildTextField(
+                                controller: _authController.editNameController,
+                                hintText: "Enter full name",
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInputGroup(
+                              label: "Email Address *",
+                              child: _buildTextField(
+                                controller: _authController.editemailController,
+                                hintText: "Enter email address",
+                                keyboardType: TextInputType.emailAddress,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInputGroup(
+                              label: "Phone Number",
+                              child: _buildPhoneField(),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInputGroup(
+                              label: "Date of Birth",
+                              child: _buildDobField(),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildInputGroup(
+                              label: "Gender",
+                              child: _buildGenderDropdown(),
+                            ),
+                          ],
+                        );
+                },
+              ),
+
+              const SizedBox(height: 32),
+
+              // Save Changes Action Button
+              Align(
+                alignment: Alignment.centerRight,
+                child: SizedBox(
+                  width: Get.width > 550 ? 200 : double.infinity,
+                  child: Obx(
+                    () => _authController.isprofileUpdating.value
+                        ? const Center(child: CircularProgressIndicator())
+                        : PrimaryButton(
+                            buttonColor: kPrimaryColor,
+                            textColor: kdefwhiteColor,
+                            buttonText: "Save Changes",
+                            onPressFunction: _saveProfileChanges,
                           ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                          child: Obx(() => _deleteAccountController.isRequestingDeletion.value
-                              ? CircularProgressIndicator()
-                              : PrimaryButton(
-                                  width: double.infinity,
-                                  buttonColor: Colors.red,
-                                  textColor: kdefwhiteColor,
-                                  onPressFunction: _showDeleteConfirmationDialog,
-                                  buttonText: "Delete Account",
-                                )),
-                        ),
-                        SizedBox(height: 20),
-                      ],
-                    ),
                   ),
                 ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildTextField(String label,
-      {required TextEditingController controller}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 6),
-          Text(label),
-          SizedBox(height: 6),
-          TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: label,
-              hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-              border: OutlineInputBorder(),
-            ),
+  Widget _buildInputGroup({required String label, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: kSecondaryColor,
           ),
-        ],
+        ),
+        const SizedBox(height: 6),
+        child,
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+        filled: true,
+        fillColor: kdefwhiteColor,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+        ),
       ),
     );
   }
 
   Widget _buildPhoneField() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 6,),
-          Text("Phone Number"),
-          SizedBox(height: 6),
-          IntlPhoneField(
-            key: ValueKey(initialCountryCode),
-            controller: _phoneDisplayController,
-            decoration: InputDecoration(
-              hintText: 'Enter phone number',
-              hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-              border: OutlineInputBorder(),
-              errorText: _phoneError,
-            ),
-            initialCountryCode: initialCountryCode,
-            disableLengthCheck: true,
-            dropdownIconPosition: IconPosition.trailing,
-            flagsButtonPadding: const EdgeInsets.only(left: 10),
-            showDropdownIcon: true,
-            dropdownTextStyle: const TextStyle(fontSize: 14),
-            onChanged: (PhoneNumber phone) {
-              setState(() {
-                completePhoneNumber = phone.number.isEmpty ? '' : phone.completeNumber;
-                selectedCountryCode = phone.countryCode.startsWith('+')
-                    ? phone.countryCode
-                    : '+${phone.countryCode}';
-                if (phone.number.isEmpty) {
-                  _phoneError = null;
-                } else {
-                  _phoneError = null;
-                }
-              });
-            },
-            onCountryChanged: (country) {
-              setState(() {
-                initialCountryCode = country.code;
-                selectedCountryCode = '+${country.dialCode}';
-                final digits = _digitsOnly(_phoneDisplayController.text);
-                completePhoneNumber = digits.isEmpty ? '' : '$selectedCountryCode$digits';
-              });
-            },
-          ),
-        ],
+    return IntlPhoneField(
+      key: ValueKey(initialCountryCode),
+      controller: _phoneDisplayController,
+      decoration: InputDecoration(
+        hintText: 'Enter phone number',
+        hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+        filled: true,
+        fillColor: kdefwhiteColor,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        errorText: _phoneError,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+        ),
       ),
-    );
-  }
-
-  Widget _buildStateDropdown() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(height: 6),
-          Text("State/Region"),
-          SizedBox(height: 6),
-          DropdownButtonFormField<String>(
-            value: selectedState,
-            items: states
-                .map((state) => DropdownMenuItem<String>(
-                      value: state,
-                      child: Text(state),
-                    ))
-                .toList(),
-            onChanged: (value) {
-              setState(() {
-                selectedState = value!;
-                _authController.editStateController.text = value == 'Select State' ? '' : value;
-              });
-            },
-            decoration: InputDecoration(
-              hintText: "Select State",
-              hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-              border: OutlineInputBorder(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteConfirmationDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Delete Account'),
-          content: Text(
-            'Are you sure you want to permanently delete your account? This action cannot be undone.\n\nA verification code will be sent to your email.',
-            style: TextStyle(fontSize: 14),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel', style: TextStyle(color: Colors.grey)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _requestAccountDeletion();
-              },
-              child: Text('Continue', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        );
+      initialCountryCode: initialCountryCode,
+      disableLengthCheck: true,
+      dropdownIconPosition: IconPosition.trailing,
+      flagsButtonPadding: const EdgeInsets.only(left: 10),
+      showDropdownIcon: true,
+      dropdownTextStyle: const TextStyle(fontSize: 14),
+      onChanged: (PhoneNumber phone) {
+        setState(() {
+          completePhoneNumber = phone.number.isEmpty ? '' : phone.completeNumber;
+          selectedCountryCode = phone.countryCode.startsWith('+')
+              ? phone.countryCode
+              : '+${phone.countryCode}';
+          _phoneError = null;
+        });
       },
     );
   }
 
-  Future<void> _requestAccountDeletion() async {
-    final success = await _deleteAccountController.requestAccountDeletion();
-    if (success) {
-      _showVerificationCodeDialog();
+  Widget _buildGenderDropdown() {
+    final currentGender = _authController.editGenderController.text.toLowerCase().trim();
+    String? dropdownValue;
+    if (['male', 'female', 'other'].contains(currentGender)) {
+      dropdownValue = currentGender;
     }
-  }
 
-  void _showVerificationCodeDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Container(
-            width: MediaQuery.of(context).size.width * 0.9,
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.mail_outline,
-                      size: 50,
-                      color: kPrimaryColor,
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Verification Code',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Enter the 6-digit code sent to your email',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    SizedBox(height: 24),
-                    TextField(
-                      controller: _verificationCodeController,
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 32,
-                        letterSpacing: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: InputDecoration(
-                        hintText: '------',
-                        hintStyle: TextStyle(
-                          letterSpacing: 16,
-                          color: Colors.grey[300],
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: kPrimaryColor, width: 2),
-                        ),
-                        counterText: '',
-                        contentPadding: EdgeInsets.symmetric(vertical: 20),
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.amber[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber[200]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, size: 20, color: Colors.amber[800]),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Email may take 5-10 minutes to arrive. Check spam folder.',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.amber[900],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    TextButton.icon(
-                      onPressed: () async {
-                        _verificationCodeController.clear();
-                        Navigator.of(context).pop();
-                        Get.snackbar(
-                          'Resending Code',
-                          'Please wait...',
-                          backgroundColor: Colors.blue,
-                          colorText: Colors.white,
-                          duration: Duration(seconds: 2),
-                        );
-                        await _requestAccountDeletion();
-                      },
-                      icon: Icon(Icons.refresh, size: 18),
-                      label: Text('Resend Code'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.orange,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {
-                              _verificationCodeController.clear();
-                              Navigator.of(context).pop();
-                            },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.grey[700],
-                              side: BorderSide(color: Colors.grey[400]!, width: 1.5),
-                              padding: EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              'Cancel',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: Obx(() => _deleteAccountController.isVerifyingCode.value
-                              ? Container(
-                                  padding: EdgeInsets.symmetric(vertical: 14),
-                                  decoration: BoxDecoration(
-                                    color: Colors.red,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Center(
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : ElevatedButton(
-                                  onPressed: () => _verifyAndDelete(),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red,
-                                    foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(vertical: 14),
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Delete',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                )),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
+    return DropdownButtonFormField<String>(
+      initialValue: dropdownValue,
+      decoration: InputDecoration(
+        hintText: 'Select Gender',
+        hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+        filled: true,
+        fillColor: kdefwhiteColor,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+        ),
+      ),
+      items: const [
+        DropdownMenuItem(value: 'male', child: Text('Male')),
+        DropdownMenuItem(value: 'female', child: Text('Female')),
+        DropdownMenuItem(value: 'other', child: Text('Other')),
+      ],
+      onChanged: (val) {
+        if (val != null) {
+          _authController.editGenderController.text = val;
+          setState(() {});
+        }
       },
     );
   }
 
-  Future<void> _verifyAndDelete() async {
-    final code = _verificationCodeController.text.trim();
-    
-    if (code.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter the verification code',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    if (code.length != 6) {
-      Get.snackbar(
-        'Error',
-        'Verification code must be 6 digits',
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    final success = await _deleteAccountController.verifyAccountDeletion(code);
-    
-    if (success) {
-      _verificationCodeController.clear();
-      Navigator.of(context).pop(); // Close dialog
-      
-      // Reset bottom navigation to home tab (index 0)
-      final bottomNavProvider = Get.find<BottomNavigationController>();
-      bottomNavProvider.setTabIndex(0);
-      
-      // Navigate to home screen and clear all previous routes
-      Get.offAll(() => Home());
-    }
+  Widget _buildDobField() {
+    return TextField(
+      controller: _authController.editDobController,
+      readOnly: true,
+      onTap: () async {
+        DateTime initialDate = DateTime.tryParse(_authController.editDobController.text) ??
+            DateTime(1995, 1, 1);
+        final pickedDate = await showDatePicker(
+          context: context,
+          initialDate: initialDate,
+          firstDate: DateTime(1920),
+          lastDate: DateTime.now(),
+        );
+        if (pickedDate != null) {
+          final formatted =
+              "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+          _authController.editDobController.text = formatted;
+          setState(() {});
+        }
+      },
+      decoration: InputDecoration(
+        hintText: 'mm/dd/yyyy',
+        hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+        filled: true,
+        fillColor: kdefwhiteColor,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+        ),
+        suffixIcon: const Icon(Icons.calendar_today_outlined, color: Colors.grey, size: 20),
+      ),
+    );
   }
 }

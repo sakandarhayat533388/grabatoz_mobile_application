@@ -60,6 +60,25 @@ class AuthController extends GetxController {
   final address = "--".obs;
   final phoneNumber = "--".obs;
   final email = "--".obs;
+  final gender = "".obs;
+  final dateOfBirth = "".obs;
+  final isAdmin = false.obs;
+  final isEmailVerified = false.obs;
+  final newsletterPref = true.obs;
+  final notificationsPref = true.obs;
+  final editDobController = TextEditingController();
+  final editGenderController = TextEditingController();
+
+  static String formatDob(String? raw) {
+    if (raw == null || raw.isEmpty) return '';
+    try {
+      final parsed = DateTime.tryParse(raw);
+      if (parsed != null) {
+        return "${parsed.year}-${parsed.month.toString().padLeft(2, '0')}-${parsed.day.toString().padLeft(2, '0')}";
+      }
+    } catch (_) {}
+    return raw;
+  }
 
   String get _registrationPlatform {
     if (Platform.isIOS) return 'ios';
@@ -82,7 +101,7 @@ class AuthController extends GetxController {
     final prefs = await SharedPreferences.getInstance();
     userID.value = prefs.getString('userId') ?? ''; // Convert to String
     token.value = prefs.getString('token') ?? ''; // Convert to String
-    fullName.value = prefs.getString('userName]') ?? ''; // Convert to String
+    fullName.value = prefs.getString('userName]') ?? prefs.getString('user_name') ?? ''; // Convert to String
     email.value = prefs.getString('userEmail') ?? ''; // Convert to String
 
     update();
@@ -92,50 +111,81 @@ class AuthController extends GetxController {
     isProfileLoading.value = true;
 
     final prefs = await SharedPreferences.getInstance();
+    token.value = prefs.getString('token') ?? token.value;
     String url = "${Configss.getuserProfile}";
 
-    var response = await http.get(Uri.parse(url),
-        headers: {"Authorization": "Bearer ${token.value}"});
-    log('🔍 GET Profile API Response: ${response.body}');
-    isProfileLoading.value = false;
+    try {
+      var response = await http.get(Uri.parse(url),
+          headers: {"Authorization": "Bearer ${token.value}"});
+      log('🔍 GET Profile API Response: ${response.body}');
+      isProfileLoading.value = false;
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-      print("🔍 Phone from API: '${data['phone']}'");
+        fullName.value = data['name'] ?? '';
+        email.value = data['email'] ?? '';
+        phoneNumber.value = data['phone'] ?? '';
+        gender.value = data['gender'] ?? '';
+        dateOfBirth.value = formatDob(data['dateOfBirth']?.toString());
+        isAdmin.value = data['isAdmin'] == true;
+        isEmailVerified.value = data['isEmailVerified'] == true;
 
-      fullName.value = data['name'] ?? '';
-      email.value = data['email'] ?? '';
-      phoneNumber.value = data['phone'] ?? '';
-      address.value = data['address']['street'] ?? '';
+        if (data['preferences'] is Map) {
+          newsletterPref.value = data['preferences']['newsletter'] != false;
+          notificationsPref.value = data['preferences']['notifications'] != false;
+        }
 
-      // Always update controllers with fresh data from API
-      editNameController.text = data['name'] ?? '';
-      editemailController.text = data['email'] ?? '';
-      editPhoneController.text = data['phone'] ?? '';
-      editaddressController.text = data['address']['street'] ?? '';
-      editzipcodeController.text = data['address']['zipCode'] ?? '';
-      editcityController.text = data['address']['city'] ?? '';
-      editStateController.text = data['address']['state'] ?? ''; // Add this
+        final addressData = data['address'] is Map
+            ? data['address'] as Map<String, dynamic>
+            : (data['addresses'] is List && (data['addresses'] as List).isNotEmpty
+                ? (data['addresses'] as List)[0] as Map<String, dynamic>
+                : null);
 
-      prefs.setString('user_address', data['address']['street'] ?? '');
-      prefs.setString('user_zipCode', data['address']['zipCode'] ?? '');
-      prefs.setString('user_city', data['address']['city'] ?? '');
-      prefs.setString('user_state', data['address']['state'] ?? '');
+        final streetVal = addressData != null ? (addressData['street'] ?? addressData['address'] ?? '') : '';
+        final cityVal = addressData != null ? (addressData['city'] ?? '') : '';
+        final stateVal = addressData != null ? (addressData['state'] ?? '') : '';
+        final zipCodeVal = addressData != null ? (addressData['zipCode'] ?? '') : '';
 
-      hasProfileDataLoaded.value = true;
-      update();
-      return;
-    }
-    if (isGuest.value) {
-      print("🟡 Guest user → profile API skipped");
-      return;
-    } else {
-      await prefs.clear();
-      final bottomNavProvider = Get.put(BottomNavigationController());
-      bottomNavProvider.setTabIndex(0);
-      Get.offAll(() => Home());
-      print('Failed to fetch categories: ${response.body}');
+        address.value = streetVal.toString().replaceAll('"', '');
+
+        // Always update controllers with fresh data from API
+        editNameController.text = data['name'] ?? '';
+        editemailController.text = data['email'] ?? '';
+        editPhoneController.text = data['phone'] ?? '';
+        editGenderController.text = data['gender'] ?? '';
+        editDobController.text = formatDob(data['dateOfBirth']?.toString());
+        editaddressController.text = streetVal.toString().replaceAll('"', '');
+        editzipcodeController.text = zipCodeVal.toString().replaceAll('"', '');
+        editcityController.text = cityVal.toString().replaceAll('"', '');
+        editStateController.text = stateVal.toString().replaceAll('"', '');
+
+        await prefs.setString('user_address', streetVal.toString().replaceAll('"', ''));
+        await prefs.setString('user_zipCode', zipCodeVal.toString().replaceAll('"', ''));
+        await prefs.setString('user_city', cityVal.toString().replaceAll('"', ''));
+        await prefs.setString('user_state', stateVal.toString().replaceAll('"', ''));
+        await prefs.setString('user_phone', (data['phone'] ?? '').toString());
+        await prefs.setString('user_name', (data['name'] ?? '').toString());
+        await prefs.setString('userName', (data['name'] ?? '').toString());
+        await prefs.setString('userEmail', (data['email'] ?? '').toString());
+
+        hasProfileDataLoaded.value = true;
+        update();
+        return;
+      }
+      if (isGuest.value) {
+        print("🟡 Guest user → profile API skipped");
+        return;
+      } else {
+        await prefs.clear();
+        final bottomNavProvider = Get.put(BottomNavigationController());
+        bottomNavProvider.setTabIndex(0);
+        Get.offAll(() => Home());
+        print('Failed to fetch profile: ${response.body}');
+      }
+    } catch (e) {
+      isProfileLoading.value = false;
+      print("⚠️ Exception fetching profile: $e");
     }
   }
 
@@ -150,25 +200,28 @@ class AuthController extends GetxController {
     String? phone,
     String? name,
     String? email,
+    String? gender,
+    String? dateOfBirth,
     String? street,
     String? city,
     String? state,
     String? zipCode,
     String? country,
-    bool showSuccessMessage = true, // Add this parameter with default true
+    bool showSuccessMessage = true,
   }) async {
     final url = Uri.parse(Configss.updateProfile);
     final prefs = await SharedPreferences.getInstance();
-    bearerToken.value = prefs.getString('token') ?? '';
+    bearerToken.value = prefs.getString('token') ?? token.value;
 
     final Map<String, dynamic> data = {};
 
-    // Send null for empty values to signal field deletion to API
+    final cleanEmail = (email == null || email.isEmpty) ? null : email.trim().toLowerCase();
     data["phone"] = (phone == null || phone.isEmpty) ? null : phone;
     data["name"] = (name == null || name.isEmpty) ? null : name;
-    data["email"] = (email == null || email.isEmpty) ? null : email;
+    data["email"] = cleanEmail;
+    if (gender != null && gender.isNotEmpty) data["gender"] = gender;
+    if (dateOfBirth != null && dateOfBirth.isNotEmpty) data["dateOfBirth"] = dateOfBirth;
 
-    // Always send address object with all fields
     final Map<String, dynamic> addressMap = {
       "street": (street == null || street.isEmpty) ? null : street,
       "city": (city == null || city.isEmpty) ? null : city,
@@ -187,7 +240,7 @@ class AuthController extends GetxController {
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $bearerToken',
+          'Authorization': 'Bearer ${bearerToken.value}',
         },
         body: jsonEncode(data),
       );
@@ -199,96 +252,190 @@ class AuthController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 201) {
         print("✅ Update successful");
 
-        // Update local controllers with whatever was sent (including empty strings)
-        editPhoneController.text = phone ?? '';
-        editNameController.text = name ?? '';
-        editemailController.text = email ?? '';
-        editaddressController.text = street ?? '';
-        editcityController.text = city ?? '';
-        editzipcodeController.text = zipCode ?? '';
+        final resObj = jsonDecode(response.body);
+        final Map<String, dynamic>? resAddr = (resObj is Map && resObj['address'] is Map)
+            ? resObj['address'] as Map<String, dynamic>
+            : null;
 
-        print("📝 Updated editPhoneController: '${editPhoneController.text}'");
+        final finalPhone = (resObj is Map && resObj['phone'] != null) ? resObj['phone'].toString() : (phone ?? '');
+        final finalName = (resObj is Map && resObj['name'] != null) ? resObj['name'].toString() : (name ?? '');
+        final finalEmail = (resObj is Map && resObj['email'] != null) ? resObj['email'].toString() : (email ?? '');
+        final finalGender = (resObj is Map && resObj['gender'] != null) ? resObj['gender'].toString() : (gender ?? '');
+        final finalDob = (resObj is Map && resObj['dateOfBirth'] != null) ? resObj['dateOfBirth'].toString() : (dateOfBirth ?? '');
+
+        final finalStreet = resAddr != null ? (resAddr['street'] ?? '').toString() : (street ?? '');
+        final finalCity = resAddr != null ? (resAddr['city'] ?? '').toString() : (city ?? '');
+        final finalState = resAddr != null ? (resAddr['state'] ?? '').toString() : (state ?? '');
+        final finalZipCode = resAddr != null ? (resAddr['zipCode'] ?? '').toString() : (zipCode ?? '');
+
+        // Update local controllers
+        editPhoneController.text = finalPhone;
+        editNameController.text = finalName;
+        editemailController.text = finalEmail;
+        editGenderController.text = finalGender;
+        editDobController.text = formatDob(finalDob);
+        editaddressController.text = finalStreet;
+        editcityController.text = finalCity;
+        editzipcodeController.text = finalZipCode;
+        editStateController.text = finalState;
 
         // Also update observable values
-        phoneNumber.value = phone ?? '';
-        fullName.value = name ?? '';
-        this.email.value = email ?? '';
-        address.value = street ?? '';
+        phoneNumber.value = finalPhone;
+        fullName.value = finalName;
+        this.email.value = finalEmail;
+        this.gender.value = finalGender;
+        this.dateOfBirth.value = formatDob(finalDob);
+        address.value = finalStreet;
 
-        print("📝 Updated phoneNumber observable: '${phoneNumber.value}'");
-
-        // Save to SharedPreferences for persistence (including empty values)
-        await prefs.setString('user_address', street ?? '');
-        await prefs.setString('user_zipCode', zipCode ?? '');
-        await prefs.setString('user_city', city ?? '');
-        await prefs.setString('user_phone', phone ?? '');
-
-        print("💾 Saved to SharedPreferences");
+        // Save to SharedPreferences for persistence
+        await prefs.setString('user_address', finalStreet);
+        await prefs.setString('user_zipCode', finalZipCode);
+        await prefs.setString('user_city', finalCity);
+        await prefs.setString('user_state', finalState);
+        await prefs.setString('user_phone', finalPhone);
+        await prefs.setString('userName', finalName);
+        await prefs.setString('user_name', finalName);
+        await prefs.setString('userEmail', finalEmail);
 
         // Also sync to checkout if UserController exists
         try {
           if (Get.isRegistered<UserController>()) {
             final userController = Get.find<UserController>();
-            userController.homePhoneController.text = phone ?? '';
-            userController.phoneController.text = phone ?? '';
-            userController.street.value = street ?? '';
-            userController.city.value = city ?? '';
-            userController.zipcode.value = zipCode ?? '';
-            // Force clear state even when API returns null
-            userController.state.value =
-                (state == null || state.isEmpty) ? '' : state;
-            print(
-                "🔄 Synced to UserController including state: '${userController.state.value}'");
+            String digitsOnlyPhone = finalPhone.trim();
+            if (digitsOnlyPhone.startsWith('+971')) {
+              digitsOnlyPhone = digitsOnlyPhone.substring(4);
+            } else if (digitsOnlyPhone.startsWith('+')) {
+              digitsOnlyPhone = digitsOnlyPhone.replaceFirst(RegExp(r'^\+\d{1,4}'), '');
+            }
+            while (digitsOnlyPhone.startsWith('0')) {
+              digitsOnlyPhone = digitsOnlyPhone.substring(1);
+            }
+            userController.homePhoneController.text = digitsOnlyPhone;
+            userController.phoneController.text = finalPhone;
+            userController.homeNameController.text = finalName;
+            userController.fullName.value = finalName;
+            userController.street.value = finalStreet;
+            userController.city.value = finalCity;
+            userController.zipcode.value = finalZipCode;
+            userController.state.value = finalState;
 
-            // Force update the editStateController to trigger listeners
             final currentState = editStateController.text;
-            final newState = (state == null || state.isEmpty) ? '' : state;
-            if (currentState != newState) {
-              editStateController.text = newState;
-              // Manually notify listeners
-              editStateController.notifyListeners();
-              print("🔔 Forced state controller update: '$newState'");
+            if (currentState != finalState) {
+              editStateController.text = finalState;
             }
           }
         } catch (e) {
           print('⚠️ UserController not available: $e');
         }
 
-        // Trigger update to notify all listeners
         update();
 
-        print("✅ All updates complete");
-
-        // Show success message only if requested
         if (showSuccessMessage) {
-          // Get.snackbar(
-          //   'Success',
-          //   'Profile updated successfully',
-          //   backgroundColor: Colors.green,
-          //   colorText: Colors.white,
-          //   snackPosition: SnackPosition.BOTTOM,
-          // );
+          Get.snackbar(
+            'Success',
+            'Profile updated successfully',
+            backgroundColor: Colors.green,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+          );
         }
       } else {
         print("❌ Failed: ${response.statusCode} - ${response.body}");
-        // Get.snackbar(
-        //   'Error',
-        //   'Failed to update profile',
-        //   backgroundColor: Colors.red,
-        //   colorText: Colors.white,
-        //   snackPosition: SnackPosition.BOTTOM,
-        // );
+        Get.snackbar(
+          'Error',
+          'Failed to update profile (${response.statusCode})',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
       }
     } catch (e) {
       isprofileUpdating.value = false;
-      print("⚠️ Error: $e");
+      print("⚠️ Error updating profile: $e");
       Get.snackbar(
         'Error',
-        'An error occurred',
+        'An error occurred while updating profile',
         backgroundColor: Colors.red,
         colorText: Colors.white,
         snackPosition: SnackPosition.BOTTOM,
       );
+    }
+  }
+
+  final isChangingPassword = false.obs;
+  Future<bool> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final url = Uri.parse(Configss.updateProfile);
+    final prefs = await SharedPreferences.getInstance();
+    final userToken = prefs.getString('token') ?? token.value;
+
+    if (userToken.isEmpty) {
+      Get.snackbar(
+        'Error',
+        'Please login to change password',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return false;
+    }
+
+    isChangingPassword.value = true;
+    try {
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $userToken',
+        },
+        body: jsonEncode({
+          'currentPassword': currentPassword,
+          'password': newPassword,
+        }),
+      );
+
+      log('📥 Change Password Response (${response.statusCode}): ${response.body}');
+      isChangingPassword.value = false;
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        if (data is Map && data.containsKey('token') && data['token'] != null) {
+          final newToken = data['token'].toString();
+          await prefs.setString('token', newToken);
+          token.value = newToken;
+        }
+
+        Get.snackbar(
+          'Success',
+          'Password changed successfully',
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return true;
+      } else {
+        Get.snackbar(
+          'Error',
+          data['message'] ?? 'Failed to change password',
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return false;
+      }
+    } catch (e) {
+      isChangingPassword.value = false;
+      log('⚠️ Error changing password: $e');
+      Get.snackbar(
+        'Error',
+        'An error occurred while changing password',
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
     }
   }
 
@@ -303,9 +450,8 @@ class AuthController extends GetxController {
   Future login(String email, String password, bool isforbottom) async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Encode the data as JSON
-
-    var bodyobj = {"email": email, "password": password};
+    final cleanEmail = email.trim().toLowerCase();
+    var bodyobj = {"email": cleanEmail, "password": password};
 
     try {
       setLoading(true);
@@ -383,13 +529,13 @@ class AuthController extends GetxController {
   ) async {
     String url = Configss.signup;
 
-    // try {
     setLoading(true);
     update();
 
+    final cleanEmail = email.trim().toLowerCase();
     var bodyobj = {
       "name": userName,
-      "email": email,
+      "email": cleanEmail,
       "password": password,
       "registrationSource": "app",
       "registrationPlatform": _registrationPlatform,
@@ -406,9 +552,8 @@ class AuthController extends GetxController {
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body.toString());
-      // print("Success: $data");
       EasyLoading.showSuccess(data['message']);
-      Get.to(() => OtpScreen(email: email, password: password));
+      Get.to(() => OtpScreen(email: cleanEmail, password: password));
       return response;
     } else {
       final errorData = json.decode(response.body);

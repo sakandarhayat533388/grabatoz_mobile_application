@@ -40,6 +40,22 @@ class Configss {
 
   // static String userProfile = "$baseUrl/api/users/profile";
   static String updateProfile = "$baseUrl/api/users/profile";
+
+  // Offer Page endpoints
+  static String getOfferCategories(String slug) =>
+      "$baseUrl/api/offer-categories/page/$slug";
+  static String getOfferBrands(String slug) =>
+      "$baseUrl/api/offer-brands/page/$slug";
+  static String getOfferProducts(String slug) =>
+      "$baseUrl/api/offer-products/page/$slug";
+
+  // Address Book Endpoints
+  static String userAddresses = "$baseUrl/api/users/addresses";
+  static String userAddressById(String id) =>
+      "$baseUrl/api/users/addresses/$id";
+  static String userAddressDefault(String id) =>
+      "$baseUrl/api/users/addresses/$id/default";
+
   static String createOrder = "$baseUrl/api/orders";
   static String paymentCardRequest = "$baseUrl/api/payment/ngenius/card";
   static String getOrders = "$baseUrl/api/orders/myorders";
@@ -63,10 +79,16 @@ class Configss {
   static String menu = "$baseUrl/api/categories/tree";
   static String product = "$baseUrl/api/products";
   static String newHomeCategory = "$baseUrl/api/custom-slider-items/active";
+  static String sliderCategories = "$baseUrl/api/categories/slider";
 
   // Account deletion endpoints
   static String requestAccountDeletion =
       "$baseUrl/api/users/request-account-deletion";
   static String verifyAccountDeletion =
       "$baseUrl/api/users/verify-account-deletion";
+
+  // Dynamic Home Sections & Banner Cards Endpoints
+  static String getActiveHomeSections = "$baseUrl/api/home-sections/active";
+  static String getBannerCardsBySection(String slug) =>
+      "$baseUrl/api/banner-cards/section/$slug";
 }

@@ -70,6 +70,8 @@ class NewProductDetails extends StatefulWidget {
   String description;
   String shortdesc;
   String subcategoryName; // already exists
+  String selfAvailableModelText;
+  String availableModelsDisplayType;
   List colorVariations;
   List variations;
   List availableModels;
@@ -92,6 +94,8 @@ class NewProductDetails extends StatefulWidget {
     required this.description,
     required this.shortdesc,
     this.subcategoryName = '', // already has default
+    this.selfAvailableModelText = '',
+    this.availableModelsDisplayType = 'button',
     this.colorVariations = const [],
     this.variations = const [],
     this.availableModels = const [],
@@ -739,11 +743,15 @@ class _NewProductDetailsState extends State<NewProductDetails>
   bool _isMeaningfulOptionLabel(String value) {
     final text = value.trim();
     if (text.isEmpty) return false;
+    if (RegExp(r'^[a-f0-9]{24}$', caseSensitive: false).hasMatch(text)) {
+      return false;
+    }
     final lower = text.toLowerCase();
     return lower != 'null' &&
         lower != 'option' &&
         lower != 'select option' &&
-        lower != 'available option';
+        lower != 'available option' &&
+        lower != 'undefined';
   }
 
   String _capacityLabelFromText(String text) {
@@ -762,10 +770,115 @@ class _NewProductDetailsState extends State<NewProductDetails>
     return '';
   }
 
+  String _modelFromSkuFallback(String sku) {
+    final s = sku.toUpperCase().trim();
+    if (s.isEmpty) return '';
+
+    if (s.contains('IP17PM')) return 'iPhone 17 Pro Max';
+    if (s.contains('IP17P')) return 'iPhone 17 Pro';
+    if (s.contains('IP17AIR') || s.contains('IP17A')) return 'iPhone 17 Air';
+    if (s.contains('IP17')) return 'iPhone 17';
+
+    if (s.contains('SAMS26U') || s.contains('S26U')) return 'Galaxy S26 Ultra';
+    if (s.contains('SAMS26P') || s.contains('S26P')) return 'Galaxy S26 Plus';
+    if (s.contains('SAMS26') || s.contains('S26')) return 'Galaxy S26';
+
+    if (s.contains('SAMS25U') || s.contains('S25U')) return 'Galaxy S25 Ultra';
+    if (s.contains('SAMS25P') || s.contains('S25P')) return 'Galaxy S25 Plus';
+    if (s.contains('SAMS25') || s.contains('S25')) return 'Galaxy S25';
+
+    if (s.contains('SAMS24U') || s.contains('S24U')) return 'Galaxy S24 Ultra';
+    if (s.contains('SAMS24P') || s.contains('S24P')) return 'Galaxy S24 Plus';
+    if (s.contains('SAMS24') || s.contains('S24')) return 'Galaxy S24';
+
+    return '';
+  }
+
+  String _cleanModelText(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return '';
+    if (RegExp(r'^[a-f0-9]{24}$', caseSensitive: false).hasMatch(trimmed)) {
+      return '';
+    }
+
+    final lower = trimmed.toLowerCase();
+    final isAccessory = lower.contains('case') ||
+        lower.contains('cover') ||
+        lower.contains('screen') ||
+        lower.contains('glass') ||
+        lower.contains('magsafe') ||
+        lower.contains('protector') ||
+        lower.contains('leather') ||
+        lower.contains('silicon') ||
+        lower.contains('transparent') ||
+        lower.contains('hybrid') ||
+        lower.contains('armored') ||
+        lower.contains('regal') ||
+        lower.contains('fusion');
+
+    if (!isAccessory && _isMeaningfulOptionLabel(trimmed) && trimmed.length <= 32) {
+      final clean = trimmed
+          .replaceAll(RegExp(r'\s*(?:[\-\–\—\:]\s*)?(?:Compatible|With|For).*$', caseSensitive: false), '')
+          .trim();
+      if (_isMeaningfulOptionLabel(clean)) return clean;
+    }
+
+    final modelMatch = RegExp(
+      r'\b(?:Samsung\s+Galaxy|Samsung|iPhone|iPad|MacBook|Google\s+Pixel|Pixel|Xiaomi\s+Redmi|Xiaomi|Redmi|Poco|Realme|OnePlus|Vivo|Oppo|Huawei|Honor)\s+(?:Galaxy\s+)?(?:S26\s+Ultra|S26\s+Plus|S26|S25\s+Ultra|S25\s+Plus|S25|S24\s+Ultra|S24\s+Plus|S24|S23\s+Ultra|S23\s+Plus|S23|S22\s+Ultra|S22\s+Plus|S22|S21\s+Ultra|S21\s+FE|S21|Note\s*\d+\s*(?:Ultra|Plus)?|Fold\s*\d+|Flip\s*\d+|17\s+Pro\s+Max|17\s+Pro|17\s+Air|17|16\s+Pro\s+Max|16\s+Pro|16\s+Plus|16|15\s+Pro\s+Max|15\s+Pro|15\s+Plus|15|[A-Za-z0-9\+\-\s]{1,22})\b',
+      caseSensitive: false,
+    ).firstMatch(trimmed);
+
+    if (modelMatch != null) {
+      String matched = modelMatch.group(0)!.trim();
+      matched = matched
+          .replaceAll(
+            RegExp(r'\s*(?:[\-\–\—\:]\s*)?(?:Case|Cover|Screen|Glass|For|With|Build|TPU|PC|Hybrid|Protector|Premium|Vegan|Leather|MagSafe|Compatible|\d+\s*(?:GB|TB)).*$', caseSensitive: false),
+            '',
+          )
+          .trim();
+      if (_isMeaningfulOptionLabel(matched) && matched.length >= 3) return matched;
+    }
+
+    final forMatch = RegExp(
+      r'\bfor\s+((?:Samsung|Galaxy|iPhone|iPad|Google|Pixel|Xiaomi|Redmi|Poco|Realme|OnePlus|Vivo|Oppo|Huawei|Honor|Watch)[A-Za-z0-9\s\+\-]{2,30})',
+      caseSensitive: false,
+    ).firstMatch(trimmed);
+
+    if (forMatch != null && forMatch.groupCount >= 1) {
+      String rawFor = forMatch.group(1)!.trim();
+      rawFor = rawFor
+          .replaceAll(
+            RegExp(r'\s*(?:[\-\–\—\:]\s*)?(?:Case|Cover|Screen|Glass|For|With|Build|TPU|PC|Hybrid|Protector|Premium|Vegan|Leather|MagSafe|Compatible|\d+\s*(?:GB|TB)).*$', caseSensitive: false),
+            '',
+          )
+          .trim();
+      if (_isMeaningfulOptionLabel(rawFor) && rawFor.length >= 3) return rawFor;
+    }
+
+    final skuFallback = _modelFromSkuFallback(trimmed);
+    if (skuFallback.isNotEmpty) return skuFallback;
+
+    final capacity = _capacityLabelFromText(trimmed);
+    if (capacity.isNotEmpty) return capacity;
+
+    return '';
+  }
+
   String _labelFromProductSummary(Map<String, dynamic> product) {
+    final selfText = _firstNonEmpty(
+      product,
+      const ['selfAvailableModelText', 'selfAvailableModelTextAr', 'variationText'],
+    );
+    if (_isMeaningfulOptionLabel(selfText)) {
+      final cleanSelf = _cleanModelText(selfText);
+      if (_isMeaningfulOptionLabel(cleanSelf)) return cleanSelf;
+      return selfText;
+    }
+
     final direct = _directOptionLabel(
       product,
       const [
+        'selfAvailableModelText',
         'variationText',
         'variantText',
         'optionText',
@@ -780,7 +893,12 @@ class _NewProductDetailsState extends State<NewProductDetails>
     );
     final capacityFromDirect = _capacityLabelFromText(direct);
     if (capacityFromDirect.isNotEmpty) return capacityFromDirect;
-    if (_isMeaningfulOptionLabel(direct) && direct.length <= 24) return direct;
+
+    final cleanName = _cleanModelText(direct.isNotEmpty ? direct : (product['name'] ?? '').toString());
+    if (_isMeaningfulOptionLabel(cleanName)) return cleanName;
+
+    final skuFallback = _modelFromSkuFallback((product['sku'] ?? '').toString());
+    if (skuFallback.isNotEmpty) return skuFallback;
 
     final skuCapacity =
         _capacityLabelFromText((product['sku'] ?? '').toString());
@@ -796,37 +914,109 @@ class _NewProductDetailsState extends State<NewProductDetails>
   }
 
   String _currentReloadOptionLabel() {
+    if (_isMeaningfulOptionLabel(widget.selfAvailableModelText)) {
+      final cleanSelf = _cleanModelText(widget.selfAvailableModelText);
+      if (_isMeaningfulOptionLabel(cleanSelf)) return cleanSelf;
+      return widget.selfAvailableModelText;
+    }
+
+    if (widget.name.isNotEmpty) {
+      final cleanName = _cleanModelText(widget.name);
+      if (_isMeaningfulOptionLabel(cleanName)) return cleanName;
+    }
+
+    final skuModel = _modelFromSkuFallback(widget.sku);
+    if (skuModel.isNotEmpty) return skuModel;
+
     final skuCapacity = _capacityLabelFromText(widget.sku);
     if (skuCapacity.isNotEmpty) return skuCapacity;
 
     final nameCapacity = _capacityLabelFromText(widget.name);
     if (nameCapacity.isNotEmpty) return nameCapacity;
 
-    return widget.sku.isNotEmpty ? widget.sku : 'Current Option';
+    if (_isMeaningfulOptionLabel(widget.name) && widget.name.length <= 28) {
+      return widget.name;
+    }
+
+    return widget.sku.isNotEmpty ? widget.sku : 'Current Model';
   }
 
   String _reloadOptionLabel(dynamic option, List<String> labelKeys) {
-    final direct = _directOptionLabel(option, labelKeys);
-    final directCapacity = _capacityLabelFromText(direct);
-    if (directCapacity.isNotEmpty) return directCapacity;
-    if (_isMeaningfulOptionLabel(direct) && direct.length <= 24) return direct;
-
     final map = _asStringMap(option);
-    for (final key in const ['product', 'linkedProduct', 'variantProduct']) {
-      final nested = map[key];
-      if (nested is Map) {
-        final label = _labelFromProductSummary(_asStringMap(nested));
-        if (label.isNotEmpty) return label;
+
+    // 1. If nested 'product' object is a Map
+    final nestedProduct = map['product'] ?? map['linkedProduct'] ?? map['variantProduct'];
+    if (nestedProduct is Map) {
+      final nestedMap = _asStringMap(nestedProduct);
+      final selfText = _firstNonEmpty(nestedMap, const [
+        'selfAvailableModelText',
+        'selfAvailableModelTextAr',
+        'variationText',
+      ]);
+      if (_isMeaningfulOptionLabel(selfText)) {
+        final clean = _cleanModelText(selfText);
+        if (_isMeaningfulOptionLabel(clean)) return clean;
+        return selfText;
+      }
+
+      final label = _labelFromProductSummary(nestedMap);
+      if (_isMeaningfulOptionLabel(label)) {
+        final clean = _cleanModelText(label);
+        if (_isMeaningfulOptionLabel(clean)) return clean;
+        return label;
       }
     }
 
-    final productId = _productIdFromOption(option);
-    final cached = _variationProductLabels[productId];
-    if (cached != null && cached.isNotEmpty) return cached;
+    // 2. Direct selfAvailableModelText or variationText on item
+    final directSelfText = _firstNonEmpty(map, const [
+      'selfAvailableModelText',
+      'selfAvailableModelTextAr',
+      'variationText',
+    ]);
+    if (_isMeaningfulOptionLabel(directSelfText)) {
+      final clean = _cleanModelText(directSelfText);
+      if (_isMeaningfulOptionLabel(clean)) return clean;
+      return directSelfText;
+    }
 
+    final direct = _directOptionLabel(option, labelKeys);
+    if (_isMeaningfulOptionLabel(direct)) {
+      final capacity = _capacityLabelFromText(direct);
+      if (capacity.isNotEmpty) return capacity;
+
+      final clean = _cleanModelText(direct);
+      if (_isMeaningfulOptionLabel(clean)) return clean;
+    }
+
+    // 3. Cached label by productId
+    final productId = _productIdFromOption(option);
+    if (productId.isNotEmpty) {
+      final cached = _variationProductLabels[productId];
+      if (cached != null && _isMeaningfulOptionLabel(cached)) {
+        final clean = _cleanModelText(cached);
+        if (_isMeaningfulOptionLabel(clean)) return clean;
+      }
+
+      final cachedProduct = _variationProductCache[productId];
+      if (cachedProduct != null) {
+        final label = _labelFromProductSummary(cachedProduct);
+        if (_isMeaningfulOptionLabel(label)) {
+          final clean = _cleanModelText(label);
+          if (_isMeaningfulOptionLabel(clean)) return clean;
+          return label;
+        }
+      }
+    }
+
+    // 4. Fallback from item summary
     final fallback = _labelFromProductSummary(map);
-    if (fallback.isNotEmpty) return fallback;
-    return 'Loading...';
+    if (_isMeaningfulOptionLabel(fallback)) {
+      final clean = _cleanModelText(fallback);
+      if (_isMeaningfulOptionLabel(clean)) return clean;
+      return fallback;
+    }
+
+    return '';
   }
 
   String _colorLabelFromSku(String sku) {
@@ -947,6 +1137,12 @@ class _NewProductDetailsState extends State<NewProductDetails>
   }
 
   String _productIdFromOption(dynamic option) {
+    if (option == null) return '';
+    if (option is String) {
+      final text = option.trim();
+      if (text.isNotEmpty && text.toLowerCase() != 'null') return text;
+    }
+
     final map = _asStringMap(option);
     for (final key in const [
       'productId',
@@ -991,9 +1187,20 @@ class _NewProductDetailsState extends State<NewProductDetails>
   }
 
   Future<Map<String, dynamic>> _fetchProductPayload(String productId) async {
+    try {
+      final response = await http
+          .get(Uri.parse('${Configss.baseUrl}/api/mobile/products/$productId'))
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final product = _productPayloadFromResponse(json.decode(response.body));
+        if (product.isNotEmpty) return product;
+      }
+    } catch (_) {}
+
     final response = await http
-        .get(Uri.parse('${Configss.baseUrl}/api/mobile/products/$productId'))
-        .timeout(const Duration(seconds: 15));
+        .get(Uri.parse('${Configss.baseUrl}/api/products/$productId'))
+        .timeout(const Duration(seconds: 10));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to load product: ${response.statusCode}');
@@ -1002,6 +1209,20 @@ class _NewProductDetailsState extends State<NewProductDetails>
     final product = _productPayloadFromResponse(json.decode(response.body));
     if (product.isEmpty) throw Exception('Unexpected product payload');
     return product;
+  }
+
+  Future<void> _fetchFullProductDetails() async {
+    if (widget.productId.isEmpty) return;
+    try {
+      final product = await _fetchProductPayload(widget.productId);
+      if (!mounted) return;
+
+      setState(() {
+        _applyProductPayload(product, forcedProductId: widget.productId);
+      });
+    } catch (e) {
+      log('Error fetching full product details: $e');
+    }
   }
 
   Map<String, dynamic> _currentProductSnapshot() {
@@ -1091,12 +1312,34 @@ class _NewProductDetailsState extends State<NewProductDetails>
         _listFromProduct(product, const ['variations', 'storageVariations']);
     widget.availableModels =
         _listFromProduct(product, const ['availableModels', 'models']);
+
+    for (final opt in [...widget.variations, ...widget.availableModels]) {
+      final pid = _productIdFromOption(opt);
+      if (pid.isNotEmpty) {
+        final label = _reloadOptionLabel(opt, const [
+          'selfAvailableModelText',
+          'variationText',
+          'variantText',
+          'optionText',
+          'model',
+          'name',
+          'label',
+        ]);
+        if (_isMeaningfulOptionLabel(label)) {
+          _variationProductLabels[pid] = label;
+        }
+      }
+    }
+
     _selectedColorVariationIndex = -1;
     _selectedColorData = null;
+    _stableReloadOptions.clear();
     _syncImageSelection();
+    _preloadVariationOptionLabels();
   }
 
   void _loadSideDataForCurrentProduct() {
+    _fetchFullProductDetails();
     if (widget.categoryId.isNotEmpty) {
       _homeController.getRelatedProducts(widget.categoryId);
     }
@@ -1129,8 +1372,14 @@ class _NewProductDetailsState extends State<NewProductDetails>
           _listFromProduct(product, const ['variations', 'storageVariations']);
       final availableModels =
           _listFromProduct(product, const ['availableModels', 'models']);
+      final fetchedImages =
+          _imagesFromProductMap(product, fallback: widget.images);
 
       setState(() {
+        if (fetchedImages.length > widget.images.length) {
+          widget.images = fetchedImages;
+          _syncImageSelection();
+        }
         if (widget.colorVariations.isEmpty && colorVariations.isNotEmpty) {
           widget.colorVariations = colorVariations;
         }
@@ -1230,6 +1479,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
       ...widget.availableModels,
     ];
 
+    final futures = <Future<void>>[];
+
     for (final option in options) {
       final productId = _productIdFromOption(option);
       if (productId.isEmpty ||
@@ -1240,36 +1491,46 @@ class _NewProductDetailsState extends State<NewProductDetails>
       }
 
       final direct = _reloadOptionLabel(option, const [
+        'selfAvailableModelText',
         'variationText',
         'variantText',
         'optionText',
-        'storage',
-        'capacity',
-        'memory',
         'model',
         'name',
         'label',
-        'value',
       ]);
-      if (direct != 'Loading...') {
+      if (_isMeaningfulOptionLabel(direct)) {
         _variationProductLabels[productId] = direct;
       }
 
       _variationLabelFetchesInFlight.add(productId);
-      try {
-        final product = await _fetchProductPayload(productId);
-        _variationProductCache[productId] = product;
-        final label = _labelFromProductSummary(product);
-        if (label.isNotEmpty) {
-          _variationProductLabels[productId] = label;
+
+      futures.add(() async {
+        try {
+          final product = await _fetchProductPayload(productId);
+          _variationProductCache[productId] = product;
+          final label = _firstNonEmpty(product, const [
+            'selfAvailableModelText',
+            'variationText',
+            'name',
+            'sku',
+          ]);
+          final cleanLabel = _cleanModelText(label);
+          if (_isMeaningfulOptionLabel(cleanLabel)) {
+            _variationProductLabels[productId] = cleanLabel;
+          }
+        } catch (e) {
+          log('Error preloading variation label $productId: $e');
+        } finally {
+          _variationLabelFetchesInFlight.remove(productId);
         }
-      } catch (e) {
-        log('Error preloading variation label $productId: $e');
-      } finally {
-        _variationLabelFetchesInFlight.remove(productId);
-      }
+      }());
     }
 
+    if (futures.isNotEmpty) {
+      await Future.wait(futures);
+    }
+    _stableReloadOptions.clear();
     if (mounted) setState(() {});
   }
 
@@ -2135,39 +2396,20 @@ class _NewProductDetailsState extends State<NewProductDetails>
 
   Widget _buildProductOptions() {
     final hasColors = widget.colorVariations.isNotEmpty;
-    final hasStorage = widget.variations.isNotEmpty;
     final hasModels = widget.availableModels.isNotEmpty;
-    if (!hasColors && !hasStorage && !hasModels) return const SizedBox.shrink();
+    if (!hasColors && !hasModels) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (hasColors) _buildColorVariationSection(widget.colorVariations),
-        if (hasStorage)
-          _buildProductReloadVariationSection(
-            groupKey: 'storage',
-            title: 'Available Options:',
-            options: widget.variations,
-            labelKeys: const [
-              'variationText',
-              'variantText',
-              'optionText',
-              'storage',
-              'storageName',
-              'capacity',
-              'size',
-              'memory',
-              'name',
-              'label',
-              'value',
-            ],
-          ),
         if (hasModels)
           _buildProductReloadVariationSection(
             groupKey: 'model',
-            title: hasStorage ? 'Available Models:' : 'Available Options:',
+            title: 'Available Models:',
             options: widget.availableModels,
             labelKeys: const [
+              'selfAvailableModelText',
               'variationText',
               'variantText',
               'optionText',
@@ -2197,7 +2439,251 @@ class _NewProductDetailsState extends State<NewProductDetails>
     );
   }
 
+  Widget _buildProductReloadVariationSection({
+    required String groupKey,
+    required String title,
+    required List options,
+    required List<String> labelKeys,
+  }) {
+    final stableOptions = _stableOptionsForGroup(groupKey, options, labelKeys);
+    final isCardDisplay = groupKey == 'model' &&
+        widget.availableModelsDisplayType.toLowerCase() == 'card';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildOptionTitle(title),
+          if (isCardDisplay)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: stableOptions.map((option) {
+                  final productId = option['productId'] ?? '';
+                  final cachedLabel = _variationProductLabels[productId];
+                  final label = cachedLabel != null && _isMeaningfulOptionLabel(cachedLabel)
+                      ? cachedLabel
+                      : (_isMeaningfulOptionLabel(option['label'] ?? '')
+                          ? option['label']!
+                          : 'Model');
+                  final selected =
+                      productId.isNotEmpty && productId == widget.productId;
+                  final loading = productId.isNotEmpty &&
+                      productId == _reloadingVariationProductId;
+                  final canOpen = productId.isNotEmpty &&
+                      productId != widget.productId &&
+                      _reloadingVariationProductId == null;
+
+                  dynamic rawOpt;
+                  for (final o in options) {
+                    if (_productIdFromOption(o) == productId) {
+                      rawOpt = o;
+                      break;
+                    }
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: _buildModelOptionCard(
+                      productId: productId,
+                      label: label,
+                      selected: selected,
+                      loading: loading,
+                      enabled: canOpen,
+                      onTap: () => _reloadProductById(productId),
+                      optionRaw: rawOpt,
+                    ),
+                  );
+                }).toList(),
+              ),
+            )
+          else
+            Wrap(
+              spacing: 12,
+              runSpacing: 10,
+              children: stableOptions.map((option) {
+                final productId = option['productId'] ?? '';
+                final cachedLabel = _variationProductLabels[productId];
+                final label = cachedLabel != null && _isMeaningfulOptionLabel(cachedLabel)
+                    ? cachedLabel
+                    : (_isMeaningfulOptionLabel(option['label'] ?? '')
+                        ? option['label']!
+                        : 'Option');
+                final selected =
+                    productId.isNotEmpty && productId == widget.productId;
+                final loading = productId.isNotEmpty &&
+                    productId == _reloadingVariationProductId;
+                final canOpen = productId.isNotEmpty &&
+                    productId != widget.productId &&
+                    _reloadingVariationProductId == null;
+
+                return _buildReloadOptionButton(
+                  label: label,
+                  selected: selected,
+                  loading: loading,
+                  enabled: canOpen,
+                  onTap: () => _reloadProductById(productId),
+                );
+              }).toList(),
+            ),
+          const SizedBox(height: 12),
+          Text(
+            groupKey == 'model'
+                ? 'Click on any model to view its details'
+                : 'Click on any variation to view its details',
+            style: const TextStyle(
+              fontSize: 13,
+              color: kSecondaryColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModelOptionCard({
+    required String productId,
+    required String label,
+    required bool selected,
+    required bool loading,
+    required bool enabled,
+    required VoidCallback onTap,
+    required dynamic optionRaw,
+  }) {
+    final cached = _variationProductCache[productId];
+    final map = _asStringMap(optionRaw);
+    final nestedProduct = map['product'] is Map ? _asStringMap(map['product']) : <String, dynamic>{};
+
+    String imageUrl = '';
+    if (cached != null) {
+      imageUrl = _imgOf(cached);
+    } else if (nestedProduct.isNotEmpty) {
+      imageUrl = _imgOf(nestedProduct);
+    } else if (map.isNotEmpty) {
+      imageUrl = _imgOf(map);
+    }
+    imageUrl = ImageHelper.getUrl(imageUrl);
+
+    String priceText = '';
+    if (cached != null) {
+      final p = _basePrice(cached);
+      if (p > 0) priceText = 'AED ${p.toStringAsFixed(2)}';
+    } else if (nestedProduct.isNotEmpty) {
+      final p = _basePrice(nestedProduct);
+      if (p > 0) priceText = 'AED ${p.toStringAsFixed(2)}';
+    } else if (map.isNotEmpty) {
+      final p = _basePrice(map);
+      if (p > 0) priceText = 'AED ${p.toStringAsFixed(2)}';
+    }
+
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      child: Stack(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 160),
+            width: 120,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: selected ? kPrimaryColor : const Color(0xFFE0E3E8),
+                width: selected ? 2 : 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 3,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (imageUrl.isNotEmpty)
+                  SizedBox(
+                    height: 70,
+                    width: 70,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.contain,
+                      errorWidget: (_, __, ___) => Image.asset(
+                        'assets/images/noimage.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                    color: kdefblackColor,
+                  ),
+                ),
+                if (priceText.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    priceText,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                ],
+                if (loading) ...[
+                  const SizedBox(height: 4),
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (selected)
+            Positioned(
+              top: 6,
+              right: 6,
+              child: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
+                  color: kPrimaryColor,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildColorVariationSection(List options) {
+    int activeColorIndex = _selectedColorVariationIndex;
+    if (activeColorIndex < 0 || activeColorIndex >= options.length) {
+      activeColorIndex = options.indexWhere((opt) {
+        final pid = _productIdFromOption(opt);
+        return pid.isNotEmpty && pid == widget.productId;
+      });
+    }
+    if (activeColorIndex < 0 || activeColorIndex >= options.length) {
+      activeColorIndex = 0;
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Column(
@@ -2233,10 +2719,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                     'value'
                   ],
                 );
-                final optionProductId = _productIdFromOption(option);
-                final selected = _selectedColorVariationIndex == index ||
-                    (optionProductId.isNotEmpty &&
-                        optionProductId == widget.productId);
+                final selected = index == activeColorIndex;
 
                 return _buildColorOptionCard(
                   option: option,
@@ -2352,58 +2835,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
     );
   }
 
-  Widget _buildProductReloadVariationSection({
-    required String groupKey,
-    required String title,
-    required List options,
-    required List<String> labelKeys,
-  }) {
-    final stableOptions = _stableOptionsForGroup(groupKey, options, labelKeys);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildOptionTitle(title),
-          Wrap(
-            spacing: 12,
-            runSpacing: 10,
-            children: stableOptions.map((option) {
-              final productId = option['productId'] ?? '';
-              final cachedLabel = _variationProductLabels[productId];
-              final label = cachedLabel != null && cachedLabel.isNotEmpty
-                  ? cachedLabel
-                  : (option['label'] ?? 'Option');
-              final selected =
-                  productId.isNotEmpty && productId == widget.productId;
-              final loading = productId.isNotEmpty &&
-                  productId == _reloadingVariationProductId;
-              final canOpen = productId.isNotEmpty &&
-                  productId != widget.productId &&
-                  _reloadingVariationProductId == null;
-
-              return _buildReloadOptionButton(
-                label: label,
-                selected: selected,
-                loading: loading,
-                enabled: canOpen,
-                onTap: () => _reloadProductById(productId),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Click on any variation to view its details',
-            style: TextStyle(
-              fontSize: 13,
-              color: kSecondaryColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildReloadOptionButton({
     required String label,
@@ -2416,38 +2848,47 @@ class _NewProductDetailsState extends State<NewProductDetails>
       onTap: enabled ? onTap : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        constraints: const BoxConstraints(minWidth: 130, minHeight: 56),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        constraints: const BoxConstraints(minWidth: 85, minHeight: 40),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFC5DEF7) : Colors.white,
+          color: selected ? const Color(0xFFD6E8FB) : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: selected ? const Color(0xFF5BA2FF) : const Color(0xFFAAB5C4),
-            width: selected ? 2 : 1,
+            color: selected ? const Color(0xFF3B82F6) : const Color(0xFFD1D5DB),
+            width: selected ? 1.8 : 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(selected ? 0.06 : 0.02),
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Flexible(
               child: Text(
                 label,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: kdefblackColor,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  color: selected ? const Color(0xFF1E3A8A) : kdefblackColor,
+                  height: 1.25,
                 ),
               ),
             ),
             if (loading) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               const SizedBox(
-                width: 14,
-                height: 14,
+                width: 12,
+                height: 12,
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ],

@@ -14,6 +14,8 @@ import 'package:graba2z/Utils/image_helper.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:graba2z/Views/Product%20Folder/newProductDetails.dart';
 import 'package:shimmer/shimmer.dart';
 
 class NewSummaryView extends StatefulWidget {
@@ -65,8 +67,8 @@ class _NewSummaryViewState extends State<NewSummaryView> {
 
   double _shippingChargeFor(double subtotal) {
     if (!_isHomeDelivery) return 0.0;
-    if (subtotal > 500) return 0.0;
-    return _deliveryCtrl.selectedCharge;
+    final fee = _deliveryCtrl.calculateShippingFee(subtotal);
+    return fee ?? 0.0;
   }
 
   double _totalBeforeFirstOrderDiscount(double subtotal) {
@@ -86,6 +88,158 @@ class _NewSummaryViewState extends State<NewSummaryView> {
     if (value == null) return 0.0;
     if (value is num) return value.toDouble();
     return double.tryParse(value.toString()) ?? 0.0;
+  }
+
+  Future<void> _openProductDetailsFromSummary(CartOtherInfo cartItem) async {
+    final String productId = cartItem.productId?.toString() ?? '';
+    if (productId.isEmpty) {
+      Get.snackbar('Warning', 'Missing product ID');
+      return;
+    }
+
+    try {
+      EasyLoading.show(status: 'Loading product details...');
+      final uri = Uri.parse('${Configss.baseUrl}/api/products/$productId');
+      final res = await http.get(uri);
+      if (res.statusCode != 200) {
+        throw Exception('Failed to fetch product ($productId): ${res.statusCode}');
+      }
+      final body = json.decode(res.body);
+      final product = (body is Map && body['data'] is Map)
+          ? body['data'] as Map<String, dynamic>
+          : (body is Map && body['product'] is Map)
+              ? body['product'] as Map<String, dynamic>
+              : (body is Map<String, dynamic> ? body : <String, dynamic>{});
+
+      if (product.isEmpty) throw Exception('Unexpected product payload');
+
+      // Extract/massage data for NewProductDetails
+      List images = [];
+      final rawImages = product['images'] ??
+          product['gallery'] ??
+          product['imageUrls'] ??
+          product['productImages'] ??
+          product['galleryImages'] ??
+          product['image'];
+      if (rawImages is List) {
+        images = rawImages
+            .map((e) {
+              if (e is String) return e;
+              if (e is Map && e['url'] is String) return e['url'];
+              return null;
+            })
+            .whereType<String>()
+            .where((s) => s.isNotEmpty)
+            .toList();
+      } else if (rawImages is String && rawImages.isNotEmpty) {
+        images = [rawImages];
+      }
+      if (images.isEmpty) {
+        final fallback = (cartItem.productImage?.isNotEmpty ?? false)
+            ? cartItem.productImage!
+            : "https://i.postimg.cc/SsWYSvq6/noimage.png";
+        images = [fallback];
+      }
+
+      List specs = [];
+      final rawSpecs = product['specs'] ?? product['specifications'];
+      if (rawSpecs is List) specs = rawSpecs;
+
+      List reviews = [];
+      final rawReviews = product['reviews'] ?? product['productReviews'];
+      if (rawReviews is List) reviews = rawReviews;
+
+      String name = product['name']?.toString() ?? cartItem.productName ?? 'Unknown Product';
+
+      String brandName = '';
+      final brandField = product['brand'] ?? product['brandName'];
+      if (brandField is Map) {
+        brandName = brandField['name']?.toString() ?? '';
+      } else if (brandField is String) {
+        brandName = brandField;
+      }
+
+      String categoryName = '';
+      String categoryId = '';
+      dynamic categoryField = product['parentCategory'] ??
+          product['parentCategoryId'] ??
+          product['category'] ??
+          product['categoryId'] ??
+          product['categories'];
+
+      if (categoryField is Map) {
+        categoryName = categoryField['name']?.toString() ?? categoryName;
+        final catIdVal = categoryField['_id'] ?? categoryField['id'];
+        categoryId = (catIdVal ?? '').toString();
+      } else if (categoryField is String) {
+        categoryId = categoryField;
+        if ((product['categoryName'] ?? '').toString().isNotEmpty) {
+          categoryName = product['categoryName'].toString();
+        }
+      } else if (categoryField is List) {
+        for (final c in categoryField) {
+          if (c is Map) {
+            final cid = (c['_id'] ?? c['id'])?.toString();
+            if (cid != null && cid.isNotEmpty) {
+              categoryId = cid;
+              categoryName = c['name']?.toString() ?? categoryName;
+              break;
+            }
+          } else if (c is String && c.isNotEmpty) {
+            categoryId = c;
+            break;
+          }
+        }
+      }
+
+      if (categoryName.isEmpty) {
+        categoryName = product['categoryName']?.toString() ?? categoryName;
+      }
+
+      String sku = product['sku']?.toString() ?? product['model']?.toString() ?? '';
+      String offerPrice = product['offerPrice']?.toString() ?? product['salePrice']?.toString() ?? '';
+      String price = product['price']?.toString() ?? product['regularPrice']?.toString() ?? cartItem.cartBasePrice.toString();
+      String stockStatus = product['stockStatus']?.toString() ??
+          ((product['stock'] is num && (product['stock'] as num) > 0)
+              ? 'Available'
+              : 'Out of Stock');
+      String stockCount = (product['stock'] ??
+              product['countInStock'] ??
+              product['stockCount'] ??
+              product['quantity'] ??
+              '')
+          .toString();
+      String description = product['description']?.toString() ?? product['longDescription']?.toString() ?? '';
+      String shortdesc = product['shortdesc']?.toString() ?? product['shortDescription']?.toString() ?? '';
+      List<dynamic> colorVariations = product['colorVariations'] is List ? List<dynamic>.from(product['colorVariations']) : [];
+      List<dynamic> variations = product['variations'] is List ? List<dynamic>.from(product['variations']) : [];
+      List<dynamic> availableModels = product['availableModels'] is List ? List<dynamic>.from(product['availableModels']) : [];
+
+      EasyLoading.dismiss();
+      Get.to(() => NewProductDetails(
+            images: images,
+            specs: specs,
+            reviews: reviews,
+            productId: productId,
+            name: name,
+            brandName: brandName,
+            categoryName: categoryName,
+            categoryId: categoryId,
+            sku: sku,
+            offerPrice: offerPrice,
+            price: price,
+            stockStatus: stockStatus,
+            stockCount: stockCount,
+            description: description,
+            shortdesc: shortdesc,
+            colorVariations: colorVariations,
+            variations: variations,
+            availableModels: availableModels,
+          ));
+    } catch (e) {
+      EasyLoading.dismiss();
+      Get.snackbar('Error', 'Failed to open product details');
+    }
   }
 
   Future<void> _hydrateCartPricesFromProducts() async {
@@ -185,8 +339,6 @@ class _NewSummaryViewState extends State<NewSummaryView> {
   @override
   Widget build(BuildContext context) {
     final subtotal = _cartSubtotal;
-    final shippingCharge = _shippingChargeFor(subtotal);
-    final totalBeforeDiscount = _totalBeforeFirstOrderDiscount(subtotal);
 
     return Column(
       children: [
@@ -324,112 +476,116 @@ class _NewSummaryViewState extends State<NewSummaryView> {
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6),
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black12, blurRadius: 4),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        CachedNetworkImage(
-                          imageUrl: cartItem.productImage?.isNotEmpty ?? false
-                              ? ImageHelper.getUrl(
-                                  cartItem.productImage.toString())!
-                              : "https://i.postimg.cc/SsWYSvq6/noimage.png",
-                          imageBuilder: (context, imageProvider) => Container(
-                            width: 55,
-                            height: 55,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(6),
-                              color: Colors.grey.shade200,
-                              image: DecorationImage(
-                                image: imageProvider,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                          placeholder: (context, url) => SizedBox(
-                            width: 55,
-                            height: 55,
-                            child: Shimmer.fromColors(
-                              baseColor: Colors.grey.shade300,
-                              highlightColor: Colors.grey.shade100,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey,
-                                  borderRadius: BorderRadius.circular(5),
+              child: InkWell(
+                onTap: () => _openProductDetailsFromSummary(cartItem),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black12, blurRadius: 4),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: cartItem.productImage?.isNotEmpty ?? false
+                                ? ImageHelper.getUrl(
+                                    cartItem.productImage.toString())!
+                                : "https://i.postimg.cc/SsWYSvq6/noimage.png",
+                            imageBuilder: (context, imageProvider) => Container(
+                              width: 55,
+                              height: 55,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(6),
+                                color: Colors.grey.shade200,
+                                image: DecorationImage(
+                                  image: imageProvider,
+                                  fit: BoxFit.contain,
                                 ),
                               ),
                             ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            height: 55,
-                            width: 55,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(6),
-                              image: const DecorationImage(
-                                image: NetworkImage(
-                                  'https://i.postimg.cc/SsWYSvq6/noimage.png',
+                            placeholder: (context, url) => SizedBox(
+                              width: 55,
+                              height: 55,
+                              child: Shimmer.fromColors(
+                                baseColor: Colors.grey.shade300,
+                                highlightColor: Colors.grey.shade100,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
                                 ),
-                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              height: 55,
+                              width: 55,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(6),
+                                image: const DecorationImage(
+                                  image: NetworkImage(
+                                    'https://i.postimg.cc/SsWYSvq6/noimage.png',
+                                  ),
+                                  fit: BoxFit.contain,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                cartItem.productName ?? "",
-                                maxLines: 2,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  cartItem.productName ?? "",
+                                  maxLines: 2,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 5),
-                              Text(
-                                "${(cartItem.cartBasePrice * (cartItem.quantity ?? 0)).toStringAsFixed(2)} AED",
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.w500,
+                                const SizedBox(height: 5),
+                                Text(
+                                  "${(cartItem.cartBasePrice * (cartItem.quantity ?? 0)).toStringAsFixed(2)} AED",
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Dated: $formattedDate",
-                          style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            "Dated: $formattedDate",
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        Text(
-                          "Quantity: ${cartItem.quantity == 1 ? '1 pc' : '${cartItem.quantity} pcs'}",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                          Text(
+                            "Quantity: ${cartItem.quantity == 1 ? '1 pc' : '${cartItem.quantity} pcs'}",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -504,14 +660,25 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Shipping
-                    _buildSummaryRowWithStyle(
-                      "Shipping",
-                      _isHomeDelivery && subtotal <= 500 && shippingCharge > 0
-                          ? "AED ${shippingCharge.toStringAsFixed(2)}"
-                          : "Free",
-                    ),
-                    const SizedBox(height: 12),
+                    // Shipping (Only show if home delivery AND backend has active delivery charges)
+                    Obx(() {
+                      final fee = _shippingChargeFor(subtotal);
+                      if (!_isHomeDelivery || !_deliveryCtrl.hasActiveDeliveryCharges) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSummaryRowWithStyle(
+                            "Shipping",
+                            fee > 0
+                                ? "AED ${fee.toStringAsFixed(2)}"
+                                : "Free",
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    }),
                     Obx(() {
                       final firstOrderDiscount = _firstOrderDiscountAmount();
                       if (firstOrderDiscount <= 0) {
@@ -553,9 +720,11 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     const SizedBox(height: 16),
                     // Total Amount
                     Obx(() {
+                      final currentShipping = _shippingChargeFor(subtotal);
+                      final currentTotalBeforeDiscount = subtotal + currentShipping;
                       final firstUserDiscount = _firstOrderDiscountAmount();
                       final displayTotal =
-                          (totalBeforeDiscount - firstUserDiscount)
+                          (currentTotalBeforeDiscount - firstUserDiscount)
                               .clamp(0.0, double.infinity);
                       return _buildSummaryRowWithStyle(
                         "Total Amount",
@@ -576,35 +745,40 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                 ),
               ),
             ),
-            // Free shipping applied banner
-            if (!(_isHomeDelivery && subtotal <= 500)) ...[
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5E9), // Light green background
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: const Color(0xFFC8E6C9), // Light green border
+            // Free shipping applied banner (Only show if active delivery charges exist AND free shipping threshold met)
+            Obx(() {
+              if (_isHomeDelivery &&
+                  _deliveryCtrl.hasActiveDeliveryCharges &&
+                  _deliveryCtrl.isFreeShippingApplied(subtotal)) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9), // Light green background
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFC8E6C9), // Light green border
+                      ),
+                    ),
+                    child: Row(
+                      children: const [
+                        Text(
+                          "🎉 Free shipping is applied to this order.",
+                          style: TextStyle(
+                            color: Color(0xFF2E7D32), // Dark green text
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    children: const [
-                      Text(
-                        "🎉 Free shipping is applied to this order.",
-                        style: TextStyle(
-                          color: Color(0xFF2E7D32), // Dark green text
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                );
+              }
+              return const SizedBox.shrink();
+            }),
             Padding(
               padding: defaultPadding(vertical: 10),
               child: GetBuilder<ApiServiceController>(builder: (
