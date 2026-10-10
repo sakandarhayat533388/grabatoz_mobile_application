@@ -9,6 +9,7 @@ import 'Edit Profile/editprofile.dart';
 import 'Security/security_password_screen.dart';
 import 'Saved Addresses/saved_addresses_screen.dart';
 import 'Danger Zone/danger_zone_screen.dart';
+import '../Notification Inbox/notification_inbox_screen.dart';
 
 class ProfileMenuScreen extends StatelessWidget {
   const ProfileMenuScreen({super.key});
@@ -171,7 +172,21 @@ class ProfileMenuScreen extends StatelessWidget {
                   ),
                   Divider(height: 0, color: Colors.grey.withOpacity(0.2)),
 
-                  // 5. Danger Zone (Styled Card as shown in screenshot)
+                  // 5. Notifications (push inbox)
+                  ListTile(
+                    minLeadingWidth: 0,
+                    onTap: () => Get.to(() => const NotificationInboxScreen()),
+                    leading: const Icon(Icons.notifications_outlined,
+                        color: kSecondaryColor, size: 22),
+                    title: const Text('Notifications',
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
+                    trailing: const Icon(Icons.arrow_forward_ios,
+                        color: kSecondaryColor, size: 14),
+                  ),
+                  Divider(height: 0, color: Colors.grey.withOpacity(0.2)),
+
+                  // 6. Danger Zone (Styled Card as shown in screenshot)
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
