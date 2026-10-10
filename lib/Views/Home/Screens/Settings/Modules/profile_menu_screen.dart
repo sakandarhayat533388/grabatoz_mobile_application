@@ -9,7 +9,7 @@ import 'Edit Profile/editprofile.dart';
 import 'Security/security_password_screen.dart';
 import 'Saved Addresses/saved_addresses_screen.dart';
 import 'Danger Zone/danger_zone_screen.dart';
-import '../Notification Inbox/notification_inbox_screen.dart';
+import 'Notification Inbox/notification_inbox_screen.dart';
 
 class ProfileMenuScreen extends StatelessWidget {
   const ProfileMenuScreen({super.key});
