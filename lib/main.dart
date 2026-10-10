@@ -1,4 +1,6 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:graba2z/Services/push_notification_service.dart';
 import 'package:graba2z/Api/Services/apiservices.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/bannerProductController.dart';
@@ -45,19 +47,94 @@ Future<void> main() async {
           channelDescription: 'Notification channel for Cart',
           defaultColor: kPrimaryColor,
           ledColor: kdefwhiteColor,
-        )
+        ),
+        // FCM push channels — one per server sound id (see spec).
+        NotificationChannel(
+          channelGroupKey: 'push_channel_group',
+          channelKey: 'push_default',
+          channelName: 'Push notifications',
+          channelDescription: 'Offers, order updates and announcements',
+          defaultColor: kPrimaryColor,
+          ledColor: kdefwhiteColor,
+          importance: NotificationImportance.High,
+        ),
+        NotificationChannel(
+          channelGroupKey: 'push_channel_group',
+          channelKey: 'push_chime',
+          channelName: 'Push notifications (chime)',
+          channelDescription: 'Push sound: chime',
+          defaultColor: kPrimaryColor,
+          ledColor: kdefwhiteColor,
+          importance: NotificationImportance.High,
+          soundSource: 'resource://raw/chime',
+        ),
+        NotificationChannel(
+          channelGroupKey: 'push_channel_group',
+          channelKey: 'push_ding',
+          channelName: 'Push notifications (ding)',
+          channelDescription: 'Push sound: ding',
+          defaultColor: kPrimaryColor,
+          ledColor: kdefwhiteColor,
+          importance: NotificationImportance.High,
+          soundSource: 'resource://raw/ding',
+        ),
+        NotificationChannel(
+          channelGroupKey: 'push_channel_group',
+          channelKey: 'push_cash',
+          channelName: 'Push notifications (cash)',
+          channelDescription: 'Push sound: cash',
+          defaultColor: kPrimaryColor,
+          ledColor: kdefwhiteColor,
+          importance: NotificationImportance.High,
+          soundSource: 'resource://raw/cash',
+        ),
+        NotificationChannel(
+          channelGroupKey: 'push_channel_group',
+          channelKey: 'push_alert',
+          channelName: 'Push notifications (alert)',
+          channelDescription: 'Push sound: alert',
+          defaultColor: kPrimaryColor,
+          ledColor: kdefwhiteColor,
+          importance: NotificationImportance.High,
+          soundSource: 'resource://raw/alert',
+        ),
+        NotificationChannel(
+          channelGroupKey: 'push_channel_group',
+          channelKey: 'push_silent',
+          channelName: 'Push notifications (silent)',
+          channelDescription: 'Silent push notifications',
+          defaultColor: kPrimaryColor,
+          ledColor: kdefwhiteColor,
+          importance: NotificationImportance.Low,
+          playSound: false,
+          enableVibration: false,
+          enableLights: false,
+        ),
       ],
       // Channel groups are only visual and are not required
       channelGroups: [
         NotificationChannelGroup(
             channelGroupKey: 'basic_channel_group',
-            channelGroupName: 'Basic group')
+            channelGroupName: 'Basic group'),
+        NotificationChannelGroup(
+            channelGroupKey: 'push_channel_group',
+            channelGroupName: 'Push notifications')
       ],
       debug: true);
   bool isAllowedToSendNotifications =
       await AwesomeNotifications().isNotificationAllowed();
   if (!isAllowedToSendNotifications) {
     AwesomeNotifications().requestPermissionToSendNotifications();
+  }
+  // FCM push: initialize Firebase only when the platform config files
+  // (google-services.json / GoogleService-Info.plist) are present.
+  // The app must keep working without them.
+  try {
+    await Firebase.initializeApp();
+    PushNotificationService.firebaseReady = true;
+    await PushNotificationService.instance.init();
+  } catch (e) {
+    debugPrint('FCM disabled — Firebase.initializeApp failed: $e');
   }
   runApp(MyApp(userId: userId)); // Pass userId to MyApp
   configEasyLoading();
