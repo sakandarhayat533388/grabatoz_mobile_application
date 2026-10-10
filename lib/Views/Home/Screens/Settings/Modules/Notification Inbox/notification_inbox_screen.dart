@@ -116,10 +116,10 @@ class _InboxTile extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: unread
-              ? kPrimaryColor.withOpacity(0.08)
+              ? kPrimaryColor.withValues(alpha: 0.08)
               : kdefwhiteColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
