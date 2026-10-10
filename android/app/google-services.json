@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:589476050656:android:57d2229e6863025eb8c285",
+        "mobilesdk_app_id": "1:589476050656:android:41c4537a2e676d75b8c285",
         "android_client_info": {
-          "package_name": "ae.grabatoz.app"
+          "package_name": "ae.grabatoz1.grabatoz1"
         }
       },
       "oauth_client": [],
