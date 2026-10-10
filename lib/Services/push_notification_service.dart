@@ -205,7 +205,7 @@ class PushNotificationService {
 
       final sound = s(data['sound']).isNotEmpty
           ? s(data['sound'])
-          : (message.notification?.android?.sound ??
+          : s(message.notification?.android?.sound ??
               message.notification?.apple?.sound ??
               'default');
       final channelKey = channelForSound(sound);
