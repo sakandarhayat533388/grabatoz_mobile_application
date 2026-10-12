@@ -53,3 +53,35 @@ dependencies {
 flutter {
     source = "../.."
 }
+
+// ---- Bundled notification tones ----
+// The tones ship as base64 text (android/app/sounds_b64/*.mp3.b64) because the
+// remote file API is text-only. This task decodes them into generated
+// resources before every build, so res/raw always contains valid audio.
+def notificationSoundsResDir = layout.buildDirectory.dir("generated/notification_sounds/res").get().asFile
+
+tasks.register("decodeNotificationSounds") {
+    def rawOutDir = new File(notificationSoundsResDir, "raw")
+    outputs.dir(rawOutDir)
+    doLast {
+        def srcDir = file("sounds_b64")
+        rawOutDir.mkdirs()
+        srcDir.eachFileMatch(~/.*\.mp3\.b64/) { f ->
+            def outFile = new File(rawOutDir, f.name.replace(".b64", ""))
+            outFile.bytes = new String(f.bytes, "UTF-8").trim().decodeBase64()
+        }
+    }
+}
+
+android {
+    sourceSets {
+        main {
+            res.srcDirs += notificationSoundsResDir
+        }
+    }
+}
+
+// Make sure the tones are decoded before resources are merged.
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn("decodeNotificationSounds")
+}
