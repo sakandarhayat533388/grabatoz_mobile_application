@@ -54,21 +54,33 @@ flutter {
     source = "../.."
 }
 
-// ---- Bundled notification tones ----
-// The tones ship as base64 text (android/app/sounds_b64/*.mp3.b64) because the
-// remote file API is text-only. This task decodes them into generated
-// resources before every build, so res/raw always contains valid audio.
-def notificationSoundsResDir = layout.buildDirectory.dir("generated/notification_sounds/res").get().asFile
+// ---- Bundled binary resources (tones + icons) ----
+// These ship as base64 text (android/app/sounds_b64/*.mp3.b64,
+// android/app/icons_b64/*.png.b64) because the remote file API is text-only.
+// This task decodes them into generated resources before every build.
+def bundledResDir = layout.buildDirectory.dir("generated/bundled_resources/res").get().asFile
 
-tasks.register("decodeNotificationSounds") {
-    def rawOutDir = new File(notificationSoundsResDir, "raw")
+tasks.register("decodeBundledResources") {
+    def rawOutDir = new File(bundledResDir, "raw")
+    def drawableOutDir = new File(bundledResDir, "drawable")
     outputs.dir(rawOutDir)
+    outputs.dir(drawableOutDir)
     doLast {
-        def srcDir = file("sounds_b64")
         rawOutDir.mkdirs()
-        srcDir.eachFileMatch(~/.*\.mp3\.b64/) { f ->
-            def outFile = new File(rawOutDir, f.name.replace(".b64", ""))
-            outFile.bytes = new String(f.bytes, "UTF-8").trim().decodeBase64()
+        drawableOutDir.mkdirs()
+        def soundsDir = file("sounds_b64")
+        if (soundsDir.exists()) {
+            soundsDir.eachFileMatch(~/.*\.mp3\.b64/) { f ->
+                new File(rawOutDir, f.name.replace(".b64", "")).bytes =
+                    new String(f.bytes, "UTF-8").trim().decodeBase64()
+            }
+        }
+        def iconsDir = file("icons_b64")
+        if (iconsDir.exists()) {
+            iconsDir.eachFileMatch(~/.*\.png\.b64/) { f ->
+                new File(drawableOutDir, f.name.replace(".b64", "")).bytes =
+                    new String(f.bytes, "UTF-8").trim().decodeBase64()
+            }
         }
     }
 }
@@ -76,12 +88,12 @@ tasks.register("decodeNotificationSounds") {
 android {
     sourceSets {
         main {
-            res.srcDirs += notificationSoundsResDir
+            res.srcDirs += bundledResDir
         }
     }
 }
 
-// Make sure the tones are decoded before resources are merged.
+// Make sure the resources are decoded before resources are merged.
 tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn("decodeNotificationSounds")
+    dependsOn("decodeBundledResources")
 }
