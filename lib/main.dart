@@ -38,7 +38,7 @@ Future<void> main() async {
   await NotificationPermissionPreloader.preload();
 
   AwesomeNotifications().initialize(
-      null,
+      'resource://drawable/ic_notification',
       [
         NotificationChannel(
           channelGroupKey: 'basic_channel_group',
