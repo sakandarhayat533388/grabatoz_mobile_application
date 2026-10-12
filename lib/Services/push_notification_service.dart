@@ -26,7 +26,12 @@ import 'package:graba2z/Services/push_deep_link.dart';
 /// Must be top-level for `FirebaseMessaging.onBackgroundMessage`.
 @pragma('vm:entry-point')
 Future<void> fcmBackgroundMessageHandler(RemoteMessage message) async {
-  await PushNotificationService.showMessage(message);
+  // Background/terminated: the OS already draws messages that carry a
+  // notification block. Rendering again here would show it TWICE.
+  // Only data-only messages need local rendering.
+  if (message.notification == null) {
+    await PushNotificationService.showMessage(message);
+  }
 }
 
 class PushNotificationService {
