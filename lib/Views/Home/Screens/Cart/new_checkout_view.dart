@@ -9,6 +9,7 @@ import 'package:graba2z/Controllers/checkout_controller.dart';
 import 'package:graba2z/Controllers/deliveryController.dart';
 import 'package:graba2z/Controllers/payment_charges_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Utils/packages.dart'; // for AuthController
 import 'package:graba2z/Views/Home/Screens/Cart/address_formt.dart';
@@ -857,7 +858,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                           final fee = _deliveryCtrl.calculateShippingFee(subtotal);
                           final text = (fee == null || fee == 0.0)
                               ? 'Free'
-                              : 'AED ${fee.toStringAsFixed(2)}';
+                              : formatPriceForSelected(fee);
                           return Column(
                             children: [
                               4.0.heightbox,
