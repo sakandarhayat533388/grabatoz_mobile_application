@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../Controllers/authController.dart';
 import '../../../../../Utils/appcolors.dart';
+import '../../../../../Controllers/country_controller.dart';
+import '../../../../../Widgets/country_selector.dart';
 import '../../../../../Widgets/customappbar.dart';
 
 import 'Account Details/account_details_screen.dart';
@@ -184,6 +186,32 @@ class ProfileMenuScreen extends StatelessWidget {
                     trailing: const Icon(Icons.arrow_forward_ios,
                         color: kSecondaryColor, size: 14),
                   ),
+                  Divider(height: 0, color: Colors.grey.withOpacity(0.2)),
+
+                  // 5b. Country / Currency
+                  Obx(() {
+                    final cc = Get.isRegistered<CountryController>()
+                        ? Get.find<CountryController>()
+                        : null;
+                    final selected = cc?.selectedCountry.value;
+                    return ListTile(
+                      minLeadingWidth: 0,
+                      onTap: () => showCountrySelector(context),
+                      leading: const Icon(Icons.public_outlined,
+                          color: kSecondaryColor, size: 22),
+                      title: const Text('Country / Currency',
+                          style: TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w600)),
+                      subtitle: selected == null
+                          ? null
+                          : Text(
+                              '${selected.name} (${selected.currencyCode})',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                      trailing: const Icon(Icons.arrow_forward_ios,
+                          color: kSecondaryColor, size: 14),
+                    );
+                  }),
                   Divider(height: 0, color: Colors.grey.withOpacity(0.2)),
 
                   // 6. Danger Zone (Styled Card as shown in screenshot)
