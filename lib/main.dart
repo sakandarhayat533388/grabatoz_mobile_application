@@ -10,6 +10,7 @@ import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Controllers/menuController.dart';
 import 'package:graba2z/Controllers/orderController.dart';
 import 'package:graba2z/Controllers/payment_charges_controller.dart';
+import 'package:graba2z/Controllers/country_controller.dart';
 import 'package:graba2z/Controllers/paymentprovider.dart';
 import 'package:graba2z/Controllers/searchController.dart';
 import 'package:graba2z/Utils/packages.dart';
@@ -30,6 +31,8 @@ class MyHttpOverrides extends HttpOverrides {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Country/currency selection — registered before any UI builds.
+  Get.put(CountryController(), permanent: true);
   final prefs = await SharedPreferences.getInstance();
   String? userId = prefs.getString('userId')?.toString();
   HttpOverrides.global = MyHttpOverrides();
