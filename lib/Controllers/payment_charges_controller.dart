@@ -3,14 +3,19 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:graba2z/Configs/config.dart';
+import 'package:graba2z/Controllers/country_controller.dart';
 
 class PaymentChargeLine {
   final String name;
   final double amount;
 
+  /// "fixed" (AED) or "percentage".
+  final String type;
+
   PaymentChargeLine({
     required this.name,
     required this.amount,
+    this.type = 'fixed',
   });
 
   factory PaymentChargeLine.fromJson(Map<String, dynamic> json) {
@@ -19,6 +24,7 @@ class PaymentChargeLine {
       amount: (json['amount'] as num?)?.toDouble() ??
           double.tryParse(json['amount']?.toString() ?? '') ??
           0.0,
+      type: (json['type']?.toString() ?? 'fixed').toLowerCase(),
     );
   }
 
@@ -26,6 +32,7 @@ class PaymentChargeLine {
     return {
       'name': name,
       'amount': amount,
+      'type': type,
     };
   }
 }
@@ -77,11 +84,13 @@ class PaymentChargesController extends GetxController {
     fetchActiveCharges();
   }
 
-  Future<void> fetchActiveCharges() async {
+  Future<void> fetchActiveCharges({String? countryCode}) async {
     isLoading.value = true;
     try {
-      final response =
-          await http.get(Uri.parse(Configss.getActivePaymentCharges));
+      final code = (countryCode ?? _selectedCountryCode()).toUpperCase();
+      final response = await http.get(
+        Uri.parse('${Configss.getActivePaymentCharges}?countryCode=$code'),
+      );
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         final List<dynamic> list = decoded is List
@@ -104,6 +113,17 @@ class PaymentChargesController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  /// Refreshes charges for a newly selected country.
+  Future<void> refreshForCountry(String code) =>
+      fetchActiveCharges(countryCode: code);
+
+  String _selectedCountryCode() {
+    if (Get.isRegistered<CountryController>()) {
+      return Get.find<CountryController>().countryCode;
+    }
+    return 'AE';
   }
 
   PaymentMethodCharge? chargeFor(String paymentMethod) {

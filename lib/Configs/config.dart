@@ -65,6 +65,7 @@ class Configss {
   // static String rangeFilter = "$baseUrl/api/app/products";
   static String getShippingCharge = "$baseUrl/api/delivery-charges";
   static String getActivePaymentCharges = "$baseUrl/api/payment-charges/active";
+  static String getPublicCountries = "$baseUrl/api/countries/public";
   static String searchAll = "$baseUrl/api/mobile/products";
 
   // Public website URL for Tamara redirects
