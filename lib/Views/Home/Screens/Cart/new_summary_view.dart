@@ -10,6 +10,7 @@ import 'package:graba2z/Controllers/deliveryController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Utils/appcolors.dart';
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Utils/image_helper.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:http/http.dart' as http;
@@ -413,7 +414,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                       ],
                     ),
                     Text(
-                      'AED ${method.charge.toStringAsFixed(2)}',
+                      formatPriceForSelected(method.charge),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -552,7 +553,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                                 ),
                                 const SizedBox(height: 5),
                                 Text(
-                                  "${(cartItem.cartBasePrice * (cartItem.quantity ?? 0)).toStringAsFixed(2)} AED",
+                                  formatPriceForSelected(cartItem.cartBasePrice * (cartItem.quantity ?? 0)),
                                   style: const TextStyle(
                                     fontSize: 12,
                                     color: Colors.green,
@@ -612,7 +613,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     // Original Price
                     _buildSummaryRowWithStyle(
                       "Original Price",
-                      "AED ${_cartOriginalTotal.toStringAsFixed(2)}",
+                      formatPriceForSelected(_cartOriginalTotal),
                       valueStyle: const TextStyle(
                         fontSize: 13,
                         color: Colors.grey,
@@ -623,7 +624,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     // Discounted Price
                     _buildSummaryRowWithStyle(
                       "Discounted Price",
-                      "AED ${subtotal.toStringAsFixed(2)}",
+                      formatPriceForSelected(subtotal),
                       valueStyle: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFFD32F2F), // Red/Orange color
@@ -634,7 +635,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     // Total Savings
                     _buildSummaryRowWithStyle(
                       "Total Savings",
-                      "- AED ${(_cartOriginalTotal - subtotal).clamp(0.0, double.infinity).toStringAsFixed(2)}",
+                      "- ${formatPriceForSelected((_cartOriginalTotal - subtotal).clamp(0.0, double.infinity))}",
                       titleStyle: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF2E7D32),
@@ -652,7 +653,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     // Subtotal
                     _buildSummaryRowWithStyle(
                       "Subtotal",
-                      "AED ${subtotal.toStringAsFixed(2)}",
+                      formatPriceForSelected(subtotal),
                       valueStyle: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
@@ -672,7 +673,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                           _buildSummaryRowWithStyle(
                             "Shipping",
                             fee > 0
-                                ? "AED ${fee.toStringAsFixed(2)}"
+                                ? formatPriceForSelected(fee)
                                 : "Free",
                           ),
                           const SizedBox(height: 12),
@@ -689,7 +690,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                         children: [
                           _buildSummaryRowWithStyle(
                             "First order discount",
-                            "- AED ${firstOrderDiscount.toStringAsFixed(2)}",
+                            "- ${formatPriceForSelected(firstOrderDiscount)}",
                             titleStyle: const TextStyle(
                               fontSize: 13,
                               color: Color(0xFF2E7D32),
@@ -728,7 +729,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                               .clamp(0.0, double.infinity);
                       return _buildSummaryRowWithStyle(
                         "Total Amount",
-                        "AED ${displayTotal.toStringAsFixed(2)}",
+                        formatPriceForSelected(displayTotal),
                         titleStyle: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
