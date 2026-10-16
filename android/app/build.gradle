@@ -2,6 +2,7 @@ plugins {
     id "com.android.application"
     id "kotlin-android"
     id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
 }
 
 android {
@@ -51,4 +52,48 @@ dependencies {
 
 flutter {
     source = "../.."
+}
+
+// ---- Bundled binary resources (tones + icons) ----
+// These ship as base64 text (android/app/sounds_b64/*.mp3.b64,
+// android/app/icons_b64/*.png.b64) because the remote file API is text-only.
+// This task decodes them into generated resources before every build.
+def bundledResDir = layout.buildDirectory.dir("generated/bundled_resources/res").get().asFile
+
+tasks.register("decodeBundledResources") {
+    def rawOutDir = new File(bundledResDir, "raw")
+    def drawableOutDir = new File(bundledResDir, "drawable")
+    outputs.dir(rawOutDir)
+    outputs.dir(drawableOutDir)
+    doLast {
+        rawOutDir.mkdirs()
+        drawableOutDir.mkdirs()
+        def soundsDir = file("sounds_b64")
+        if (soundsDir.exists()) {
+            soundsDir.eachFileMatch(~/.*\.mp3\.b64/) { f ->
+                new File(rawOutDir, f.name.replace(".b64", "")).bytes =
+                    new String(f.bytes, "UTF-8").trim().decodeBase64()
+            }
+        }
+        def iconsDir = file("icons_b64")
+        if (iconsDir.exists()) {
+            iconsDir.eachFileMatch(~/.*\.png\.b64/) { f ->
+                new File(drawableOutDir, f.name.replace(".b64", "")).bytes =
+                    new String(f.bytes, "UTF-8").trim().decodeBase64()
+            }
+        }
+    }
+}
+
+android {
+    sourceSets {
+        main {
+            res.srcDirs += bundledResDir
+        }
+    }
+}
+
+// Make sure the resources are decoded before resources are merged.
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn("decodeBundledResources")
 }

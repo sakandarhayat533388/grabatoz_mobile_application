@@ -1,6 +1,7 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:graba2z/Widgets/secondarybutton.dart';
 import 'package:graba2z/Services/notification_permission_preloader.dart';
+import 'package:graba2z/Services/push_notification_service.dart';
 import '../../../../../../Utils/packages.dart';
 
 class NotificationTile extends StatefulWidget {
@@ -105,6 +106,12 @@ class NotificationTileState extends State<NotificationTile> with WidgetsBindingO
         _initDone = true;
       });
       await NotificationPermissionPreloader.updateEffective(isNotificationEnabled);
+      if (nowAllowed) {
+        // FCM: re-attach this install now that notifications are allowed
+        try {
+          await PushNotificationService.instance.registerDevice();
+        } catch (_) {}
+      }
       _showNotificationDialog(
         nowAllowed ? "Notifications Enabled" : "Permission Required",
         nowAllowed
@@ -116,6 +123,10 @@ class NotificationTileState extends State<NotificationTile> with WidgetsBindingO
       try {
         await AwesomeNotifications().cancelAll();
         await AwesomeNotifications().cancelAllSchedules();
+      } catch (_) {}
+      // FCM: stop pushes to this install when the customer opts out
+      try {
+        await PushNotificationService.instance.deregisterDevice();
       } catch (_) {}
       if (!mounted) return;
       setState(() {

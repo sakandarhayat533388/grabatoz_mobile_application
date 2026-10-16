@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
+import 'package:graba2z/Services/push_notification_service.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Views/Auth/otp_view.dart';
 import 'package:graba2z/Views/Home/home.dart';
@@ -481,6 +482,10 @@ class AuthController extends GetxController {
         await prefs.setString('userName', userName);
         await prefs.setString('user_name', userName);
         await prefs.setString('token', token);
+        // FCM: attach this install's push token to the logged-in account
+        try {
+          await PushNotificationService.instance.registerDevice();
+        } catch (_) {}
         await prefs.remove('Guest');
         await prefs.remove('guest_name');
         await prefs.remove('guest_email');
@@ -553,6 +558,10 @@ class AuthController extends GetxController {
     if (response.statusCode == 200 || response.statusCode == 201) {
       final data = json.decode(response.body.toString());
       EasyLoading.showSuccess(data['message']);
+      // FCM: register this install (re-registered again after login)
+      try {
+        await PushNotificationService.instance.registerDevice();
+      } catch (_) {}
       Get.to(() => OtpScreen(email: cleanEmail, password: password));
       return response;
     } else {
@@ -573,6 +582,10 @@ class AuthController extends GetxController {
   // Function to log out user
   void logout() async {
     final prefs = await SharedPreferences.getInstance();
+    // FCM: stop pushes to this install (spec: DELETE on logout)
+    try {
+      await PushNotificationService.instance.deregisterDevice();
+    } catch (_) {}
     await prefs.remove('token');
     await prefs.remove('userEmail');
     await prefs.remove('userName');

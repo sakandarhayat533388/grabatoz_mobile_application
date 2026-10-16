@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyAzqizHRRhtbgY_IdmmGl_DHNar_gpYq1g</string>
+	<key>GCM_SENDER_ID</key>
+	<string>589476050656</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>ae.grabatoz1.grabatoz1</string>
+	<key>PROJECT_ID</key>
+	<string>graba2z</string>
+	<key>STORAGE_BUCKET</key>
+	<string>graba2z.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:589476050656:ios:312f75c39a6a7a30b8c285</string>
+</dict>
+</plist>

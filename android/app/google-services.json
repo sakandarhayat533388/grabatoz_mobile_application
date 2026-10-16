@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "589476050656",
+    "project_id": "graba2z",
+    "storage_bucket": "graba2z.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589476050656:android:41c4537a2e676d75b8c285",
+        "android_client_info": {
+          "package_name": "ae.grabatoz1.grabatoz1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2xDxYGSod-WFrQX4Waef_Ks2MqIwsPVI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
