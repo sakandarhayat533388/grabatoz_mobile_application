@@ -21,6 +21,7 @@ import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/favController.dart';
 import 'package:graba2z/Controllers/home_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/cart.dart';
 import 'package:graba2z/Views/Product%20Folder/newProduct_card.dart';
 import 'package:html/parser.dart';
@@ -517,7 +518,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
   double _discounted(double price, int percent) =>
       (price * (100 - percent)) / 100.0;
 
-  String _fmt(double v) => 'AED ${v.toStringAsFixed(2)}';
+  String _fmt(double v) => formatPriceForSelected(v);
 
   String _idOf(Map p) => (p['_id'] ?? '').toString();
 
@@ -2568,13 +2569,13 @@ class _NewProductDetailsState extends State<NewProductDetails>
     String priceText = '';
     if (cached != null) {
       final p = _basePrice(cached);
-      if (p > 0) priceText = 'AED ${p.toStringAsFixed(2)}';
+      if (p > 0) priceText = formatPriceForSelected(p);
     } else if (nestedProduct.isNotEmpty) {
       final p = _basePrice(nestedProduct);
-      if (p > 0) priceText = 'AED ${p.toStringAsFixed(2)}';
+      if (p > 0) priceText = formatPriceForSelected(p);
     } else if (map.isNotEmpty) {
       final p = _basePrice(map);
-      if (p > 0) priceText = 'AED ${p.toStringAsFixed(2)}';
+      if (p > 0) priceText = formatPriceForSelected(p);
     }
 
     return GestureDetector(
@@ -2810,9 +2811,9 @@ class _NewProductDetailsState extends State<NewProductDetails>
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'AED',
-              style: TextStyle(
+            Text(
+              currencySymbolForSelected(),
+              style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
                 color: kdefblackColor,
@@ -3583,7 +3584,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                 textBaseline: TextBaseline.alphabetic,
                                 children: [
                                   Text(
-                                    'AED ${offerDisplayPrice.toStringAsFixed(2)}',
+                                    formatPriceForSelected(offerDisplayPrice),
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
@@ -3600,7 +3601,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                   Padding(
                                     padding: const EdgeInsets.only(left: 8.0),
                                     child: Text(
-                                      'AED ${regularDisplayPrice.toStringAsFixed(2)}',
+                                      formatPriceForSelected(regularDisplayPrice),
                                       style: const TextStyle(
                                           decoration:
                                               TextDecoration.lineThrough,
@@ -3617,7 +3618,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                 textBaseline: TextBaseline.alphabetic,
                                 children: [
                                   Text(
-                                    'AED ${regularDisplayPrice.toStringAsFixed(2)}',
+                                    formatPriceForSelected(regularDisplayPrice),
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
