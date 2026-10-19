@@ -197,8 +197,11 @@ class ProfileMenuScreen extends StatelessWidget {
                     return ListTile(
                       minLeadingWidth: 0,
                       onTap: () => showCountrySelector(context),
-                      leading: const Icon(Icons.public_outlined,
-                          color: kSecondaryColor, size: 22),
+                      leading: selected == null
+                          ? const Icon(Icons.public_outlined,
+                              color: kSecondaryColor, size: 22)
+                          : CountryFlag(selected.flagSvg,
+                              width: 32, height: 22),
                       title: const Text('Country / Currency',
                           style: TextStyle(
                               fontSize: 13, fontWeight: FontWeight.w600)),
