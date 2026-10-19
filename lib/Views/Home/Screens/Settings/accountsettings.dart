@@ -414,8 +414,11 @@ class _SettingsState extends State<Settings> {
                         return ListTile(
                           minLeadingWidth: 0,
                           onTap: () => showCountrySelector(context),
-                          leading: const Icon(Icons.public_outlined,
-                              color: kSecondaryColor, size: 20),
+                          leading: selected == null
+                              ? const Icon(Icons.public_outlined,
+                                  color: kSecondaryColor, size: 20)
+                              : CountryFlag(selected.flagSvg,
+                                  width: 32, height: 22),
                           title: const Text('Country / Currency',
                               style: TextStyle(
                                   fontSize: 12, fontWeight: FontWeight.w600)),
