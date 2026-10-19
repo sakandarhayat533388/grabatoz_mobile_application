@@ -606,20 +606,17 @@ class _NewProductDetailsState extends State<NewProductDetails>
 
   String _stockStatusFromMap(Map<String, dynamic> product,
       {String fallback = 'Unknown'}) {
-    final countedStock = product['countInStock'];
-    if (countedStock != null) {
-      return _toDouble(countedStock) > 0 ? 'In Stock' : 'Out of Stock';
-    }
-
+    // Prefer the explicit status field, exactly like the product card does.
     final explicit = _firstNonEmpty(
       product,
       const ['stockStatus', 'availability', 'status'],
     );
     if (explicit.isNotEmpty) return explicit;
 
-    final stock = product['stock'] ??
+    // Fallback: derive from quantity fields only when no status is provided.
+    final stock = product['countInStock'] ??
+        product['stock'] ??
         product['stockCount'] ??
-        product['countInStock'] ??
         product['quantity'] ??
         product['availableQuantity'] ??
         product['qty'];
