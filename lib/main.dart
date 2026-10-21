@@ -1,6 +1,9 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Services/push_notification_service.dart';
+import 'package:graba2z/Utils/app_translations.dart';
 import 'package:graba2z/Api/Services/apiservices.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/bannerProductController.dart';
@@ -33,6 +36,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Country/currency selection — registered before any UI builds.
   Get.put(CountryController(), permanent: true);
+  // App language — load the saved choice before any UI builds.
+  Get.put(LanguageController(), permanent: true);
+  Get.find<LanguageController>().currentLang.value =
+      await LanguageController.loadLanguageCode();
   final prefs = await SharedPreferences.getInstance();
   String? userId = prefs.getString('userId')?.toString();
   HttpOverrides.global = MyHttpOverrides();
@@ -205,6 +212,18 @@ class _MyAppState extends State<MyApp> {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Graba2z',
+      translations: AppTranslations(),
+      locale: Get.find<LanguageController>().locale,
+      fallbackLocale: const Locale('en', 'US'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('ar', 'AE'),
+      ],
       theme: ThemeData(
         scaffoldBackgroundColor: kdefwhiteColor,
         fontFamily: "Montserrat",
