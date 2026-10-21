@@ -110,10 +110,23 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
       return;
     }
 
-    String formattedFull = hasPlus ? '+$digits' : digits;
-    if (!formattedFull.startsWith('+')) {
-      formattedFull = '+$formattedFull';
+    // A bare national number (no '+' or '00' prefix) must NEVER be
+    // reinterpreted as having a dial code: its leading digits belong to
+    // the number itself (e.g. Pakistani "3326723213" is NOT "+33...").
+    // Keep the currently selected country and use the digits as-is.
+    if (!hasPlus) {
+      String nationalOnly = digits;
+      while (nationalOnly.startsWith('0')) {
+        nationalOnly = nationalOnly.substring(1);
+      }
+      completePhoneNumber = '$selectedCountryCode$nationalOnly';
+      _userController.homePhoneController.text = nationalOnly;
+      if (mounted) setState(() {});
+      _isParsingPhone = false;
+      return;
     }
+
+    String formattedFull = '+$digits';
 
     String detectedCountry = 'AE';
     String detectedDialCode = '+971';
