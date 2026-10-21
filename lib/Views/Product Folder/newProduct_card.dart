@@ -8,6 +8,7 @@ import 'package:graba2z/Controllers/favController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/image_helper.dart';
+import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Views/Product%20Folder/newProductDetails.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -58,7 +59,8 @@ class _NewProductCardState extends State<NewProductCard> {
   String _formatPrice(dynamic v) {
     if (v == null || v.toString().trim().isEmpty) return 'N/A';
     final price = double.tryParse(v.toString());
-    return price == null ? v.toString() : price.toStringAsFixed(2);
+    // Display-only conversion: AED -> selected country currency.
+    return price == null ? v.toString() : formatPriceForSelected(price);
   }
 
   String _detailsPrice(dynamic v) {
@@ -659,7 +661,7 @@ class _NewProductCardState extends State<NewProductCard> {
                                                     color: Color(0xFF16A34A)),
                                               ),
                                               TextSpan(
-                                                text: "$currentPrice AED",
+                                                text: currentPrice,
                                                 style: const TextStyle(
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.bold,
@@ -670,7 +672,7 @@ class _NewProductCardState extends State<NewProductCard> {
                                         ),
                                         if (hasOffer)
                                           Text(
-                                            "AED ${_formatPrice(widget.prdouctList is Map ? widget.prdouctList['price'] : null)}",
+                                            "${_formatPrice(widget.prdouctList is Map ? widget.prdouctList['price'] : null)}",
                                             style: const TextStyle(
                                               fontSize: 8,
                                               fontWeight: FontWeight.bold,

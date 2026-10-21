@@ -11,6 +11,7 @@ import 'package:get/get.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Views/Auth/signup.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/new_checkout_view.dart';
@@ -558,7 +559,7 @@ class _CartState extends State<Cart> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${cartNotifier.cartTotalPriceF().toStringAsFixed(2)} AED',
+                          formatPriceForSelected(cartNotifier.cartTotalPriceF()),
                           style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -633,7 +634,7 @@ class _CartState extends State<Cart> {
                                       fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  '- ${cartNotifier.discountAmountApplied.value.toStringAsFixed(2)} AED',
+                                  '- ${formatPriceForSelected(cartNotifier.discountAmountApplied.value)}',
                                   style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -665,7 +666,7 @@ class _CartState extends State<Cart> {
                                     fontSize: 14, fontWeight: FontWeight.bold),
                               ),
                               Text(
-                                '- ${appDiscountAmount.toStringAsFixed(2)} AED',
+                                '- ${formatPriceForSelected(appDiscountAmount)}',
                                 style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -709,7 +710,7 @@ class _CartState extends State<Cart> {
                                 (couponAdjustedTotal - appDiscountAmount)
                                     .clamp(0.0, double.infinity);
                             return Text(
-                              "${displayTotal.toStringAsFixed(2)} AED",
+                              formatPriceForSelected(displayTotal),
                               style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -863,7 +864,7 @@ class _CartState extends State<Cart> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '${(double.tryParse(price) ?? 0.0).toStringAsFixed(2)} AED',
+                          formatPriceForSelected(double.tryParse(price) ?? 0.0),
                           style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               color: kPrimaryColor),
@@ -1004,7 +1005,7 @@ Future<bool?> _confirmRemoveDialog(
                               fontWeight: FontWeight.w500)),
                       const SizedBox(height: 6),
                       Text(
-                          '${(double.tryParse(price) ?? 0.0).toStringAsFixed(2)} AED',
+                          formatPriceForSelected(double.tryParse(price) ?? 0.0),
                           style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               color: kPrimaryColor)),
@@ -1229,7 +1230,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                         children: [
                           Expanded(
                             child: Text(
-                              "${(widget.cartItem.cartBasePrice * (widget.cartItem.quantity ?? 0)).toStringAsFixed(2)} AED",
+                              formatPriceForSelected(widget.cartItem.cartBasePrice * (widget.cartItem.quantity ?? 0)),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,

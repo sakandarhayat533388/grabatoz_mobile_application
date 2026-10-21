@@ -21,6 +21,8 @@ import '../../../../Widgets/footertile.dart';
 import '../../../../Widgets/socialicon.dart';
 import '../../../Auth/signup.dart';
 import 'Modules/profile_menu_screen.dart';
+import 'package:graba2z/Controllers/country_controller.dart';
+import 'package:graba2z/Widgets/country_selector.dart';
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -398,6 +400,41 @@ class _SettingsState extends State<Settings> {
                             NotificationPermissionPreloader.effectiveOrFalse),
                       ),
 
+                      Divider(
+                        height: 0,
+                        color: Colors.grey.withValues(alpha: .2),
+                      ),
+
+                      // Country / Currency — visible to guests too
+                      Obx(() {
+                        final cc = Get.isRegistered<CountryController>()
+                            ? Get.find<CountryController>()
+                            : null;
+                        final selected = cc?.selectedCountry.value;
+                        return ListTile(
+                          minLeadingWidth: 0,
+                          onTap: () => showCountrySelector(context),
+                          leading: selected == null
+                              ? const Icon(Icons.public_outlined,
+                                  color: kSecondaryColor, size: 20)
+                              : CountryFlag(selected.flagSvg,
+                                  width: 32, height: 22),
+                          title: const Text('Country / Currency',
+                              style: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600)),
+                          subtitle: selected == null
+                              ? null
+                              : Text(
+                                  '${selected.name} (${selected.currencyCode})',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: kSecondaryColor,
+                          ),
+                        );
+                      }),
                       Divider(
                         height: 0,
                         color: Colors.grey.withValues(alpha: .2),

@@ -7,6 +7,8 @@ import 'package:graba2z/Controllers/checkout_controller.dart';
 import 'package:graba2z/Controllers/deliveryController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Controllers/payment_charges_controller.dart';
+import 'package:graba2z/Controllers/country_controller.dart';
+import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:graba2z/Views/success_page/successpayment.dart';
@@ -33,6 +35,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   double total = 0.0;
   double deliveryFee = 0.0;
   double subtotal = 0.0;
+
+  /// Selected country code for payment resolve + payloads (fallback 'AE').
+  String get _selectedCountryCode => Get.isRegistered<CountryController>()
+      ? Get.find<CountryController>().countryCode
+      : 'AE';
 
   double _firstOrderDiscountAmount() {
     if (!Get.isRegistered<FirstUserDiscountController>()) return 0.0;
@@ -130,13 +137,19 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       if (!mounted) return;
       getcalculations();
       fetchAllowedPaymentMethods();
-      _paymentChargesCtrl.fetchActiveCharges();
+      _paymentChargesCtrl.fetchActiveCharges(countryCode: _selectedCountryCode);
       if (!Get.isRegistered<FirstUserDiscountController>()) return;
       final discountController = Get.find<FirstUserDiscountController>();
       discountController.loadStatus().then((_) {
         discountController.previewCart(_cartNotifier.cartOtherInfoList);
       });
     });
+    // Re-resolve payment methods whenever the country changes.
+    if (Get.isRegistered<CountryController>()) {
+      ever(Get.find<CountryController>().selectedCountry, (_) {
+        if (mounted) fetchAllowedPaymentMethods();
+      });
+    }
   }
 
   Future<void> fetchAllowedPaymentMethods() async {
@@ -164,7 +177,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'productIds': productIds}),
+        body: jsonEncode({
+          'productIds': productIds,
+          'countryCode': _selectedCountryCode,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -454,7 +470,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                           }
                           final displayTotal = _selectedPayableTotal();
                           return Text(
-                            "Place Order - AED ${displayTotal.toStringAsFixed(2)}",
+                            "Place Order - ${formatPriceForSelected(displayTotal)}",
                             style: TextStyle(color: Colors.white),
                           );
                         },
@@ -945,7 +961,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         "last_name": firstLast['last_name'],
         "phone_number": phone,
       },
-      "country_code": "AE",
+      "country_code": _selectedCountryCode,
       "description": "Order for ${items.length} item(s) from Graba2z",
       "merchant_url": {
         "cancel": "${Configss.webBaseUrl}/payment/cancel",
@@ -1034,7 +1050,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final name = _splitName(fullName);
     return {
       "city": _usercontroller.city.value.replaceAll('"', ''),
-      "country_code": "AE",
+      "country_code": _selectedCountryCode,
       "first_name": name['first_name'],
       "last_name": name['last_name'],
       "line1": _usercontroller.street.value.replaceAll('"', ''),
@@ -1160,7 +1176,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           const SizedBox(height: 14),
           _buildSummaryRowWithStyle(
             "Original Price",
-            "AED ${originalTotal.toStringAsFixed(2)}",
+            formatPriceForSelected(originalTotal),
             valueStyle: const TextStyle(
               fontSize: 13,
               color: Colors.grey,
@@ -1170,7 +1186,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           const SizedBox(height: 12),
           _buildSummaryRowWithStyle(
             "Discounted Price",
-            "AED ${currentSubtotal.toStringAsFixed(2)}",
+            formatPriceForSelected(currentSubtotal),
             valueStyle: const TextStyle(
               fontSize: 13,
               color: Color(0xFFD32F2F),
@@ -1180,7 +1196,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           const SizedBox(height: 12),
           _buildSummaryRowWithStyle(
             "Total Savings",
-            "- AED ${savings.toStringAsFixed(2)}",
+            "- ${formatPriceForSelected(savings)}",
             titleStyle: const TextStyle(
               fontSize: 13,
               color: Color(0xFF2E7D32),
@@ -1197,7 +1213,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           const SizedBox(height: 12),
           _buildSummaryRowWithStyle(
             "Subtotal",
-            "AED ${currentSubtotal.toStringAsFixed(2)}",
+            formatPriceForSelected(currentSubtotal),
             valueStyle: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
@@ -1209,7 +1225,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             _buildSummaryRowWithStyle(
               "Shipping",
               standardShipping > 0
-                  ? "AED ${standardShipping.toStringAsFixed(2)}"
+                  ? formatPriceForSelected(standardShipping)
                   : "Free",
             ),
             const SizedBox(height: 12),
@@ -1221,7 +1237,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _buildSummaryRowWithStyle(
                   charge.name.isEmpty ? "Payment charge" : charge.name,
-                  "AED ${charge.amount.toStringAsFixed(2)}",
+                  formatPriceForSelected(charge.amount),
                   titleStyle: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF92400E),
@@ -1239,7 +1255,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           if (firstOrderDiscount > 0) ...[
             _buildSummaryRowWithStyle(
               "First order discount",
-              "- AED ${firstOrderDiscount.toStringAsFixed(2)}",
+              "- ${formatPriceForSelected(firstOrderDiscount)}",
               titleStyle: const TextStyle(
                 fontSize: 13,
                 color: Color(0xFF2E7D32),
@@ -1267,7 +1283,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           const SizedBox(height: 16),
           _buildSummaryRowWithStyle(
             "Total Amount",
-            "AED ${displayTotal.toStringAsFixed(2)}",
+            formatPriceForSelected(displayTotal),
             titleStyle: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -1411,7 +1427,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   text: "$title: ",
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                TextSpan(text: "AED ${amount.toStringAsFixed(2)}"),
+                TextSpan(text: formatPriceForSelected(amount)),
               ],
             ),
           ),
@@ -1735,14 +1751,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           if (currentChargesList.isNotEmpty) ...[
             const SizedBox(height: 6),
             ...currentChargesList.map((charge) {
+              final String chargeAmountText = charge.type == 'percentage'
+                  ? '${charge.amount.toStringAsFixed(2)}%'
+                  : formatPriceForSelected(charge.amount);
               String formattedText = '• ${charge.name}';
               if (charge.name.toLowerCase().contains('%') ||
                   charge.name.toLowerCase().contains('fee')) {
-                formattedText =
-                    '• ${charge.name} (AED ${charge.amount.toStringAsFixed(2)})';
+                formattedText = '• ${charge.name} ($chargeAmountText)';
               } else {
-                formattedText =
-                    '• ${charge.name}: AED ${charge.amount.toStringAsFixed(2)}';
+                formattedText = '• ${charge.name}: $chargeAmountText';
               }
               return Padding(
                 padding: const EdgeInsets.only(top: 2),
