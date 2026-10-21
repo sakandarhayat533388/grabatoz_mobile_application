@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:graba2z/Api/Models/country_model.dart';
 import 'package:graba2z/Configs/config.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Controllers/payment_charges_controller.dart';
 
 /// App-wide country / currency selection.
@@ -36,6 +37,34 @@ class CountryController extends GetxController {
 
   /// Currency symbol for display, e.g. "AED", "SAR".
   String get currencySymbol => selectedCountry.value?.currencySymbol ?? 'AED';
+
+  /// True when the app UI language is Arabic (LanguageController ready).
+  bool get _isArabic {
+    if (Get.isRegistered<LanguageController>()) {
+      return Get.find<LanguageController>().isArabic;
+    }
+    return false;
+  }
+
+  /// Localized country name: Arabic `nameAr` when the UI is Arabic and the
+  /// API provided one, otherwise the English `name`.
+  String get countryName {
+    final c = selectedCountry.value;
+    if (c == null) return 'UAE';
+    if (_isArabic && c.nameAr.trim().isNotEmpty) return c.nameAr;
+    return c.name;
+  }
+
+  /// Localized currency symbol: Arabic symbol (e.g. "ر.س") when the UI is
+  /// Arabic and the API provided one, otherwise the English symbol.
+  String get localizedCurrencySymbol {
+    final c = selectedCountry.value;
+    if (c == null) return 'AED';
+    if (_isArabic && c.currencySymbolAr.trim().isNotEmpty) {
+      return c.currencySymbolAr;
+    }
+    return c.currencySymbol;
+  }
 
   @override
   void onInit() {
