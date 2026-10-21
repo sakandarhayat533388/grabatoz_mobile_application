@@ -22,6 +22,7 @@ import '../../../../Widgets/socialicon.dart';
 import '../../../Auth/signup.dart';
 import 'Modules/profile_menu_screen.dart';
 import 'package:graba2z/Controllers/country_controller.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Widgets/country_selector.dart';
 
 class Settings extends StatefulWidget {
@@ -428,6 +429,36 @@ class _SettingsState extends State<Settings> {
                                   '${selected.name} (${selected.currencyCode})',
                                   style: const TextStyle(fontSize: 11),
                                 ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: kSecondaryColor,
+                          ),
+                        );
+                      }),
+                      Divider(
+                        height: 0,
+                        color: Colors.grey.withValues(alpha: .2),
+                      ),
+
+                      // Language — visible to guests too
+                      Obx(() {
+                        final lc = Get.isRegistered<LanguageController>()
+                            ? Get.find<LanguageController>()
+                            : null;
+                        final isAr = lc?.isArabic ?? false;
+                        return ListTile(
+                          minLeadingWidth: 0,
+                          onTap: () => showLanguageSelector(context),
+                          leading: const Icon(Icons.language_outlined,
+                              color: kSecondaryColor, size: 20),
+                          title: Text('language'.tr,
+                              style: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600)),
+                          subtitle: Text(
+                            isAr ? 'العربية' : 'English',
+                            style: const TextStyle(fontSize: 11),
+                          ),
                           trailing: const Icon(
                             Icons.arrow_forward_ios,
                             size: 16,
@@ -1269,3 +1300,114 @@ class _SettingsState extends State<Settings> {
 //     ),
 //   ),
 // ),
+
+/// Bottom-sheet language switcher (English / العربية).
+///
+/// Follows the same visual style as [showCountrySelector]. Selecting a
+/// language persists it via [LanguageController] and applies it immediately
+/// (including the RTL layout flip for Arabic).
+Future<void> showLanguageSelector(BuildContext context) {
+  if (!Get.isRegistered<LanguageController>()) return Future.value();
+  final LanguageController lc = Get.find<LanguageController>();
+
+  return Get.bottomSheet(
+    Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 42,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 10),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Text(
+            'select_language'.tr,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'language_hint'.tr,
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 12),
+          Obx(() {
+            final isAr = lc.isArabic;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _languageOption(
+                  lc,
+                  code: LanguageController.englishCode,
+                  nativeLabel: 'English',
+                  englishLabel: 'English',
+                  selected: !isAr,
+                ),
+                const SizedBox(height: 8),
+                _languageOption(
+                  lc,
+                  code: LanguageController.arabicCode,
+                  nativeLabel: 'العربية',
+                  englishLabel: 'Arabic',
+                  selected: isAr,
+                ),
+              ],
+            );
+          }),
+        ],
+      ),
+    ),
+    isScrollControlled: true,
+  );
+}
+
+Widget _languageOption(
+  LanguageController lc, {
+  required String code,
+  required String nativeLabel,
+  required String englishLabel,
+  required bool selected,
+}) {
+  return Material(
+    color: selected
+        ? Colors.green.withValues(alpha: 0.08)
+        : Colors.grey.withValues(alpha: 0.07),
+    borderRadius: BorderRadius.circular(12),
+    child: ListTile(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      leading: Icon(
+        Icons.language_outlined,
+        color: selected ? Colors.green : Colors.grey.shade500,
+      ),
+      title: Text(nativeLabel,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      subtitle: nativeLabel == englishLabel
+          ? null
+          : Text(
+              englishLabel,
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
+      trailing: Icon(
+        selected ? Icons.check_circle : Icons.radio_button_unchecked,
+        color: selected ? Colors.green : Colors.grey.shade400,
+        size: 24,
+      ),
+      onTap: () async {
+        await lc.setLanguage(code);
+        Get.back();
+      },
+    ),
+  );
+}
