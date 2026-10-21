@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import 'package:graba2z/Api/Models/country_model.dart';
 import 'package:graba2z/Controllers/country_controller.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 
 /// Small rounded flag widget, reused by the settings rows and the selector.
 /// Falls back to a neutral icon when the SVG is missing or invalid.
@@ -115,7 +116,7 @@ Future<void> showCountrySelector(BuildContext context) {
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 4),
                       leading: CountryFlag(c.flagSvg),
-                      title: Text(c.name,
+                      title: Text(_localizedCountryName(c),
                           style: const TextStyle(
                               fontWeight: FontWeight.w600, fontSize: 14)),
                       subtitle: Text(
@@ -155,4 +156,13 @@ String _currencyLabel(Country c) {
     return c.currencyCode;
   }
   return '${c.currencyCode} (${c.currencySymbol})';
+}
+
+/// Localized country name: Arabic `nameAr` when the UI language is Arabic
+/// and the API provided one, otherwise the English `name`.
+String _localizedCountryName(Country c) {
+  final isAr = Get.isRegistered<LanguageController>() &&
+      Get.find<LanguageController>().isArabic;
+  if (isAr && c.nameAr.trim().isNotEmpty) return c.nameAr;
+  return c.name;
 }
