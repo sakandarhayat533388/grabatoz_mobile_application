@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:flutter/widgets.dart';
 import 'package:graba2z/Utils/appcolors.dart';
 import 'package:graba2z/Views/Product%20Folder/newProduct_card.dart';
@@ -55,7 +56,7 @@ class _HorizontalProductsState extends State<HorizontalProducts> {
                       Row(
                         children: [
                           Text(
-                            "Show All",
+                            'home_show_all'.tr,
                             style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
