@@ -1,4 +1,5 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:get/get.dart';
 import 'package:graba2z/Widgets/secondarybutton.dart';
 import 'package:graba2z/Services/notification_permission_preloader.dart';
 import 'package:graba2z/Services/push_notification_service.dart';
@@ -113,10 +114,10 @@ class NotificationTileState extends State<NotificationTile> with WidgetsBindingO
         } catch (_) {}
       }
       _showNotificationDialog(
-        nowAllowed ? "Notifications Enabled" : "Permission Required",
+        nowAllowed ? 'settings_notif_enabled_title'.tr : 'settings_notif_perm_title'.tr,
         nowAllowed
-            ? "You will now receive notifications."
-            : "Notifications are still disabled in system settings.",
+            ? 'settings_notif_enabled_body'.tr
+            : 'settings_notif_perm_body'.tr,
       );
     } else {
       await prefs.setBool(_prefKey, false);
@@ -135,8 +136,8 @@ class NotificationTileState extends State<NotificationTile> with WidgetsBindingO
       });
       await NotificationPermissionPreloader.updateEffective(false);
       _showNotificationDialog(
-        "Notifications Disabled",
-        "You will not receive in-app notifications.",
+        'settings_notif_disabled_title'.tr,
+        'settings_notif_disabled_body'.tr,
       );
     }
   }
@@ -164,7 +165,7 @@ class NotificationTileState extends State<NotificationTile> with WidgetsBindingO
           actions: [
             SecondaryButton(
               onPressFunction: () => Navigator.of(context).pop(),
-              buttonText: "OK",
+              buttonText: 'ok'.tr,
             ),
           ],
         );
@@ -183,8 +184,8 @@ class NotificationTileState extends State<NotificationTile> with WidgetsBindingO
         width: 20,
         height: 20,
       ),
-      title: const Text(
-        'Notification',
+      title: Text(
+        'settings_notification'.tr,
         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
       ),
       trailing: SizedBox(
