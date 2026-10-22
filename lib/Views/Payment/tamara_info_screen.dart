@@ -34,7 +34,7 @@ class TamaraInfoScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           IconButton(
-                            tooltip: 'Close',
+                            tooltip: 'payment_close_tooltip'.tr,
                             onPressed: () => Get.back(),
                             icon: const Icon(Icons.close, color: Colors.black87, size: 24),
                           ),
@@ -61,13 +61,13 @@ class TamaraInfoScreen extends StatelessWidget {
                         text: TextSpan(
                           style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
                           children: [
-                            const TextSpan(
-                              text: 'Your payment,',
+                            TextSpan(
+                              text: 'payment_tamara_headline1'.tr,
                               style: TextStyle(color: Colors.black),
                             ),
                             const TextSpan(text: '\n'),
                             TextSpan(
-                              text: 'your pace',
+                              text: 'payment_tamara_headline2'.tr,
                               style: TextStyle(
                                 foreground: Paint()
                                   ..shader = const LinearGradient(
@@ -81,17 +81,17 @@ class TamaraInfoScreen extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       // Payment options
-                      _optionRow(context, 'Ð ${two.toStringAsFixed(2)}', '/mo', 'No fees', '2 Payments'),
+                      _optionRow(context, 'Ð ${two.toStringAsFixed(2)}', 'payment_per_month'.tr, 'payment_no_fees'.tr, 'payment_2_payments'.tr),
                       const SizedBox(height: 8),
-                      _optionRow(context, 'Ð ${three.toStringAsFixed(2)}', '/mo', 'No fees', '3 Payments'),
+                      _optionRow(context, 'Ð ${three.toStringAsFixed(2)}', 'payment_per_month'.tr, 'payment_no_fees'.tr, 'payment_3_payments'.tr),
                       const SizedBox(height: 8),
-                      _optionRow(context, 'Ð ${four.toStringAsFixed(2)}', '/mo', 'No fees', '4 Payments'),
+                      _optionRow(context, 'Ð ${four.toStringAsFixed(2)}', 'payment_per_month'.tr, 'payment_no_fees'.tr, 'payment_4_payments'.tr),
                       const SizedBox(height: 8),
-                      _optionRow(context, 'Ð ${full.toStringAsFixed(2)}', '', 'No fees', 'Pay in Full'),
+                      _optionRow(context, 'Ð ${full.toStringAsFixed(2)}', '', 'payment_no_fees'.tr, 'payment_pay_in_full'.tr),
 
                       const SizedBox(height: 20),
                       // How it works
-                      const Text('How it works?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                      Text('payment_how_it_works'.tr, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 10),
                       Container(
                         decoration: BoxDecoration(
@@ -100,46 +100,46 @@ class TamaraInfoScreen extends StatelessWidget {
                         ),
                         padding: const EdgeInsets.all(12),
                         child: Column(
-                          children: const [
+                          children: [
                             _HowItWorksItem(
                               n: 1,
-                              title: 'Pick a plan that works for you',
-                              desc: 'Choose Tamara at checkout and select the payment plan that fits your needs.',
+                              title: 'payment_tamara_step1_title'.tr,
+                              desc: 'payment_tamara_step1_desc'.tr,
                             ),
                             SizedBox(height: 10),
                             SizedBox(height: 10),
                             _HowItWorksItem(
                               n: 2,
-                              title: 'Pay your first payment securely',
-                              desc: 'Enter your card details to make your first payment safely and instantly.',
+                              title: 'payment_tamara_step2_title'.tr,
+                              desc: 'payment_tamara_step2_desc'.tr,
                             ),
                             SizedBox(height: 10),
                             SizedBox(height: 10),
                             _HowItWorksItem(
                               n: 3,
-                              title: 'Stay in control',
-                              desc: 'Track and manage all your upcoming payments easily in the Tamara app.',
+                              title: 'payment_tamara_step3_title'.tr,
+                              desc: 'payment_tamara_step3_desc'.tr,
                             ),
                             SizedBox(height: 10),
                             SizedBox(height: 10),
                             _HowItWorksItem(
                               n: 4,
-                              title: 'We’ve got your back',
-                              desc: 'Get helpful reminders before each payment, no surprises.',
+                              title: 'payment_tamara_step4_title'.tr,
+                              desc: 'payment_tamara_step4_desc'.tr,
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 20),
                       // Why Tamara
-                      const Text('Why Tamara?', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text('payment_why_tamara'.tr, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: const [
-                          _WhyIcon(icon: Icons.shield_outlined, color: Colors.green, text: '100%\nbuyer protection'),
-                          _WhyIcon(icon: Icons.verified, color: Colors.blue, text: 'Sharia\ncompliant'),
-                          _WhyIcon(icon: Icons.close, color: Colors.purple, text: 'No late\nfees'),
+                        children: [
+                          _WhyIcon(icon: Icons.shield_outlined, color: Colors.green, text: 'payment_buyer_protection'.tr),
+                          _WhyIcon(icon: Icons.verified, color: Colors.blue, text: 'payment_sharia_compliant'.tr),
+                          _WhyIcon(icon: Icons.close, color: Colors.purple, text: 'payment_no_late_fees'.tr),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -149,16 +149,16 @@ class TamaraInfoScreen extends StatelessWidget {
                         TextSpan(
                           style: label,
                           children: [
-                            const TextSpan(
+                            TextSpan(
                               text:
-                                  'Payment plans shown are estimates. Actual offers may vary based on your eligibility and order details. Approval is subject to eligibility checks and may require a down payment. Final terms may exclude taxes, shipping, or other charges. For more information, see our ',
+                                  'payment_tamara_disclaimer'.tr,
                             ),
                             WidgetSpan(
                               alignment: PlaceholderAlignment.middle,
                               child: InkWell(
                                 onTap: () {},
-                                child: const Text(
-                                  'Terms & Conditions',
+                                child: Text(
+                                  'payment_terms_conditions'.tr,
                                   style: TextStyle(
                                     decoration: TextDecoration.underline,
                                     color: Color(0xFF7C3AED),
@@ -216,10 +216,10 @@ class TamaraInfoScreen extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Row(
-                children: const [
+                children: [
                   Icon(Icons.check_circle, size: 14, color: Colors.green),
                   SizedBox(width: 4),
-                  Text('No fees', style: TextStyle(fontSize: 11, color: Colors.green)),
+                  Text('payment_no_fees'.tr, style: TextStyle(fontSize: 11, color: Colors.green)),
                 ],
               ),
             ]),
