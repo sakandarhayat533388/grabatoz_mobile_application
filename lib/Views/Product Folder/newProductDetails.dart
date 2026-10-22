@@ -3868,7 +3868,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                   );
                                 }),
                                 _actionButton(Icons.shield_outlined,
-                                    "Request Bulk\nPurchase", () {
+                                    'product_detail_request_bulk'.tr, () {
                                   Get.to(() => BulkPurchaceView());
                                 }),
                               ],
@@ -3884,7 +3884,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    children: const [
+                                    children: [
                                       Icon(Icons.local_offer,
                                           color: Colors.red),
                                       SizedBox(width: 8),
