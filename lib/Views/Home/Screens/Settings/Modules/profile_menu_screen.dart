@@ -19,7 +19,7 @@ class ProfileMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(titleText: "My Profile"),
+      appBar: CustomAppBar(titleText: 'profile_my_profile'.tr),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -66,7 +66,7 @@ class ProfileMenuScreen extends StatelessWidget {
                             Text(
                               auth.fullName.value.isNotEmpty
                                   ? auth.fullName.value
-                                  : "User Profile",
+                                  : 'profile_user'.tr,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -92,8 +92,8 @@ class ProfileMenuScreen extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-            const Text(
-              "PROFILE MENU",
+            Text(
+              'profile_menu_header'.tr,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -124,7 +124,7 @@ class ProfileMenuScreen extends StatelessWidget {
                     onTap: () => Get.to(() => const AccountDetailsScreen()),
                     leading: const Icon(Icons.person_outline_rounded,
                         color: kSecondaryColor, size: 22),
-                    title: const Text('Account Details',
+                    title: Text('profile_account_details'.tr,
                         style: TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios,
@@ -138,7 +138,7 @@ class ProfileMenuScreen extends StatelessWidget {
                     onTap: () => Get.to(() => const EditProfile()),
                     leading: const Icon(Icons.edit_outlined,
                         color: kSecondaryColor, size: 22),
-                    title: const Text('Edit Profile',
+                    title: Text('profile_edit'.tr,
                         style: TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios,
@@ -152,7 +152,7 @@ class ProfileMenuScreen extends StatelessWidget {
                     onTap: () => Get.to(() => const SecurityPasswordScreen()),
                     leading: const Icon(Icons.lock_outline_rounded,
                         color: kSecondaryColor, size: 22),
-                    title: const Text('Security & Password',
+                    title: Text('profile_security_password'.tr,
                         style: TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios,
@@ -166,7 +166,7 @@ class ProfileMenuScreen extends StatelessWidget {
                     onTap: () => Get.to(() => const SavedAddressesScreen()),
                     leading: const Icon(Icons.location_on_outlined,
                         color: kSecondaryColor, size: 22),
-                    title: const Text('Saved Addresses',
+                    title: Text('profile_saved_addresses'.tr,
                         style: TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios,
@@ -180,7 +180,7 @@ class ProfileMenuScreen extends StatelessWidget {
                     onTap: () => Get.to(() => const NotificationInboxScreen()),
                     leading: const Icon(Icons.notifications_outlined,
                         color: kSecondaryColor, size: 22),
-                    title: const Text('Notifications',
+                    title: Text('profile_notifications'.tr,
                         style: TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w600)),
                     trailing: const Icon(Icons.arrow_forward_ios,
@@ -202,7 +202,7 @@ class ProfileMenuScreen extends StatelessWidget {
                               color: kSecondaryColor, size: 22)
                           : CountryFlag(selected.flagSvg,
                               width: 32, height: 22),
-                      title: const Text('Country / Currency',
+                      title: Text('country_currency'.tr,
                           style: TextStyle(
                               fontSize: 13, fontWeight: FontWeight.w600)),
                       subtitle: selected == null
@@ -232,14 +232,14 @@ class ProfileMenuScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: Colors.red.withOpacity(0.3)),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
                             Icon(Icons.warning_amber_rounded,
                                 color: Colors.red, size: 22),
                             SizedBox(width: 14),
                             Expanded(
                               child: Text(
-                                'Danger Zone',
+                                'profile_danger_zone'.tr,
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
