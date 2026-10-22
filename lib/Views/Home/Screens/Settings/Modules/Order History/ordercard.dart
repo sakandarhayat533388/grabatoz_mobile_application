@@ -74,7 +74,7 @@ class OrderCard extends StatelessWidget {
           Icon(icon, color: fg, size: 14),
           const SizedBox(width: 4),
           Text(
-            status,
+            _localizedStatus(status),
             style: TextStyle(
               color: fg,
               fontSize: 12,
@@ -86,6 +86,25 @@ class OrderCard extends StatelessWidget {
     );
   }
 
+  String _localizedStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+        return 'orders_status_delivered'.tr;
+      case 'cancelled':
+      case 'deleted':
+        return 'orders_status_cancelled'.tr;
+      case 'processing':
+      case 'pending':
+        return 'orders_status_pending'.tr;
+      case 'confirmed':
+        return 'orders_status_confirmed'.tr;
+      case 'shipped':
+        return 'orders_status_shipped'.tr;
+      default:
+        return status;
+    }
+  }
+
   Future<void> _openProductDetails(
     BuildContext context,
     String productId,
@@ -94,12 +113,12 @@ class OrderCard extends StatelessWidget {
     double fallbackPrice,
   ) async {
     if (productId.isEmpty) {
-      Get.snackbar('Warning', 'Missing product ID');
+      Get.snackbar('orders_warning'.tr, 'orders_missing_product_id'.tr);
       return;
     }
 
     try {
-      EasyLoading.show(status: 'Loading product details...');
+      EasyLoading.show(status: 'orders_loading_product'.tr);
       final uri = Uri.parse('${Configss.baseUrl}/api/products/$productId');
       final res = await http.get(uri);
       if (res.statusCode != 200) {
@@ -241,7 +260,7 @@ class OrderCard extends StatelessWidget {
     } catch (e) {
       EasyLoading.dismiss();
       debugPrint('Error fetching product details: $e');
-      Get.snackbar('Error', 'Failed to load product details: $e');
+      Get.snackbar('orders_error'.tr, 'orders_product_load_failed'.trParams({'e': '$e'}));
     }
   }
 
@@ -255,7 +274,7 @@ class OrderCard extends StatelessWidget {
       } catch (_) {}
     }
 
-    String productName = 'Order Item';
+    String productName = 'orders_order_item'.tr;
     String productImage = '';
     String productId = '';
     double itemPrice = 0.0;
@@ -323,8 +342,8 @@ class OrderCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            "Order Number",
+                          Text(
+                            'orders_number'.tr,
                             style: TextStyle(
                               fontSize: 10,
                               color: kmediumblackColor,
@@ -346,8 +365,8 @@ class OrderCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text(
-                            "Order Status",
+                          Text(
+                            'orders_status'.tr,
                             style: TextStyle(
                               fontSize: 10,
                               color: kmediumblackColor,
@@ -368,8 +387,8 @@ class OrderCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Date Placed",
+                            Text(
+                              'orders_date_placed'.tr,
                               style: TextStyle(
                                 fontSize: 10,
                                 color: kmediumblackColor,
@@ -400,8 +419,8 @@ class OrderCard extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Total Amount",
+                            Text(
+                              'orders_total_amount'.tr,
                               style: TextStyle(
                                 fontSize: 10,
                                 color: kmediumblackColor,
@@ -524,7 +543,7 @@ class OrderCard extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  "+ ${orderItems.length - 1} more item${orderItems.length - 1 > 1 ? 's' : ''}",
+                                  (orderItems.length - 1) == 1 ? 'orders_one_more_item'.tr : 'orders_more_items'.trParams({'count': '${orderItems.length - 1}'}),
                                   style: const TextStyle(
                                     fontSize: 10,
                                     color: kmediumblackColor,
@@ -551,8 +570,8 @@ class OrderCard extends StatelessWidget {
                           size: 16,
                           color: kSecondaryColor,
                         ),
-                        label: const Text(
-                          "View Details",
+                        label: Text(
+                          'orders_view_details'.tr,
                           style: TextStyle(
                             fontSize: 12,
                             color: kSecondaryColor,
@@ -580,8 +599,8 @@ class OrderCard extends StatelessWidget {
                           size: 16,
                           color: kdefgreenColor,
                         ),
-                        label: const Text(
-                          "Invoice",
+                        label: Text(
+                          'orders_invoice'.tr,
                           style: TextStyle(
                             fontSize: 12,
                             color: kdefgreenColor,
