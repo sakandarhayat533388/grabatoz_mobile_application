@@ -772,6 +772,7 @@ class AppTranslations extends Translations {
           'product_detail_specifications': 'Specifications',
           'product_detail_vat': 'VAT',
           'product_detail_you_save': 'You save @amount',
+          'product_detail_request_bulk': 'Request Bulk\nPurchase',
         },
         'ar_AE': {
           'language': 'اللغة',
@@ -1537,6 +1538,7 @@ class AppTranslations extends Translations {
           'product_detail_specifications': 'المواصفات',
           'product_detail_vat': 'ضريبة القيمة المضافة',
           'product_detail_you_save': 'وفّرت @amount',
+          'product_detail_request_bulk': 'طلب شراء\nبالجملة',
         },
       };
 }
