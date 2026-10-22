@@ -158,7 +158,7 @@ class SplashScreenState extends State<SplashScreen> {
                     Padding(
                       padding: EdgeInsets.only(right: screenWidth * 0.2),
                       child: Text(
-                        'One Stop, All-in-One',
+                        'auth_splash_onestop'.tr,
                         style: TextStyle(
                             fontSize: screenWidth * 0.03,
                             fontWeight: FontWeight.bold,
@@ -170,7 +170,7 @@ class SplashScreenState extends State<SplashScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Tech Shop',
+                          'auth_splash_techshop'.tr,
                           style: TextStyle(
                             fontSize: screenWidth * 0.03,
                             color: kdefwhiteColor,
