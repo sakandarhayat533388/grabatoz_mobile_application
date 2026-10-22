@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'package:graba2z/Configs/config.dart';
 import 'package:http/http.dart' as http;
@@ -57,7 +58,7 @@ class Coupon {
     final String desc = (m['description'] ??
             m['details'] ??
             m['note'] ??
-            'Use this coupon to save more on your next order.')
+            'product_coupon_default_desc'.tr)
         .toString();
 
     // Min order amount -> "Min: AED 1000"
@@ -65,9 +66,9 @@ class Coupon {
     final dynamic minRaw = m['minOrderAmount'] ?? m['minPurchase'] ?? m['minAmount'] ?? m['minimumOrderValue'];
     if (minRaw != null && minRaw.toString().isNotEmpty) {
       final num? min = (minRaw is num) ? minRaw : num.tryParse(minRaw.toString());
-      if (min != null && min > 0) minText = 'Min: AED ${min.toStringAsFixed(0)}';
+      if (min != null && min > 0) minText = 'product_coupon_min_amount'.trParams({'amount': min.toStringAsFixed(0)});
     }
-    if (minText.isEmpty) minText = 'Min: -';
+    if (minText.isEmpty) minText = 'product_coupon_min_none'.tr;
 
     // Valid From/Until -> "Valid: 01/10/2025 - 24/10/2025"
     String validText = '';
@@ -76,15 +77,15 @@ class Coupon {
     final String fromFmt = fromIso.isNotEmpty ? _formatDate(fromIso) : '';
     final String untilFmt = untilIso.isNotEmpty ? _formatDate(untilIso) : '';
     if (fromFmt.isNotEmpty && untilFmt.isNotEmpty) {
-      validText = 'Valid: $fromFmt - $untilFmt';
+      validText = 'product_coupon_valid_range'.trParams({'from': fromFmt, 'until': untilFmt});
     } else if (untilFmt.isNotEmpty) {
-      validText = 'Valid till: $untilFmt';
+      validText = 'product_coupon_valid_till'.trParams({'until': untilFmt});
     } else {
-      validText = 'Valid: -';
+      validText = 'product_coupon_valid_none'.tr;
     }
 
     // Scope/categories
-    String scopeText = 'All Categories';
+    String scopeText = 'product_coupon_all_categories'.tr;
     final cats = m['categories'];
     if (cats is List && cats.isNotEmpty) {
       // Try to join category names; fallback to IDs/strings; else generic
@@ -96,14 +97,14 @@ class Coupon {
           names.add(c);
         }
       }
-      scopeText = names.isNotEmpty ? names.join(', ') : 'Selected Categories';
+      scopeText = names.isNotEmpty ? names.join(', ') : 'product_coupon_selected_categories'.tr;
     }
 
     return Coupon(
       percent: pct,
       code: code,
-      title: 'PROMO CODE',
-      giftLabel: 'GIFT COUPON',
+      title: 'product_coupon_promo_code'.tr,
+      giftLabel: 'product_coupon_gift_label'.tr,
       description: desc,
       minText: minText,
       validText: validText,
@@ -166,8 +167,8 @@ Future<void> showCouponBottomSheet(BuildContext context) async {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const SizedBox(height: 8),
-                    const Text(
-                      'Available Coupons',
+                    Text(
+                      'product_coupons_title'.tr,
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
@@ -180,11 +181,11 @@ Future<void> showCouponBottomSheet(BuildContext context) async {
                             return const Center(child: CircularProgressIndicator());
                           }
                           if (snap.hasError) {
-                            return const Center(child: Text('Failed to load coupons'));
+                            return Center(child: Text('product_coupons_load_failed'.tr));
                           }
                           final items = snap.data ?? const <Coupon>[];
                           if (items.isEmpty) {
-                            return const Center(child: Text('No coupons available'));
+                            return Center(child: Text('product_coupons_empty'.tr));
                           }
                           return SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
@@ -208,7 +209,7 @@ Future<void> showCouponBottomSheet(BuildContext context) async {
                 right: 6,
                 child: IconButton(
                   onPressed: () => Navigator.pop(context),
-                  tooltip: 'Close',
+                  tooltip: 'product_close'.tr,
                   icon: const Icon(Icons.close_rounded, color: Colors.grey),
                 ),
               ),
@@ -301,7 +302,7 @@ class _CouponCardState extends State<_CouponCard> with SingleTickerProviderState
                       RotatedBox(
                         quarterTurns: 3,
                         child: Text(
-                          'DISCOUNT',
+                          'product_coupon_discount_label'.tr,
                           style: TextStyle(
                             fontSize: 8,
                             fontWeight: FontWeight.w800,
@@ -411,7 +412,7 @@ class _CouponCardState extends State<_CouponCard> with SingleTickerProviderState
                                 const Align(
                                   alignment: Alignment.center,
                                   child: Text(
-                                    'PROMO CODE',
+                                    'product_coupon_promo_code'.tr,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w800,
@@ -463,8 +464,8 @@ class _CouponCardState extends State<_CouponCard> with SingleTickerProviderState
                                             borderRadius: BorderRadius.circular(6),
                                           ),
                                         ),
-                                        child: const Text(
-                                          'Copy',
+                                        child: Text(
+                                          'product_coupon_copy'.tr,
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w700,
