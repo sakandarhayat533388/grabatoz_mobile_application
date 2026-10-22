@@ -89,8 +89,8 @@ class _UpdatePasswordState extends State<UpdatePassword> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         50.0.heightbox,
-                        const Text(
-                          'New Credentials',
+                        Text(
+                          'auth_new_credentials_title'.tr,
                           style: TextStyle(
                             fontSize: 40.0,
                             fontWeight: FontWeight.bold,
@@ -99,8 +99,8 @@ class _UpdatePasswordState extends State<UpdatePassword> {
                           textAlign: TextAlign.center,
                         ),
                         30.0.heightbox,
-                        const Text(
-                          'Please,copy and enter the key from your mail & Update your password',
+                        Text(
+                          'auth_new_credentials_subtitle'.tr,
                           style: TextStyle(
                             fontSize: 14.0,
                             fontWeight: FontWeight.w500,
@@ -117,12 +117,12 @@ class _UpdatePasswordState extends State<UpdatePassword> {
                             children: [
                               PrimaryTextField(
                                 controller: keyController,
-                                hintText: "Reset Key",
+                                hintText: 'auth_reset_key_hint'.tr,
                               ),
                               30.0.heightbox,
                               PrimaryTextField(
                                 controller: loginController,
-                                hintText: "username",
+                                hintText: 'auth_username_hint'.tr,
                               ),
                               30.0.heightbox,
                               GetBuilder<AuthController>(builder: (
@@ -130,7 +130,7 @@ class _UpdatePasswordState extends State<UpdatePassword> {
                               ) {
                                 return PrimaryTextField(
                                   controller: newPasswordController,
-                                  hintText: "New Password",
+                                  hintText: 'auth_new_password_hint'.tr,
                                   obsecure: authProvider.isPasswordObscure,
                                   suffix: GestureDetector(
                                     onTap: () {
@@ -155,7 +155,7 @@ class _UpdatePasswordState extends State<UpdatePassword> {
                           return PrimaryButton(
                               buttonColor: kdefwhiteColor,
                               textColor: kSecondaryColor,
-                              buttonText: "Update",
+                              buttonText: 'auth_update_btn'.tr,
                               onPressFunction: () async {
                                 final key = keyController.text.trim();
                                 final username = loginController.text.trim();
@@ -166,10 +166,10 @@ class _UpdatePasswordState extends State<UpdatePassword> {
                                   formKey.currentState!.save();
 
                                   try {
-                                    EasyLoading.show(status: 'Updating...');
+                                    EasyLoading.show(status: 'auth_updating'.tr);
                                     // await apiservice.updatePassword(
                                     //     key, username, newPassword);
-                                    EasyLoading.showSuccess('Password Changed');
+                                    EasyLoading.showSuccess('auth_password_changed'.tr);
                                     await Future.delayed(
                                         const Duration(seconds: 1));
                                     EasyLoading.dismiss();
