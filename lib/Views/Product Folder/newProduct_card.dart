@@ -614,8 +614,16 @@ class _NewProductCardState extends State<NewProductCard> {
                                 children: [
                                   Text(
                                     (widget.prdouctList is Map
-                                            ? widget.prdouctList['name']
-                                                ?.toString()
+                                            ? (_isAr &&
+                                                    (widget.prdouctList['nameAr']
+                                                            ?.toString()
+                                                            .trim()
+                                                            .isNotEmpty ==
+                                                        true)
+                                                ? widget.prdouctList['nameAr']
+                                                    ?.toString()
+                                                : widget.prdouctList['name']
+                                                    ?.toString())
                                             : null) ??
                                         'product_name_fallback'.tr,
                                     maxLines: widget.maxLines,
