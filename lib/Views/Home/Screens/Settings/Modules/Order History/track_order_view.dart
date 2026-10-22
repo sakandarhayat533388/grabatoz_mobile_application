@@ -34,6 +34,23 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
     "Delivered"
   ];
 
+  String _localizedStep(String step) {
+    switch (step) {
+      case 'Order Placed':
+        return 'orders_step_placed'.tr;
+      case 'Order Confirmed':
+        return 'orders_step_confirmed'.tr;
+      case 'Processing':
+        return 'orders_step_processing'.tr;
+      case 'Shipped':
+        return 'orders_step_shipped'.tr;
+      case 'Delivered':
+        return 'orders_step_delivered'.tr;
+      default:
+        return step;
+    }
+  }
+
   int getCurrentStep() {
     return steps.indexOf(currentStatus);
   }
@@ -102,7 +119,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        titleText: "Track Your Order",
+        titleText: 'orders_track_title'.tr,
         showLeading: true,
         actionicon: const SizedBox.shrink(),
       ),
@@ -111,8 +128,8 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
           padding: const EdgeInsets.all(16),
           child: ListView(
             children: [
-              const Text(
-                "Enter your email and order ID to track your order status",
+              Text(
+                'orders_track_hint'.tr,
                 style: TextStyle(fontSize: 16),
                 textAlign: TextAlign.center,
               ),
@@ -120,7 +137,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
               TextField(
                 controller: emailController,
                 decoration: InputDecoration(
-                  labelText: "Email Address",
+                  labelText: 'profile_email'.tr,
                   border: const OutlineInputBorder(),
                   focusedBorder: const OutlineInputBorder(
                     borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
@@ -131,8 +148,8 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
               const SizedBox(height: 12),
               TextField(
                 controller: orderIdController,
-                decoration: const InputDecoration(
-                  labelText: "Order ID",
+                decoration: InputDecoration(
+                  labelText: 'orders_order_id'.tr,
                   border: OutlineInputBorder(),
                   focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
@@ -159,8 +176,8 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                         }
                       },
                       icon: const Icon(Icons.search, color: kdefwhiteColor),
-                      label: const Text(
-                        "Track Order",
+                      label: Text(
+                        'settings_track_order'.tr,
                         style: TextStyle(color: kdefwhiteColor),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -201,24 +218,24 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Order Details",
+            Text('orders_details_title'.tr,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             SizedBox(height: 10),
-            _InfoRow("Order ID", orderIdFromJson),
-            _InfoRow("Order Date", formatDate(createdDate)),
-            _InfoRow("Total Amount", "${totalAmount} AED"),
+            _InfoRow('orders_order_id'.tr, orderIdFromJson),
+            _InfoRow('orders_order_date'.tr, formatDate(createdDate)),
+            _InfoRow('orders_total_amount'.tr, "${totalAmount} AED"),
             SizedBox(height: 16),
-            Text("Shipping Address",
+            Text('orders_shipping_address'.tr,
                 style: TextStyle(fontWeight: FontWeight.bold)),
             shippingAddress.isEmpty
-                ? Text('N/A')
+                ? Text('orders_na'.tr)
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(shippingName),
                       Text(shippingAddress),
                       Text(shippingCity),
-                      Text("Phone: ${shippingPhone}"),
+                      Text('orders_phone_label'.trParams({'phone': shippingPhone})),
                     ],
                   )
           ],
@@ -233,7 +250,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Order Progress",
+        Text('orders_progress'.tr,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         SingleChildScrollView(
@@ -261,7 +278,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      steps[index],
+                      _localizedStep(steps[index]),
                       style: TextStyle(
                         fontSize: 12,
                         color: index <= currentStep
@@ -281,7 +298,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
             const Icon(Icons.local_shipping_outlined, color: kPrimaryColor),
             const SizedBox(width: 8),
             Text(
-              "Current Status: $currentStatus",
+              'orders_current_status'.trParams({'status': _localizedStep(currentStatus)}),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
@@ -318,7 +335,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                   style: TextStyle(fontSize: 14),
                 ),
                 subtitle:
-                    Text('Qty: ${item['quantity']}  •  AED${item['price']}'),
+                    Text('${'orders_qty'.trParams({'qty': '${item['quantity']}'})}  •  AED${item['price']}'),
               ),
             );
           },
