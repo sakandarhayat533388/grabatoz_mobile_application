@@ -202,7 +202,7 @@ class _NewProductCardState extends State<NewProductCard> {
   void _showFavPopup({required bool added}) {
     showGeneralDialog(
       context: context,
-      barrierLabel: added ? 'Added to wishlist' : 'Removed from wishlist',
+      barrierLabel: added ? 'product_wishlist_added'.tr : 'product_wishlist_removed'.tr,
       barrierDismissible: false,
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 200),
@@ -227,7 +227,7 @@ class _NewProductCardState extends State<NewProductCard> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    added ? 'Added to wishlist' : 'Removed from wishlist',
+                    added ? 'product_wishlist_added'.tr : 'product_wishlist_removed'.tr,
                     style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
@@ -613,7 +613,7 @@ class _NewProductCardState extends State<NewProductCard> {
                                             ? widget.prdouctList['name']
                                                 ?.toString()
                                             : null) ??
-                                        "Product Name",
+                                        'product_name_fallback'.tr,
                                     maxLines: widget.maxLines,
                                     style: const TextStyle(
                                         fontSize: 10,
@@ -624,7 +624,7 @@ class _NewProductCardState extends State<NewProductCard> {
                                   if (subcategoryNameForCard.isNotEmpty) ...[
                                     gapTiny.heightbox,
                                     Text(
-                                      'Category: $subcategoryNameForCard',
+                                      'product_card_category'.trParams({'category': subcategoryNameForCard}),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
@@ -653,8 +653,8 @@ class _NewProductCardState extends State<NewProductCard> {
                                         RichText(
                                           text: TextSpan(
                                             children: [
-                                              const TextSpan(
-                                                text: "Inclusive VAT ",
+                                              TextSpan(
+                                                text: 'product_card_inclusive_vat'.tr,
                                                 style: TextStyle(
                                                     fontSize: 8,
                                                     fontWeight: FontWeight.w500,
@@ -743,7 +743,7 @@ class _NewProductCardState extends State<NewProductCard> {
                                           // ...existing WhatsApp code...
                                         },
                                         child: Text(
-                                          'Check Availability',
+                                          'product_card_check_availability'.tr,
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             color: kPrimaryColor,
@@ -790,8 +790,8 @@ class _NewProductCardState extends State<NewProductCard> {
                                           offerP > 0 ? offerP : regularP;
 
                                       if (finalPrice <= 0) {
-                                        Get.snackbar('Info',
-                                            'Price not available for this product.');
+                                        Get.snackbar('product_card_info'.tr,
+                                            'product_card_price_unavailable'.tr);
                                         return;
                                       }
 
@@ -844,8 +844,8 @@ class _NewProductCardState extends State<NewProductCard> {
                                       // Feedback
                                       widget.onAddedToCart?.call();
                                     } catch (e) {
-                                      Get.snackbar('Error',
-                                          'Failed to add item to cart.');
+                                      Get.snackbar('product_error_title'.tr,
+                                          'product_add_to_cart_failed'.tr);
                                     }
                                   },
                                   child: isOutOfStock
@@ -870,8 +870,8 @@ class _NewProductCardState extends State<NewProductCard> {
                                                   height: 12,
                                                 ),
                                                 const SizedBox(width: 4),
-                                                const Text(
-                                                  "Add to Cart",
+                                                Text(
+                                                  'product_add_to_cart'.tr,
                                                   style: TextStyle(
                                                     color: kdefblackColor,
                                                     fontSize: 10,
@@ -910,7 +910,7 @@ class _NewProductCardState extends State<NewProductCard> {
                     .white, // Consider defining this color in your constants
               ),
               child: Text(
-                "${widget.prdouctList['discount']}% OFF",
+                'product_card_discount_off'.trParams({'discount': widget.prdouctList['discount'].toString()}),
                 style: const TextStyle(
                   color: kSecondaryColor,
                   fontSize: 6,
