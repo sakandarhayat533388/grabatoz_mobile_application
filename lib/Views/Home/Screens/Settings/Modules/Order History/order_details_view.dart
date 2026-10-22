@@ -39,12 +39,12 @@ class OrderDetailScreen extends StatelessWidget {
       String fallbackImage,
       double fallbackPrice) async {
     if (productId.isEmpty) {
-      Get.snackbar('Warning', 'Missing product ID');
+      Get.snackbar('orders_warning'.tr, 'orders_missing_product_id'.tr);
       return;
     }
 
     try {
-      EasyLoading.show(status: 'Loading product details...');
+      EasyLoading.show(status: 'orders_loading_product'.tr);
       final product = await _fetchProductById(productId);
 
       // Extract/massage data for NewProductDetails
@@ -189,13 +189,13 @@ class OrderDetailScreen extends StatelessWidget {
     } catch (e) {
       EasyLoading.dismiss();
       debugPrint('Error fetching product details: $e');
-      Get.snackbar('Error', 'Failed to load product details: $e');
+      Get.snackbar('orders_error'.tr, 'orders_product_load_failed'.trParams({'e': '$e'}));
     }
   }
 
   Future<void> _handleOrderAgain(BuildContext context) async {
     try {
-      EasyLoading.show(status: 'Reconstructing Cart...');
+      EasyLoading.show(status: 'orders_reconstructing_cart'.tr);
 
       final cartNotifier = Get.find<CartNotifier>();
 
@@ -213,7 +213,7 @@ class OrderDetailScreen extends StatelessWidget {
 
       if (nonProtectionItems.isEmpty) {
         EasyLoading.dismiss();
-        Get.snackbar('Info', 'No items in this order are eligible to be ordered again.');
+        Get.snackbar('orders_info'.tr, 'orders_no_reorder_items'.tr);
         return;
       }
 
@@ -224,7 +224,7 @@ class OrderDetailScreen extends StatelessWidget {
 
         if (productId.isEmpty) continue;
 
-        final productName = item['name'] ?? product?['name'] ?? 'Order Item';
+        final productName = item['name'] ?? product?['name'] ?? 'orders_order_item'.tr;
         final productImage = item['image'] ?? product?['image'] ?? '';
 
         final double itemPrice = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
@@ -259,13 +259,13 @@ class OrderDetailScreen extends StatelessWidget {
       }
 
       EasyLoading.dismiss();
-      EasyLoading.showSuccess('Cart reconstructed successfully!');
+      EasyLoading.showSuccess('orders_cart_reconstructed'.tr);
 
       // Navigate to Cart screen
       Get.to(() => const Cart());
     } catch (e) {
       EasyLoading.dismiss();
-      Get.snackbar('Error', 'Failed to reconstruct cart: $e');
+      Get.snackbar('orders_error'.tr, 'orders_cart_reconstruct_failed'.trParams({'e': '$e'}));
     }
   }
 
@@ -287,18 +287,18 @@ class OrderDetailScreen extends StatelessWidget {
       case 'delivered':
         bg = const Color(0xFFECFDF5);
         fg = const Color(0xFF059669);
-        text = 'Paid';
+        text = 'orders_paid'.tr;
         break;
       case 'cancelled':
       case 'deleted':
         bg = const Color(0xFFFEF2F2);
         fg = const Color(0xFFDC2626);
-        text = 'Cancelled';
+        text = 'orders_cancelled'.tr;
         break;
       default:
         bg = const Color(0xFFFFFBEB);
         fg = const Color(0xFFD97706);
-        text = 'Pending';
+        text = 'orders_pending'.tr;
     }
 
     return Container(
@@ -369,7 +369,7 @@ class OrderDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: CustomAppBar(
-        titleText: 'Order Details',
+        titleText: 'orders_details_title'.tr,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -379,7 +379,7 @@ class OrderDetailScreen extends StatelessWidget {
             children: [
               // Placed Date Subtitle Header
               Text(
-                "Placed on ${formatPlacedDate(order['createdAt'] ?? '')}",
+                'orders_placed_on'.trParams({'date': formatPlacedDate(order['createdAt'] ?? '')}),
                 style: const TextStyle(
                   fontSize: 14,
                   color: kmediumblackColor,
@@ -397,8 +397,8 @@ class OrderDetailScreen extends StatelessWidget {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    "Order Items",
+                  Text(
+                    'orders_items'.tr,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -416,7 +416,7 @@ class OrderDetailScreen extends StatelessWidget {
 
                 // Safe name and image extraction
                 String productName =
-                    item['name'] ?? product['name'] ?? 'Order Item';
+                    item['name'] ?? product['name'] ?? 'orders_order_item'.tr;
                 String productImage = item['image'] ?? product['image'] ?? '';
 
                 double itemPrice =
@@ -495,7 +495,7 @@ class OrderDetailScreen extends StatelessWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    "Qty: ${item['quantity']}",
+                                    'orders_qty'.trParams({'qty': '${item['quantity']}'}),
                                     style: const TextStyle(
                                       fontSize: 13,
                                       color: kmediumblackColor,
@@ -533,8 +533,8 @@ class OrderDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Payment Summary",
+                    Text(
+                      'orders_payment_summary'.tr,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -545,8 +545,8 @@ class OrderDetailScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Subtotal",
+                        Text(
+                          'orders_subtotal'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             color: kmediumblackColor,
@@ -566,8 +566,8 @@ class OrderDetailScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Shipping Fee",
+                        Text(
+                          'orders_shipping_fee'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             color: kmediumblackColor,
@@ -592,8 +592,8 @@ class OrderDetailScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          "Total",
+                        Text(
+                          'orders_total'.tr,
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -663,8 +663,8 @@ class OrderDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Delivery Details",
+                    Text(
+                      'orders_delivery_details'.tr,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -672,19 +672,19 @@ class OrderDetailScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _infoRow("Tracking ID",
+                    _infoRow('orders_tracking_id'.tr,
                         "#${order['_id']?.toString().substring((order['_id']?.toString().length ?? 6) - 6) ?? ''}"),
-                    _infoRow("Delivery Type",
+                    _infoRow('orders_delivery_type'.tr,
                         "${order['deliveryType'] ?? 'Standard'}"),
                     _infoRow(
-                        "Customer Note",
+                        'orders_customer_note'.tr,
                         order['customerNotes'] != null &&
                                 order['customerNotes']
                                     .toString()
                                     .trim()
                                     .isNotEmpty
                             ? "${order['customerNotes']}"
-                            : "N/A"),
+                            : 'orders_na'.tr),
                   ],
                 ),
               ),
@@ -714,8 +714,8 @@ class OrderDetailScreen extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: () => _handleOrderAgain(context),
                   icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-                  label: const Text(
-                    "Order Again",
+                  label: Text(
+                    'orders_order_again'.tr,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -740,8 +740,8 @@ class OrderDetailScreen extends StatelessWidget {
                     Get.to(() => InvoicePreviewScreen(order: order));
                   },
                   icon: const Icon(Icons.print_outlined, color: kdefgreenColor),
-                  label: const Text(
-                    "Print / Download Invoice",
+                  label: Text(
+                    'orders_print_invoice'.tr,
                     style: TextStyle(
                       color: kdefgreenColor,
                       fontSize: 16,
