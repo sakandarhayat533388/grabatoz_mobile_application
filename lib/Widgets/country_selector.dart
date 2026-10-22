@@ -72,13 +72,13 @@ Future<void> showCountrySelector(BuildContext context) {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const Text(
-            'Select Country / Currency',
+          Text(
+            'settings_select_country'.tr,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
-            'Prices will be shown in the selected currency',
+            'settings_currency_hint'.tr,
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 12),
@@ -91,9 +91,9 @@ Future<void> showCountrySelector(BuildContext context) {
                 );
               }
               if (controller.countries.isEmpty) {
-                return const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Text('No countries available'),
+                return Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text('settings_no_countries'.tr),
                 );
               }
               return ListView.separated(
