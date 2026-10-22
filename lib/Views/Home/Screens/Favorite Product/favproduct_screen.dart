@@ -55,11 +55,11 @@ class _FavoriteState extends State<Favorite> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.shopping_cart, color: Colors.white, size: 24),
                   SizedBox(width: 8),
                   Text(
-                    'Added to cart',
+                    'fav_added_to_cart'.tr,
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -91,7 +91,7 @@ class _FavoriteState extends State<Favorite> {
                   Icon(added ? Icons.favorite : Icons.favorite_border, color: Colors.white, size: 24),
                   const SizedBox(width: 8),
                   Text(
-                    added ? 'Added to wishlist' : 'Removed from wishlist',
+                    added ? 'fav_added_to_wishlist'.tr : 'fav_removed_from_wishlist'.tr,
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -153,7 +153,7 @@ class _FavoriteState extends State<Favorite> {
             onPressed: _handleBack,
             icon: const Icon(Icons.arrow_back_ios, size: 20),
           ),
-          titleText: "Favorites",
+          titleText: 'fav_title'.tr,
           actionicon: GetBuilder<CartNotifier>(
             builder: (
               cartNotifier,
@@ -237,8 +237,8 @@ class _FavoriteState extends State<Favorite> {
                     ),
                   ),
                   20.0.heightbox,
-                  const Text(
-                    "First login to Favorite the product",
+                  Text(
+                    'fav_login_prompt'.tr,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -251,7 +251,7 @@ class _FavoriteState extends State<Favorite> {
                     onPressFunction: () {
                       context.route(Login());
                     },
-                    buttonText: "Login Now",
+                    buttonText: 'fav_login_now_btn'.tr,
                   ),
                 ],
               ),
@@ -270,8 +270,8 @@ class _FavoriteState extends State<Favorite> {
                       ),
                     ),
                     20.0.heightbox,
-                    const Text(
-                      "No Favorite Items",
+                    Text(
+                      'fav_empty_title'.tr,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -279,8 +279,8 @@ class _FavoriteState extends State<Favorite> {
                       ),
                     ),
                     10.0.heightbox,
-                    const Text(
-                      "Add items to your wishlist to see them here.",
+                    Text(
+                      'fav_empty_msg'.tr,
                       style: TextStyle(
                         fontSize: 14,
                         color: kSecondaryColor,
@@ -411,8 +411,8 @@ class _FavoriteState extends State<Favorite> {
                     ),
                     errorWidget: (context, url, error) => Column(
                       children: [
-                        const Text(
-                          "No image",
+                        Text(
+                          'fav_no_image'.tr,
                           style: TextStyle(fontSize: 12, color: Colors.red),
                         ),
                         10.0.heightbox,
@@ -420,16 +420,16 @@ class _FavoriteState extends State<Favorite> {
                       ],
                     ),
                   ),
-                  const Text(
-                    "Remove from WishList",
+                  Text(
+                    'fav_remove_btn'.tr,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
                     ),
                   ),
                   8.0.heightbox,
-                  const Text(
-                    "Are you sure you want to remove this item from your Favorites?",
+                  Text(
+                    'fav_remove_confirm_msg'.tr,
                     textAlign: TextAlign.center,
                   ),
                   15.0.heightbox,
@@ -450,9 +450,9 @@ class _FavoriteState extends State<Favorite> {
                               border: Border.all(color: kPrimaryColor),
                               borderRadius: defaultBorderRadious,
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                'Cancel',
+                                'cancel'.tr,
                                 style: TextStyle(
                                     color: kPrimaryColor,
                                     fontWeight: FontWeight.w600),
@@ -481,9 +481,9 @@ class _FavoriteState extends State<Favorite> {
                               color: kPrimaryColor,
                               borderRadius: defaultBorderRadious,
                             ),
-                            child: const Center(
+                            child: Center(
                               child: Text(
-                                'Yes,Remove',
+                                'fav_remove_confirm_btn'.tr,
                                 style: TextStyle(
                                     fontSize: 14,
                                     color: kdefwhiteColor,
