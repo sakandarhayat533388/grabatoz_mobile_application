@@ -117,9 +117,9 @@ class EditProfileState extends State<EditProfile> {
     final phone = _phoneDisplayController.text.trim();
     if (phone.isNotEmpty && _digitsOnly(phone).length < 6) {
       setState(() {
-        _phoneError = 'Enter a valid phone number';
+        _phoneError = 'profile_invalid_phone'.tr;
       });
-      Get.snackbar('Warning', 'Please enter a valid phone number',
+      Get.snackbar('profile_warning'.tr, 'profile_enter_valid_phone'.tr,
           backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
@@ -149,15 +149,15 @@ class EditProfileState extends State<EditProfile> {
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFFBFBFD),
-        appBar: const CustomAppBar(titleText: "Edit Profile"),
+        appBar: CustomAppBar(titleText: 'profile_edit'.tr),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Section
-              const Text(
-                "Edit Profile Details",
+              Text(
+                'profile_edit_details'.tr,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -166,7 +166,7 @@ class EditProfileState extends State<EditProfile> {
               ),
               const SizedBox(height: 4),
               Text(
-                "Keep your personal information up to date.",
+                'profile_edit_subtitle'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -186,20 +186,20 @@ class EditProfileState extends State<EditProfile> {
                               children: [
                                 Expanded(
                                   child: _buildInputGroup(
-                                    label: "Full Name *",
+                                    label: 'profile_full_name_required'.tr,
                                     child: _buildTextField(
                                       controller: _authController.editNameController,
-                                      hintText: "Enter full name",
+                                      hintText: 'profile_enter_full_name'.tr,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildInputGroup(
-                                    label: "Email Address *",
+                                    label: 'profile_email_required'.tr,
                                     child: _buildTextField(
                                       controller: _authController.editemailController,
-                                      hintText: "Enter email address",
+                                      hintText: 'profile_enter_email'.tr,
                                       keyboardType: TextInputType.emailAddress,
                                     ),
                                   ),
@@ -212,14 +212,14 @@ class EditProfileState extends State<EditProfile> {
                               children: [
                                 Expanded(
                                   child: _buildInputGroup(
-                                    label: "Phone Number",
+                                    label: 'profile_phone'.tr,
                                     child: _buildPhoneField(),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: _buildInputGroup(
-                                    label: "Date of Birth",
+                                    label: 'profile_dob'.tr,
                                     child: _buildDobField(),
                                   ),
                                 ),
@@ -231,7 +231,7 @@ class EditProfileState extends State<EditProfile> {
                               children: [
                                 Expanded(
                                   child: _buildInputGroup(
-                                    label: "Gender",
+                                    label: 'profile_gender'.tr,
                                     child: _buildGenderDropdown(),
                                   ),
                                 ),
@@ -245,34 +245,34 @@ class EditProfileState extends State<EditProfile> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildInputGroup(
-                              label: "Full Name *",
+                              label: 'profile_full_name_required'.tr,
                               child: _buildTextField(
                                 controller: _authController.editNameController,
-                                hintText: "Enter full name",
+                                hintText: 'profile_enter_full_name'.tr,
                               ),
                             ),
                             const SizedBox(height: 16),
                             _buildInputGroup(
-                              label: "Email Address *",
+                              label: 'profile_email_required'.tr,
                               child: _buildTextField(
                                 controller: _authController.editemailController,
-                                hintText: "Enter email address",
+                                hintText: 'profile_enter_email'.tr,
                                 keyboardType: TextInputType.emailAddress,
                               ),
                             ),
                             const SizedBox(height: 16),
                             _buildInputGroup(
-                              label: "Phone Number",
+                              label: 'profile_phone'.tr,
                               child: _buildPhoneField(),
                             ),
                             const SizedBox(height: 16),
                             _buildInputGroup(
-                              label: "Date of Birth",
+                              label: 'profile_dob'.tr,
                               child: _buildDobField(),
                             ),
                             const SizedBox(height: 16),
                             _buildInputGroup(
-                              label: "Gender",
+                              label: 'profile_gender'.tr,
                               child: _buildGenderDropdown(),
                             ),
                           ],
@@ -293,7 +293,7 @@ class EditProfileState extends State<EditProfile> {
                         : PrimaryButton(
                             buttonColor: kPrimaryColor,
                             textColor: kdefwhiteColor,
-                            buttonText: "Save Changes",
+                            buttonText: 'profile_save_changes'.tr,
                             onPressFunction: _saveProfileChanges,
                           ),
                   ),
@@ -360,7 +360,7 @@ class EditProfileState extends State<EditProfile> {
       key: ValueKey(initialCountryCode),
       controller: _phoneDisplayController,
       decoration: InputDecoration(
-        hintText: 'Enter phone number',
+        hintText: 'profile_enter_phone'.tr,
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
         filled: true,
         fillColor: kdefwhiteColor,
@@ -407,7 +407,7 @@ class EditProfileState extends State<EditProfile> {
     return DropdownButtonFormField<String>(
       initialValue: dropdownValue,
       decoration: InputDecoration(
-        hintText: 'Select Gender',
+        hintText: 'profile_select_gender'.tr,
         hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
         filled: true,
         fillColor: kdefwhiteColor,
@@ -425,10 +425,10 @@ class EditProfileState extends State<EditProfile> {
           borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
         ),
       ),
-      items: const [
-        DropdownMenuItem(value: 'male', child: Text('Male')),
-        DropdownMenuItem(value: 'female', child: Text('Female')),
-        DropdownMenuItem(value: 'other', child: Text('Other')),
+      items: [
+        DropdownMenuItem(value: 'male', child: Text('profile_male'.tr)),
+        DropdownMenuItem(value: 'female', child: Text('profile_female'.tr)),
+        DropdownMenuItem(value: 'other', child: Text('profile_other'.tr)),
       ],
       onChanged: (val) {
         if (val != null) {
