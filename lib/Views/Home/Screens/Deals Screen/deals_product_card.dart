@@ -219,7 +219,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
   void _showFavPopup({required bool added}) {
     showGeneralDialog(
       context: context,
-      barrierLabel: added ? 'Added to wishlist' : 'Removed from wishlist',
+      barrierLabel: added ? 'deals_added_to_wishlist'.tr : 'deals_removed_from_wishlist'.tr,
       barrierDismissible: false,
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 200),
@@ -244,7 +244,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    added ? 'Added to wishlist' : 'Removed from wishlist',
+                    added ? 'deals_added_to_wishlist'.tr : 'deals_removed_from_wishlist'.tr,
                     style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
@@ -306,7 +306,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
 
       String productId = productData['_id']?.toString() ?? '';
       String name =
-          productData['name']?.toString() ?? 'Product Name Not Available';
+          productData['name']?.toString() ?? 'deals_product_name_missing'.tr;
 
       // Extract brand - already enriched by controller
       dynamic brandData = productData['brand'];
@@ -556,7 +556,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                       ? widget.productList['stockStatus']
                                           ?.toString()
                                       : null) ??
-                                  'Unknown';
+                                  'deals_unknown'.tr;
                               final s = status.toLowerCase();
                               final Color bg = (s == 'out of stock')
                                   ? kredColor
@@ -596,7 +596,10 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                           borderRadius:
                                               BorderRadius.circular(4)),
                                       child: Text(
-                                        "${widget.productList['discount']}% OFF",
+                                        'deals_discount_badge'.trParams({
+                                          'd': widget.productList['discount']
+                                              .toString()
+                                        }),
                                         style: const TextStyle(
                                             color: kdefwhiteColor,
                                             fontSize: 8,
@@ -647,7 +650,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                               ? widget.productList['name']
                                                   ?.toString()
                                               : null) ??
-                                          "Product Name",
+                                          'deals_product_name'.tr,
                                       maxLines: widget.maxLines,
                                       style: const TextStyle(
                                           fontSize: 10,
@@ -703,8 +706,8 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                           RichText(
                                             text: TextSpan(
                                               children: [
-                                                const TextSpan(
-                                                  text: "Inclusive VAT ",
+                                                TextSpan(
+                                                  text: 'deals_inclusive_vat'.tr,
                                                   style: TextStyle(
                                                       fontSize: 8,
                                                       fontWeight:
@@ -794,7 +797,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                             // ...existing WhatsApp code...
                                           },
                                           child: Text(
-                                            'Check Availability',
+                                            'deals_check_availability_btn'.tr,
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               color: kPrimaryColor,
@@ -828,7 +831,8 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                         final String productId =
                                             (map['_id'] ?? '').toString();
                                         final String productName =
-                                            (map['name'] ?? 'Unknown Product')
+                                            (map['name'] ??
+                                                    'deals_unknown_product'.tr)
                                                 .toString();
 
                                         final double offerP =
@@ -839,8 +843,8 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                             offerP > 0 ? offerP : regularP;
 
                                         if (finalPrice <= 0) {
-                                          Get.snackbar('Info',
-                                              'Price not available for this product.');
+                                          Get.snackbar('deals_info_title'.tr,
+                                              'deals_price_unavailable_msg'.tr);
                                           return;
                                         }
 
@@ -889,8 +893,8 @@ class _DealsProductCardState extends State<DealsProductCard> {
 
                                         widget.onAddedToCart?.call();
                                       } catch (e) {
-                                        Get.snackbar('Error',
-                                            'Failed to add item to cart.');
+                                        Get.snackbar('deals_error_title'.tr,
+                                            'deals_add_cart_failed_msg'.tr);
                                       }
                                     },
                                     child: isOutOfStock
@@ -915,8 +919,8 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                                     height: 12,
                                                   ),
                                                   const SizedBox(width: 4),
-                                                  const Text(
-                                                    "Add to Cart",
+                                                  Text(
+                                                    'deals_add_to_cart_btn'.tr,
                                                     style: TextStyle(
                                                       color: kdefblackColor,
                                                       fontSize: 10,
