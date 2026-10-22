@@ -89,11 +89,11 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
       text: address?.zipCode ?? '',
     );
 
-    String selectedState = address?.state.isNotEmpty == true ? address!.state : 'Select State';
+    String selectedState = address?.state.isNotEmpty == true ? address!.state : 'address_select_state'.tr;
     bool isDefault = address?.isDefault ?? false;
 
     final List<String> uaeStates = [
-      'Select State',
+      'address_select_state'.tr,
       'Abu Dhabi',
       'Ajman',
       'Al Ain',
@@ -129,7 +129,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            isEdit ? "Edit Address Details" : "Add Address Details",
+                            isEdit ? 'address_edit_title'.tr : 'address_add_title'.tr,
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -148,17 +148,17 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
 
                       // ADDRESS LABEL *
                       _buildDialogFieldGroup(
-                        label: "ADDRESS LABEL *",
+                        label: 'address_label'.tr,
                         child: _buildDialogTextField(
                           controller: nameController,
-                          hintText: "e.g. Home, Office, Work",
+                          hintText: 'address_label_hint'.tr,
                         ),
                       ),
                       const SizedBox(height: 14),
 
                       // PHONE *
                       _buildDialogFieldGroup(
-                        label: "PHONE *",
+                        label: 'address_phone'.tr,
                         child: _buildDialogPhoneField(
                           initialCountryCode: initialCountryCode,
                           initialNumber: initialNumberDigits,
@@ -171,7 +171,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
 
                       // EMAIL
                       _buildDialogFieldGroup(
-                        label: "EMAIL",
+                        label: 'address_email'.tr,
                         child: _buildDialogTextField(
                           controller: emailController,
                           hintText: "sakandarhayat388@gmail.com",
@@ -183,22 +183,22 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
 
                       // ADDRESS STREET *
                       _buildDialogFieldGroup(
-                        label: "ADDRESS STREET *",
+                        label: 'address_street'.tr,
                         child: _buildDialogTextField(
                           controller: streetController,
-                          hintText: "Street name, Villa/Apartment details",
+                          hintText: 'address_street_hint'.tr,
                         ),
                       ),
                       const SizedBox(height: 14),
 
                       // STATE / EMIRATE *
                       _buildDialogFieldGroup(
-                        label: "STATE / EMIRATE *",
+                        label: 'address_state'.tr,
                         child: DropdownButtonFormField<String>(
                           initialValue: uaeStates.contains(selectedState)
                               ? selectedState
-                              : 'Select State',
-                          decoration: _inputDecoration(hintText: 'Select State'),
+                              : 'address_select_state'.tr,
+                          decoration: _inputDecoration(hintText: 'address_select_state'.tr),
                           items: uaeStates
                               .map((st) => DropdownMenuItem(
                                     value: st,
@@ -218,17 +218,17 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
 
                       // CITY *
                       _buildDialogFieldGroup(
-                        label: "CITY *",
+                        label: 'address_city'.tr,
                         child: _buildDialogTextField(
                           controller: cityController,
-                          hintText: "City",
+                          hintText: 'address_city_hint'.tr,
                         ),
                       ),
                       const SizedBox(height: 14),
 
                       // ZIP CODE / POST CODE
                       _buildDialogFieldGroup(
-                        label: "ZIP CODE / POST CODE",
+                        label: 'address_zip'.tr,
                         child: _buildDialogTextField(
                           controller: zipController,
                           hintText: "00000",
@@ -258,8 +258,8 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                 });
                               },
                             ),
-                            const Text(
-                              "Set as Default Address",
+                            Text(
+                              'address_set_default'.tr,
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -284,8 +284,8 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                 ),
                               ),
                               onPressed: () => Navigator.pop(context),
-                              child: const Text(
-                                "Cancel",
+                              child: Text(
+                                'cancel'.tr,
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -301,20 +301,20 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                 : PrimaryButton(
                                     buttonColor: kPrimaryColor,
                                     textColor: kdefwhiteColor,
-                                    buttonText: isEdit ? "Save Address" : "Save Address",
+                                    buttonText: 'address_save'.tr,
                                     onPressFunction: () async {
                                       final labelVal = nameController.text.trim();
                                       final streetVal = streetController.text.trim();
                                       final cityVal = cityController.text.trim();
 
                                       if (labelVal.isEmpty) {
-                                        Get.snackbar("Warning", "Address Label is required",
+                                        Get.snackbar('address_warning'.tr, 'address_label_required'.tr,
                                             backgroundColor: Colors.orange, colorText: Colors.white);
                                         return;
                                       }
 
                                       if (streetVal.isEmpty) {
-                                        Get.snackbar("Warning", "Address Street is required",
+                                        Get.snackbar('address_warning'.tr, 'address_street_required'.tr,
                                             backgroundColor: Colors.orange, colorText: Colors.white);
                                         return;
                                       }
@@ -325,7 +325,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                         "email": emailController.text.trim(),
                                         "address": streetVal,
                                         "city": cityVal.isNotEmpty ? cityVal : "Dubai",
-                                        "state": selectedState == 'Select State' ? 'Dubai' : selectedState,
+                                        "state": selectedState == 'address_select_state'.tr ? 'Dubai' : selectedState,
                                         "zipCode": zipController.text.trim().isNotEmpty
                                             ? zipController.text.trim()
                                             : "00000",
@@ -373,7 +373,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
       dropdownIconPosition: IconPosition.trailing,
       flagsButtonPadding: const EdgeInsets.only(left: 10),
       showDropdownIcon: true,
-      decoration: _inputDecoration(hintText: 'Phone Number'),
+      decoration: _inputDecoration(hintText: 'profile_phone'.tr),
       onChanged: (PhoneNumber phone) {
         onChanged(phone.number.isEmpty ? '' : phone.completeNumber);
       },
@@ -449,13 +449,13 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFD),
-      appBar: const CustomAppBar(titleText: "Saved Addresses"),
+      appBar: CustomAppBar(titleText: 'profile_saved_addresses'.tr),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openAddressDialog(),
         backgroundColor: kPrimaryColor,
         icon: const Icon(Icons.add, color: kdefwhiteColor),
-        label: const Text(
-          "Add New Address",
+        label: Text(
+          'address_add_new'.tr,
           style: TextStyle(color: kdefwhiteColor, fontWeight: FontWeight.bold),
         ),
       ),
@@ -471,12 +471,12 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
               children: [
                 Icon(Icons.location_off_outlined, size: 70, color: Colors.grey[400]),
                 const SizedBox(height: 16),
-                const Text(
-                  "No Saved Addresses Found",
+                Text(
+                  'address_empty_title'.tr,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: kSecondaryColor),
                 ),
                 const SizedBox(height: 8),
-                const Text("Add a shipping address for faster checkout.", style: TextStyle(color: Colors.grey)),
+                Text('address_empty_hint'.tr, style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
@@ -486,7 +486,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                   ),
                   onPressed: () => _openAddressDialog(),
                   icon: const Icon(Icons.add, color: Colors.white),
-                  label: const Text("Add New Address", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  label: Text('address_add_new'.tr, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -536,7 +536,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                           runSpacing: 4,
                           children: [
                             Text(
-                              addr.name.isNotEmpty ? addr.name : "Address",
+                              addr.name.isNotEmpty ? addr.name : 'address_fallback'.tr,
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -551,14 +551,14 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                   color: const Color(0xFFE8F5E9),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(Icons.check,
                                         size: 14, color: kPrimaryColor),
                                     SizedBox(width: 4),
                                     Text(
-                                      "Default",
+                                      'address_default'.tr,
                                       style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
@@ -580,8 +580,8 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                     color: Colors.grey.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Text(
-                                    "Set Default",
+                                  child: Text(
+                                    'address_set_default_btn'.tr,
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.grey,
@@ -693,19 +693,19 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Delete Address"),
-        content: Text("Are you sure you want to delete '${addr.name}'?"),
+        title: Text('address_delete_title'.tr),
+        content: Text('address_delete_confirm'.trParams({'name': addr.name})),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text('cancel'.tr),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await _addressController.deleteAddress(addr.id);
             },
-            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+            child: Text('address_delete'.tr, style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
