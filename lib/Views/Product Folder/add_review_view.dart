@@ -148,11 +148,11 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
     if (_verifying) return;
     final code = _codeController.text.trim();
     if (code.length != 6) {
-      _showCenterPopup('Enter 6-digit code', icon: Icons.info);
+      _showCenterPopup('product_review_enter_code'.tr, icon: Icons.info);
       return;
     }
     if (_verificationId == null) {
-      _showCenterPopup('Verification not initialized', icon: Icons.error);
+      _showCenterPopup('product_review_verification_not_initialized'.tr, icon: Icons.error);
       return;
     }
     setState(() => _verifying = true);
@@ -164,11 +164,11 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
         body: jsonEncode({'verificationId': _verificationId, 'code': code}),
       );
       if (res.statusCode == 201 || res.statusCode == 200) {
-        _showCenterPopup('Verified successfully', icon: Icons.check_circle);
+        _showCenterPopup('product_review_verified_success'.tr, icon: Icons.check_circle);
         await Future.delayed(const Duration(milliseconds: 900));
         if (mounted) Navigator.pop(context, true);
       } else {
-        String msg = 'Invalid or expired code';
+        String msg = 'product_review_invalid_code'.tr;
         try {
           final body = json.decode(res.body);
           if (body is Map && body['message'] is String) msg = body['message'];
@@ -176,7 +176,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
         _showCenterPopup(msg, icon: Icons.error);
       }
     } catch (_) {
-      _showCenterPopup('Verification failed', icon: Icons.error);
+      _showCenterPopup('product_review_verification_failed'.tr, icon: Icons.error);
     } finally {
       if (mounted) setState(() => _verifying = false);
     }
@@ -192,13 +192,13 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
         body: jsonEncode({'verificationId': _verificationId}),
       );
       if (res.statusCode == 200) {
-        _showCenterPopup('Code resent', icon: Icons.check_circle);
+        _showCenterPopup('product_review_code_resent'.tr, icon: Icons.check_circle);
         _startResendTimer(60);
       } else {
-        _showCenterPopup('Failed to resend code', icon: Icons.error);
+        _showCenterPopup('product_review_resend_failed'.tr, icon: Icons.error);
       }
     } catch (_) {
-      _showCenterPopup('Failed to resend code', icon: Icons.error);
+      _showCenterPopup('product_review_resend_failed'.tr, icon: Icons.error);
     }
   }
 
@@ -211,17 +211,17 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
     final int ratingInt = _rating.round();
 
     if (ratingInt <= 0 || comment.isEmpty) {
-      _showCenterPopup('Please add rating and comment', icon: Icons.info);
+      _showCenterPopup('product_review_rating_comment_required'.tr, icon: Icons.info);
       return;
     }
     // Guests must provide name and valid email
     if (!_loggedIn) {
       if (name.isEmpty || email.isEmpty) {
-        _showCenterPopup('Name and email are required', icon: Icons.info);
+        _showCenterPopup('product_review_name_email_required'.tr, icon: Icons.info);
         return;
       }
       if (!_isValidEmail(email)) {
-        _showCenterPopup('Enter a valid email address', icon: Icons.info);
+        _showCenterPopup('product_review_invalid_email'.tr, icon: Icons.info);
         return;
       }
     }
@@ -274,12 +274,12 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
           _startResendTimer(60);
         } else {
           // Authenticated or immediate success
-          _showCenterPopup('Review submitted', icon: Icons.check_circle);
+          _showCenterPopup('product_review_submitted'.tr, icon: Icons.check_circle);
           await Future.delayed(const Duration(milliseconds: 900));
           if (mounted) Navigator.pop(context, true);
         }
       } else {
-        String msg = 'Failed to post review';
+        String msg = 'product_review_submit_failed'.tr;
         try {
           final body = json.decode(res.body);
           if (body is Map && body['message'] is String) {
@@ -289,7 +289,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
         _showCenterPopup(msg, icon: Icons.error);
       }
     } catch (e) {
-      _showCenterPopup('Failed to post review', icon: Icons.error);
+      _showCenterPopup('product_review_submit_failed'.tr, icon: Icons.error);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -331,10 +331,10 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text("Verify your email", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    Text('product_review_verify_email'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                     const SizedBox(height: 6),
                     Text(
-                      _guestEmail != null ? "We sent a 6-digit code to $_guestEmail" : "We sent a 6-digit code to your email",
+                      _guestEmail != null ? 'product_review_code_sent_to'.trParams({'email': _guestEmail!}) : 'product_review_code_sent_generic'.tr,
                       style: const TextStyle(fontSize: 13, color: Colors.black54),
                     ),
                     const SizedBox(height: 16),
@@ -342,9 +342,9 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                       controller: _codeController,
                       keyboardType: TextInputType.number,
                       maxLength: 6,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: OutlineInputBorder(),
-                        hintText: "Enter 6-digit code",
+                        hintText: 'product_review_enter_code'.tr,
                         counterText: "",
                       ),
                     ),
@@ -357,7 +357,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                             style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
                             child: _verifying
                                 ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Text("Verify", style: TextStyle(color: Colors.white)),
+                                : Text('product_review_verify_btn'.tr, style: const TextStyle(color: Colors.white)),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -365,7 +365,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                           child: OutlinedButton(
                             onPressed: (_resendCooldown > 0) ? null : _resendVerification,
                             child: Text(
-                              _resendCooldown > 0 ? "Resend in ${_resendCooldown}s" : "Resend Code",
+                              _resendCooldown > 0 ? 'product_review_resend_in'.trParams({'seconds': _resendCooldown.toString()}) : 'product_review_resend_code'.tr,
                               style: const TextStyle(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -376,7 +376,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                     Center(
                       child: TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text("Cancel"),
+                        child: Text('cancel'.tr),
                       ),
                     ),
                   ],
@@ -385,7 +385,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Rating", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text('product_review_rating_label'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     SizedBox(height: 8),
                     Row(
                       children: [
@@ -402,41 +402,41 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                           maxRating: 5,
                         ),
                         SizedBox(width: 10),
-                        Text("(${_rating.toInt()} stars)"),
+                        Text('product_review_stars'.trParams({'count': _rating.toInt().toString()})),
                       ],
                     ),
                     SizedBox(height: 20),
                     if (!_loggedIn) ...[
-                      Text("Name", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('product_review_name_label'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _nameController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: OutlineInputBorder(),
-                          hintText: "Enter your name",
+                          hintText: 'product_review_name_hint'.tr,
                         ),
                       ),
                       const SizedBox(height: 16),
-                      Text("Email", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('product_review_email_label'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: OutlineInputBorder(),
-                          hintText: "Enter your email",
+                          hintText: 'product_review_email_hint'.tr,
                         ),
                       ),
                       const SizedBox(height: 20),
                     ],
-                    Text("Review", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text('product_review_write_label'.tr, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     SizedBox(height: 8),
                     TextField(
                       controller: _reviewController,
                       maxLines: 4,
                       decoration: InputDecoration(
                         border: OutlineInputBorder(),
-                        hintText: "Write your review here...",
+                        hintText: 'product_review_comment_hint'.tr,
                       ),
                     ),
                     SizedBox(height: 24),
@@ -448,7 +448,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                             child: _submitting
                                 ? SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                : Text("Submit Review", style: TextStyle(color: Colors.white)),
+                                : Text('product_review_submit_btn'.tr, style: const TextStyle(color: Colors.white)),
                           ),
                         ),
                         SizedBox(width: 10),
@@ -456,7 +456,7 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
                           child: ElevatedButton(
                             onPressed: _cancelReview,
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                            child: Text("Cancel", style: TextStyle(color: Colors.white)),
+                            child: Text('cancel'.tr, style: const TextStyle(color: Colors.white)),
                           ),
                         ),
                       ],
