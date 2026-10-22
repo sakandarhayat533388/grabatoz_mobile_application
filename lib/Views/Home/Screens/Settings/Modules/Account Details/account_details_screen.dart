@@ -22,7 +22,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
 
   String _formatDisplayPhone(String rawPhone) {
     final clean = rawPhone.trim().replaceAll(RegExp(r'[\s\-\(\)]'), '');
-    if (clean.isEmpty) return 'Not specified';
+    if (clean.isEmpty) return 'profile_not_specified'.tr;
 
     final validDialCodes = [
       '+971', '+966', '+968', '+974', '+973', '+965', '+91', '+92', '+44', '+1',
@@ -66,7 +66,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFD),
-      appBar: const CustomAppBar(titleText: "Account Details"),
+      appBar: CustomAppBar(titleText: 'profile_account_details'.tr),
       body: Obx(() {
         if (_authController.isProfileLoading.value) {
           return const Center(child: CircularProgressIndicator());
@@ -74,20 +74,20 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
 
         final fullName = _authController.fullName.value.isNotEmpty
             ? _authController.fullName.value
-            : "Not specified";
+            : 'profile_not_specified'.tr;
         final email = _authController.email.value.isNotEmpty
             ? _authController.email.value
-            : "Not specified";
+            : 'profile_not_specified'.tr;
         final phone = _authController.phoneNumber.value.isNotEmpty
             ? _formatDisplayPhone(_authController.phoneNumber.value)
-            : "Not specified";
+            : 'profile_not_specified'.tr;
         final dob = _authController.dateOfBirth.value.isNotEmpty
             ? _authController.dateOfBirth.value
-            : "Not specified";
+            : 'profile_not_specified'.tr;
         final gender = _authController.gender.value.isNotEmpty
             ? _authController.gender.value.capitalizeFirst ?? _authController.gender.value
-            : "Not Specified";
-        final accountType = _authController.isAdmin.value ? "Admin" : "Customer";
+            : 'profile_not_specified'.tr;
+        final accountType = _authController.isAdmin.value ? 'profile_admin'.tr : 'profile_customer'.tr;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
@@ -95,8 +95,8 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Section
-              const Text(
-                "Account Details",
+              Text(
+                'profile_account_details'.tr,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -105,7 +105,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                "Full overview of your account information.",
+                'profile_account_overview'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -127,42 +127,42 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                           childAspectRatio: 2.5,
                           children: [
                             _buildDetailCard(
-                              label: "Full Name",
+                              label: 'profile_full_name'.tr,
                               value: fullName,
                               icon: Icons.person_outline,
                               iconBgColor: const Color(0xFFE8F5E9),
                               iconColor: const Color(0xFF4CAF50),
                             ),
                             _buildDetailCard(
-                              label: "Email Address",
+                              label: 'profile_email'.tr,
                               value: email,
                               icon: Icons.email_outlined,
                               iconBgColor: const Color(0xFFE3F2FD),
                               iconColor: const Color(0xFF2196F3),
                             ),
                             _buildDetailCard(
-                              label: "Phone Number",
+                              label: 'profile_phone'.tr,
                               value: phone,
                               icon: Icons.phone_outlined,
                               iconBgColor: const Color(0xFFF3E5F5),
                               iconColor: const Color(0xFF9C27B0),
                             ),
                             _buildDetailCard(
-                              label: "Date of Birth",
+                              label: 'profile_dob'.tr,
                               value: dob,
                               icon: Icons.calendar_today_outlined,
                               iconBgColor: const Color(0xFFFFF3E0),
                               iconColor: const Color(0xFFFF9800),
                             ),
                             _buildDetailCard(
-                              label: "Gender",
+                              label: 'profile_gender'.tr,
                               value: gender,
                               icon: Icons.tune_outlined,
                               iconBgColor: const Color(0xFFE0F2F1),
                               iconColor: const Color(0xFF009688),
                             ),
                             _buildDetailCard(
-                              label: "Account Type",
+                              label: 'profile_account_type'.tr,
                               value: accountType,
                               icon: Icons.layers_outlined,
                               iconBgColor: const Color(0xFFE8EAF6),
@@ -173,7 +173,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                       : Column(
                           children: [
                             _buildDetailCard(
-                              label: "Full Name",
+                              label: 'profile_full_name'.tr,
                               value: fullName,
                               icon: Icons.person_outline,
                               iconBgColor: const Color(0xFFE8F5E9),
@@ -181,7 +181,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                             ),
                             const SizedBox(height: 12),
                             _buildDetailCard(
-                              label: "Email Address",
+                              label: 'profile_email'.tr,
                               value: email,
                               icon: Icons.email_outlined,
                               iconBgColor: const Color(0xFFE3F2FD),
@@ -189,7 +189,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                             ),
                             const SizedBox(height: 12),
                             _buildDetailCard(
-                              label: "Phone Number",
+                              label: 'profile_phone'.tr,
                               value: phone,
                               icon: Icons.phone_outlined,
                               iconBgColor: const Color(0xFFF3E5F5),
@@ -197,7 +197,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                             ),
                             const SizedBox(height: 12),
                             _buildDetailCard(
-                              label: "Date of Birth",
+                              label: 'profile_dob'.tr,
                               value: dob,
                               icon: Icons.calendar_today_outlined,
                               iconBgColor: const Color(0xFFFFF3E0),
@@ -205,7 +205,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                             ),
                             const SizedBox(height: 12),
                             _buildDetailCard(
-                              label: "Gender",
+                              label: 'profile_gender'.tr,
                               value: gender,
                               icon: Icons.tune_outlined,
                               iconBgColor: const Color(0xFFE0F2F1),
@@ -213,7 +213,7 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
                             ),
                             const SizedBox(height: 12),
                             _buildDetailCard(
-                              label: "Account Type",
+                              label: 'profile_account_type'.tr,
                               value: accountType,
                               icon: Icons.layers_outlined,
                               iconBgColor: const Color(0xFFE8EAF6),
