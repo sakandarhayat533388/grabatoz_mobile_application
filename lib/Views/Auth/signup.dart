@@ -183,7 +183,7 @@ class _SignUpState extends State<SignUp> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     50.0.heightbox,
-                    const Text('Sign Up',
+                    Text('auth_signup_title'.tr,
                         style: TextStyle(
                             fontSize: 34.0,
                             fontWeight: FontWeight.bold,
@@ -201,7 +201,7 @@ class _SignUpState extends State<SignUp> {
                               children: [
                                 PrimaryTextField(
                                   onChanged: authProvider.validatefirstname,
-                                  hintText: "Name",
+                                  hintText: 'auth_name_hint'.tr,
                                   controller: firstnamecontroller,
                                 ),
                                 if (authProvider.firstnamemessage != null)
@@ -256,7 +256,7 @@ class _SignUpState extends State<SignUp> {
                                           color: kdefwhiteColor,
                                         )
                                       : null,
-                                  hintText: 'Email Address',
+                                  hintText: 'auth_email_hint'.tr,
                                 ),
                                 if (authProvider.emailErrorMessage != null)
                                   Padding(
@@ -293,7 +293,7 @@ class _SignUpState extends State<SignUp> {
                                       color: kdefwhiteColor,
                                     ),
                                   ),
-                                  hintText: 'Password',
+                                  hintText: 'auth_password_hint'.tr,
                                 ),
                                 if (authProvider.passwordErrorMessage != null)
                                   Padding(
@@ -442,7 +442,7 @@ class _SignUpState extends State<SignUp> {
                         return PrimaryButton(
                           buttonColor: kdefwhiteColor,
                           textColor: kSecondaryColor,
-                          buttonText: "Sign Up",
+                          buttonText: 'auth_signup_title'.tr,
                           onPressFunction: () async {
                             final firstname = firstnamecontroller.text.trim();
                             final email = emailcontroller.text.trim();
@@ -465,7 +465,7 @@ class _SignUpState extends State<SignUp> {
                                 formKey.currentState!.save();
 
                                 try {
-                                  EasyLoading.show(status: 'Signing up...');
+                                  EasyLoading.show(status: 'auth_signing_up'.tr);
 
                                   await authProvider.signUp(
                                     firstname,
@@ -495,18 +495,18 @@ class _SignUpState extends State<SignUp> {
                       onTap: () {
                         context.route(const Login());
                       },
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Already have an account? ',
+                            'auth_already_have_account'.tr + ' ',
                             style: TextStyle(
                                 color: kdefwhiteColor,
                                 fontSize: 14.0,
                                 fontWeight: FontWeight.w600),
                           ),
                           Text(
-                            'Login',
+                            'auth_login_title'.tr,
                             style: TextStyle(
                                 fontSize: 16.0,
                                 fontWeight: FontWeight.w600,
