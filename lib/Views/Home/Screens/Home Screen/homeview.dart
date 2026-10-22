@@ -405,7 +405,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
   void _showAddedToCartPopup() {
     showGeneralDialog(
       context: context,
-      barrierLabel: 'Added to cart',
+      barrierLabel: 'home_added_to_cart'.tr,
       barrierDismissible: false,
       barrierColor: Colors.transparent,
       transitionDuration: const Duration(milliseconds: 200),
@@ -423,11 +423,11 @@ class _HomeScreenViewState extends State<HomeScreenView> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.shopping_cart, color: Colors.white, size: 24),
                   SizedBox(width: 8),
                   Text(
-                    'Added to cart',
+                    'home_added_to_cart'.tr,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -593,17 +593,17 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                     },
                     child: Padding(
                       padding: defaultPadding(),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("Categories",
+                          Text('categories'.tr,
                               style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   color: kSecondaryColor)),
                           Row(
                             children: [
-                              Text("Show All",
+                              Text('home_show_all'.tr,
                                   style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
@@ -913,7 +913,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                         Get.to(() => NewAllProduct(
                             id: "_featured_", parentType: "featured"));
                       },
-                      name: "Featured Products",
+                      name: 'home_featured_products'.tr,
                       loading: isLoadingFeatured,
                       productList: displayFeaturedProducts,
                       onAddedToCart: _showAddedToCartPopup, // ADD
@@ -1009,11 +1009,11 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                           Get.to(() => NewAllProduct(
                               id: _hpSectionBrandId, parentType: "brand"));
                         } else {
-                          Get.snackbar("Developer Info",
-                              "HP Brand ID needs to be configured by the developer.");
+                          Get.snackbar('home_developer_info'.tr,
+                              'home_hp_brand_config_msg'.tr);
                         }
                       },
-                      name: "HP Products",
+                      name: 'home_hp_products'.tr,
                       loading: isLoadingHp,
                       productList: displayHpProducts,
                       onAddedToCart: _showAddedToCartPopup, // ADD
@@ -1109,7 +1109,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                         Get.to(() => NewAllProduct(
                             id: accessoriesCategoryId, parentType: "category"));
                       },
-                      name: "Accessories",
+                      name: 'home_accessories'.tr,
                       loading: isLoadingAccessories,
                       productList: displayAccessoriesProducts,
                       onAddedToCart: _showAddedToCartPopup, // ADD
@@ -1203,7 +1203,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                         Get.to(() => NewAllProduct(
                             id: _asusSectionBrandId, parentType: "brand"));
                       },
-                      name: "Shop Asus",
+                      name: 'home_shop_asus'.tr,
                       loading: isLoadingAsus,
                       productList: displayAsusProducts,
                       onAddedToCart: _showAddedToCartPopup, // ADD
@@ -1254,7 +1254,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                             id: networkingCategoryId,
                             parentType: "subcategory"));
                       },
-                      name: "Networking",
+                      name: 'home_networking'.tr,
                       loading: isLoadingNetworking,
                       productList: displayNetworkingProducts,
                       onAddedToCart: _showAddedToCartPopup, // ADD
@@ -1349,10 +1349,10 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                               id: _msiSectionBrandId, parentType: "brand"));
                         } else {
                           Get.snackbar(
-                              "Info", "MSI brand page not available yet.");
+                              'home_info_title'.tr, 'home_msi_unavailable_msg'.tr);
                         }
                       },
-                      name: "Shop MSI",
+                      name: 'home_shop_msi'.tr,
                       loading: isLoadingMsi,
                       productList: displayMsiProducts,
                       onAddedToCart: _showAddedToCartPopup, // ADD
@@ -1445,10 +1445,10 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                               id: _appleSectionBrandId, parentType: "brand"));
                         } else {
                           Get.snackbar(
-                              "Info", "Apple brand page not available yet.");
+                              'home_info_title'.tr, 'home_apple_unavailable_msg'.tr);
                         }
                       },
-                      name: "Show Apple",
+                      name: 'home_show_apple'.tr,
                       loading: isLoadingApple,
                       productList: displayAppleProducts,
                       onAddedToCart: _showAddedToCartPopup, // ADD
@@ -1463,17 +1463,17 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                     },
                     child: Padding(
                       padding: defaultPadding(),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text("Featured Brands",
+                          Text('home_featured_brands'.tr,
                               style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
                                   color: kSecondaryColor)),
                           Row(
                             children: [
-                              Text("Show All",
+                              Text('home_show_all'.tr,
                                   style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
@@ -1587,11 +1587,11 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                               ),
                             );
                           } else if (brands.isEmpty) {
-                            return const Center(
+                            return Center(
                               child: Padding(
                                 padding: EdgeInsets.all(16.0),
                                 child: Text(
-                                  'No Brands available.',
+                                  'home_no_brands'.tr,
                                   style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700),
@@ -1623,7 +1623,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                                           imageUrl:
                                               ImageHelper.getUrl(brand['logo'])
                                                   .toString(),
-                                          name: (brand['name'] ?? 'No Name')
+                                          name: (brand['name'] ?? 'home_no_name'.tr)
                                               .toString(),
                                           width:
                                               cardWidth, // visual size inside the slot
