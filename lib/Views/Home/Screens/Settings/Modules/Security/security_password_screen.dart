@@ -38,19 +38,19 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
     final confirmPass = _confirmPasswordController.text.trim();
 
     if (currentPass.isEmpty) {
-      Get.snackbar('Warning', 'Please enter your current password',
+      Get.snackbar('profile_warning'.tr, 'profile_enter_current_password'.tr,
           backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
     if (newPass.length < 6) {
-      Get.snackbar('Warning', 'New password must be at least 6 characters',
+      Get.snackbar('profile_warning'.tr, 'profile_password_min_length'.tr,
           backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
 
     if (newPass != confirmPass) {
-      Get.snackbar('Warning', 'New password and confirmation do not match',
+      Get.snackbar('profile_warning'.tr, 'profile_password_mismatch'.tr,
           backgroundColor: Colors.orange, colorText: Colors.white);
       return;
     }
@@ -73,7 +73,7 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBFBFD),
-      appBar: const CustomAppBar(titleText: "Security & Password"),
+      appBar: CustomAppBar(titleText: 'profile_security_password'.tr),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Form(
@@ -82,8 +82,8 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Section
-              const Text(
-                "Security & Password",
+              Text(
+                'profile_security_password'.tr,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -92,7 +92,7 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                "Update your password to keep your account safe.",
+                'profile_security_subtitle'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -102,10 +102,10 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
 
               // Form Fields Section
               _buildInputGroup(
-                label: "Current Password",
+                label: 'profile_current_password'.tr,
                 child: _buildPasswordField(
                   controller: _currentPasswordController,
-                  hintText: "Enter current password",
+                  hintText: 'profile_enter_current'.tr,
                   obscureText: _obscureCurrent,
                   onToggleObscure: () {
                     setState(() {
@@ -117,10 +117,10 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
               const SizedBox(height: 16),
 
               _buildInputGroup(
-                label: "New Password",
+                label: 'profile_new_password'.tr,
                 child: _buildPasswordField(
                   controller: _newPasswordController,
-                  hintText: "Enter new password",
+                  hintText: 'profile_enter_new'.tr,
                   obscureText: _obscureNew,
                   onToggleObscure: () {
                     setState(() {
@@ -132,10 +132,10 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
               const SizedBox(height: 16),
 
               _buildInputGroup(
-                label: "Confirm New Password",
+                label: 'profile_confirm_new_password'.tr,
                 child: _buildPasswordField(
                   controller: _confirmPasswordController,
-                  hintText: "Confirm new password",
+                  hintText: 'profile_confirm_new'.tr,
                   obscureText: _obscureConfirm,
                   onToggleObscure: () {
                     setState(() {
@@ -158,7 +158,7 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
                         : PrimaryButton(
                             buttonColor: kPrimaryColor,
                             textColor: kdefwhiteColor,
-                            buttonText: "Update Password",
+                            buttonText: 'profile_update_password'.tr,
                             onPressFunction: _submitChangePassword,
                           ),
                   ),
