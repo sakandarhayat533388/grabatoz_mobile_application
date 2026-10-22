@@ -84,7 +84,7 @@ class _NewAllProductState extends State<NewAllProduct> {
   late Worker _sortedWorker;
 
   // Sort button UI state
-  String _sortLabel = 'Newest First';
+  String _sortLabel = 'product_sort_newest';
   bool _sortMenuOpen = false;
 
   // Helper to cap sort button width responsively
@@ -99,11 +99,11 @@ class _NewAllProductState extends State<NewAllProduct> {
         _sortLabel = val;
         _sortMenuOpen = false;
       }),
-      itemBuilder: (_) => const [
-        PopupMenuItem(value: 'Newest First', child: Text('Newest First')),
-        PopupMenuItem(value: 'Price: Low to High', child: Text('Price: Low to High')),
-        PopupMenuItem(value: 'Price: High to Low', child: Text('Price: High to Low')),
-        PopupMenuItem(value: 'Name: A to Z', child: Text('Name: A to Z')),
+      itemBuilder: (_) => [
+        PopupMenuItem(value: 'product_sort_newest', child: Text('product_sort_newest'.tr)),
+        PopupMenuItem(value: 'product_sort_price_low_high', child: Text('product_sort_price_low_high'.tr)),
+        PopupMenuItem(value: 'product_sort_price_high_low', child: Text('product_sort_price_high_low'.tr)),
+        PopupMenuItem(value: 'product_sort_name_az', child: Text('product_sort_name_az'.tr)),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -117,7 +117,7 @@ class _NewAllProductState extends State<NewAllProduct> {
           children: [
             Expanded(
               child: Text(
-                _sortLabel,
+                _sortLabel.tr,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: Colors.black),
               ),
@@ -185,16 +185,16 @@ class _NewAllProductState extends State<NewAllProduct> {
 
     int Function(dynamic, dynamic)? cmp;
     switch (_sortLabel) {
-      case 'Price: Low to High':
+      case 'product_sort_price_low_high':
         cmp = (a, b) => _priceOf(a).compareTo(_priceOf(b));
         break;
-      case 'Price: High to Low':
+      case 'product_sort_price_high_low':
         cmp = (a, b) => _priceOf(b).compareTo(_priceOf(a));
         break;
-      case 'Name: A to Z':
+      case 'product_sort_name_az':
         cmp = (a, b) => _nameOf(a).toLowerCase().compareTo(_nameOf(b).toLowerCase());
         break;
-      case 'Newest First':
+      case 'product_sort_newest':
       default:
         // Preserve incoming order (already grouped)
         return base;
@@ -467,11 +467,11 @@ class _NewAllProductState extends State<NewAllProduct> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.shopping_cart, color: Colors.white, size: 24),
-                  SizedBox(width: 8),
+                children: [
+                  const Icon(Icons.shopping_cart, color: Colors.white, size: 24),
+                  const SizedBox(width: 8),
                   Text(
-                    'Added to cart',
+                    'product_added_to_cart'.tr,
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -495,18 +495,18 @@ class _NewAllProductState extends State<NewAllProduct> {
     // 2) Derive from type/id
     switch (_effectiveParentType) {
       case 'featured':
-        return 'Featured Products';
+        return 'product_title_featured'.tr;
       case 'brand':
         final name = _findBrandNameById(_effectiveId);
-        return name?.isNotEmpty == true ? name! : 'Brand';
+        return name?.isNotEmpty == true ? name! : 'product_title_brand'.tr;
       case 'parentCategory':
         final name = _findCategoryNameById(_effectiveId);
-        return name?.isNotEmpty == true ? name! : 'Category';
+        return name?.isNotEmpty == true ? name! : 'product_title_category'.tr;
       case 'subcategory':
         final name = _findSubCategoryNameById(_effectiveId);
-        return name?.isNotEmpty == true ? name! : 'Subcategory';
+        return name?.isNotEmpty == true ? name! : 'product_title_subcategory'.tr;
       default:
-        return 'All Products';
+        return 'product_title_all_products'.tr;
     }
   }
 
@@ -791,7 +791,7 @@ class _NewAllProductState extends State<NewAllProduct> {
           // Apply brand and category filters
           final filtered = _filterProductsByBrandsAndCategories(display);
 
-          if (filtered.isEmpty) return const Center(child: Text("No products found."));
+          if (filtered.isEmpty) return Center(child: Text('product_no_products'.tr));
           // Apply UI sort
           final applied = _applySortOption(filtered);
           final visible = applied.take(_visibleCount).toList();
@@ -821,12 +821,12 @@ class _NewAllProductState extends State<NewAllProduct> {
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
-                                  children: const [
-                                    Icon(Icons.filter_list,
+                                  children: [
+                                    const Icon(Icons.filter_list,
                                         size: 18, color: Colors.white),
-                                    SizedBox(width: 4),
+                                    const SizedBox(width: 4),
                                     Text(
-                                      'Filter',
+                                      'product_filter'.tr,
                                       style: TextStyle(
                                         color: Colors.white,
                                         fontSize: 12,
@@ -858,7 +858,7 @@ class _NewAllProductState extends State<NewAllProduct> {
                         const Icon(Icons.inventory_2, size: 18, color: kPrimaryColor),
                         const SizedBox(width: 10),
                         Text(
-                          '${applied.length} products found',
+                          'product_products_found'.trParams({'count': applied.length.toString()}),
                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -903,7 +903,7 @@ class _NewAllProductState extends State<NewAllProduct> {
                               _visibleCount = next > total ? total : next;
                             });
                           },
-                          child: const Text('Load More'),
+                          child: Text('product_load_more'.tr),
                         ),
                       ),
                     ),
@@ -957,7 +957,7 @@ class _NewAllProductState extends State<NewAllProduct> {
         final filteredProducts = _filterProductsByBrandsAndCategories(base);
 
         if (filteredProducts.isEmpty && sc.isrequesting.value == 0) {
-          return const Center(child: Text("No products found."));
+          return Center(child: Text('product_no_products'.tr));
         }
         // Apply UI sort
         final displayable = _applySortOption(filteredProducts);
@@ -993,12 +993,12 @@ class _NewAllProductState extends State<NewAllProduct> {
                                     children: [
                                       Row(
                                         mainAxisSize: MainAxisSize.min,
-                                        children: const [
-                                          Icon(Icons.filter_list,
+                                        children: [
+                                          const Icon(Icons.filter_list,
                                               size: 18, color: Colors.white),
-                                          SizedBox(width: 4),
+                                          const SizedBox(width: 4),
                                           Text(
-                                            'Filter',
+                                            'product_filter'.tr,
                                             style: TextStyle(
                                               color: Colors.white,
                                               fontSize: 12,
@@ -1025,7 +1025,7 @@ class _NewAllProductState extends State<NewAllProduct> {
                                   size: 18, color: kPrimaryColor),
                               SizedBox(width: 10,),
                               Text(
-                                '${filteredProducts.length} products found',
+                                'product_products_found'.trParams({'count': filteredProducts.length.toString()}),
                                 style: const TextStyle(
                                     fontSize: 14, fontWeight: FontWeight.w700),
                                 overflow: TextOverflow.ellipsis,
@@ -1077,7 +1077,7 @@ class _NewAllProductState extends State<NewAllProduct> {
                                 _visibleCount = next > total ? total : next;
                               });
                             },
-                            child: const Text('Load More'),
+                            child: Text('product_load_more'.tr),
                           )
                         : const SizedBox.shrink(),
                   ),
