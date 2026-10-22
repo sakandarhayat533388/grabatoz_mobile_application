@@ -75,8 +75,8 @@ class ActiveOrdersTabState extends State<ActiveOrdersTab> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const Text(
-                          'No Orders Found',
+                        Text(
+                          'orders_empty_title'.tr,
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -85,7 +85,7 @@ class ActiveOrdersTabState extends State<ActiveOrdersTab> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "You haven't placed any orders yet. Explore our products and deals!",
+                          'orders_empty_hint'.tr,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 14,
@@ -112,13 +112,13 @@ class ActiveOrdersTabState extends State<ActiveOrdersTab> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.shopping_bag_outlined, size: 20, color: Colors.white),
                               SizedBox(width: 10),
                               Text(
-                                "Continue Shopping",
+                                'orders_continue_shopping'.tr,
                                 maxLines: 1,
                                 style: TextStyle(
                                   fontSize: 15,
