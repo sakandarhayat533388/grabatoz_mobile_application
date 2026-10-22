@@ -86,7 +86,7 @@ class _OtpScreenState extends State<OtpScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(data['message'] ?? "Failed to resend OTP"),
+            content: Text(data['message'] ?? 'auth_failed_to_resend_otp'.tr),
             backgroundColor: Colors.red,
           ),
         );
@@ -95,7 +95,7 @@ class _OtpScreenState extends State<OtpScreen> {
       setState(() => _isResending = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Network error. Please try again."),
+          content: Text('auth_network_error'.tr),
           backgroundColor: Colors.red,
         ),
       );
@@ -107,7 +107,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
     if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter all 6 digits")),
+        SnackBar(content: Text('auth_enter_all_digits'.tr)),
       );
       return;
     }
@@ -129,9 +129,9 @@ class _OtpScreenState extends State<OtpScreen> {
       setState(() => _isLoading = false);
 
       if (response.statusCode == 200) {
-        EasyLoading.showSuccess('Account Created');
+        EasyLoading.showSuccess('auth_account_created'.tr);
         await Future.delayed(const Duration(milliseconds: 700));
-        EasyLoading.show(status: 'Logging in...');
+        EasyLoading.show(status: 'auth_logging_in'.tr);
         final authProvider = Get.isRegistered<AuthController>()
             ? Get.find<AuthController>()
             : Get.put(AuthController());
@@ -140,7 +140,7 @@ class _OtpScreenState extends State<OtpScreen> {
       EasyLoading.dismiss();
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Something went wrong: $e")),
+        SnackBar(content: Text('auth_something_wrong'.trParams({'error': e.toString()}))),
       );
     }
   }
@@ -161,7 +161,7 @@ class _OtpScreenState extends State<OtpScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        titleText: 'OTP Verification',
+        titleText: 'auth_otp_title'.tr,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -177,7 +177,7 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               SizedBox(height: 20),
               Text(
-                "Verify Your Email",
+                'auth_verify_email_title'.tr,
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -186,7 +186,7 @@ class _OtpScreenState extends State<OtpScreen> {
               ),
               SizedBox(height: 10),
               Text(
-                "Enter the 6-digit code sent to",
+                'auth_otp_subtitle'.tr,
                 style: TextStyle(fontSize: 13, color: Colors.grey[600]),
               ),
               SizedBox(height: 4),
@@ -260,7 +260,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           ),
                         ),
                         child: Text(
-                          "Verify",
+                          'auth_verify_btn'.tr,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -274,7 +274,7 @@ class _OtpScreenState extends State<OtpScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Didn't receive the code? ",
+                    'auth_didnt_receive_code'.tr,
                     style: TextStyle(color: Colors.grey[600], fontSize: 13),
                   ),
                   _isResending
@@ -285,7 +285,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         )
                       : _resendCountdown > 0
                           ? Text(
-                              "Resend in $_resendCountdown s",
+                              'auth_resend_in'.trParams({'seconds': _resendCountdown.toString()}),
                               style: TextStyle(
                                 color: Colors.grey,
                                 fontWeight: FontWeight.w600,
@@ -295,7 +295,7 @@ class _OtpScreenState extends State<OtpScreen> {
                           : GestureDetector(
                               onTap: _resendOtp,
                               child: Text(
-                                "Resend Code",
+                                'auth_resend_code'.tr,
                                 style: TextStyle(
                                   color: kPrimaryColor,
                                   fontWeight: FontWeight.bold,
@@ -320,7 +320,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "Check your spam folder if you don't see the email.",
+                        'auth_check_spam'.tr,
                         style: TextStyle(fontSize: 11, color: Colors.blue[900]),
                       ),
                     ),
