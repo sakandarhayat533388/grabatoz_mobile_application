@@ -94,12 +94,12 @@ class _NewSummaryViewState extends State<NewSummaryView> {
   Future<void> _openProductDetailsFromSummary(CartOtherInfo cartItem) async {
     final String productId = cartItem.productId?.toString() ?? '';
     if (productId.isEmpty) {
-      Get.snackbar('Warning', 'Missing product ID');
+      Get.snackbar('checkout_warning_title'.tr, 'cart_missing_product_id'.tr);
       return;
     }
 
     try {
-      EasyLoading.show(status: 'Loading product details...');
+      EasyLoading.show(status: 'checkout_loading_details'.tr);
       final uri = Uri.parse('${Configss.baseUrl}/api/products/$productId');
       final res = await http.get(uri);
       if (res.statusCode != 200) {
@@ -150,7 +150,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
       final rawReviews = product['reviews'] ?? product['productReviews'];
       if (rawReviews is List) reviews = rawReviews;
 
-      String name = product['name']?.toString() ?? cartItem.productName ?? 'Unknown Product';
+      String name = product['name']?.toString() ?? cartItem.productName ?? 'cart_unknown_product'.tr;
 
       String brandName = '';
       final brandField = product['brand'] ?? product['brandName'];
@@ -202,8 +202,8 @@ class _NewSummaryViewState extends State<NewSummaryView> {
       String price = product['price']?.toString() ?? product['regularPrice']?.toString() ?? cartItem.cartBasePrice.toString();
       String stockStatus = product['stockStatus']?.toString() ??
           ((product['stock'] is num && (product['stock'] as num) > 0)
-              ? 'Available'
-              : 'Out of Stock');
+              ? 'cart_stock_available'.tr
+              : 'cart_stock_out'.tr);
       String stockCount = (product['stock'] ??
               product['countInStock'] ??
               product['stockCount'] ??
@@ -239,7 +239,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
           ));
     } catch (e) {
       EasyLoading.dismiss();
-      Get.snackbar('Error', 'Failed to open product details');
+      Get.snackbar('checkout_error_title'.tr, 'checkout_failed_open_details'.tr);
     }
   }
 
@@ -343,12 +343,12 @@ class _NewSummaryViewState extends State<NewSummaryView> {
 
     return Column(
       children: [
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 6),
           child: Row(
             children: [
               Text(
-                'Delivery Details',
+                'checkout_delivery_details'.tr,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -366,7 +366,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Home Delivery',
+                        'checkout_home_delivery'.tr,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Row(),
@@ -379,11 +379,11 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Store Pickup',
+                        'checkout_store_pickup'.tr,
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Row(),
-                      Text("Phone: ${widget.phone}"),
+                      Text('checkout_phone_colon'.trParams({'phone': widget.phone})),
                       Text(widget.companyName),
                       Text(widget.companyAddress),
                     ],
@@ -422,12 +422,12 @@ class _NewSummaryViewState extends State<NewSummaryView> {
               ),
             );
           }),
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 6),
           child: Row(
             children: [
               Text(
-                'Order Notes (Optional)',
+                'checkout_order_notes'.tr,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -440,20 +440,20 @@ class _NewSummaryViewState extends State<NewSummaryView> {
         TextFormField(
           controller: _userController.optionalNote,
           decoration: InputDecoration(
-              labelText: "Note",
+              labelText: 'checkout_note_label'.tr,
               hintStyle: TextStyle(color: Colors.grey),
-              hintText: "Write here",
+              hintText: 'checkout_note_hint'.tr,
               border: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey)),
               enabledBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey))),
         ),
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 10),
           child: Row(
             children: [
               Text(
-                'YOUR ORDER',
+                'checkout_your_order'.tr,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -473,7 +473,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
             String formattedDate = cartItem.addedToCartTime != null
                 ? DateFormat('MMM dd, yyyy h:mm a')
                     .format(cartItem.addedToCartTime!)
-                : 'No Date';
+                : 'cart_no_date'.tr;
 
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 6),
@@ -570,14 +570,14 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "Dated: $formattedDate",
+                            'cart_dated'.trParams({'date': formattedDate}),
                             style: const TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           Text(
-                            "Quantity: ${cartItem.quantity == 1 ? '1 pc' : '${cartItem.quantity} pcs'}",
+                            (cartItem.quantity == 1 ? 'checkout_quantity_pc'.trParams({'quantity': cartItem.quantity.toString()}) : 'checkout_quantity_pcs'.trParams({'quantity': cartItem.quantity.toString()})),
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
@@ -601,8 +601,8 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Order Summary",
+                    Text(
+                      'payment_order_summary'.tr,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -612,7 +612,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     const SizedBox(height: 16),
                     // Original Price
                     _buildSummaryRowWithStyle(
-                      "Original Price",
+                      'payment_original_price'.tr,
                       formatPriceForSelected(_cartOriginalTotal),
                       valueStyle: const TextStyle(
                         fontSize: 13,
@@ -623,7 +623,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     const SizedBox(height: 12),
                     // Discounted Price
                     _buildSummaryRowWithStyle(
-                      "Discounted Price",
+                      'payment_discounted_price'.tr,
                       formatPriceForSelected(subtotal),
                       valueStyle: const TextStyle(
                         fontSize: 13,
@@ -634,7 +634,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     const SizedBox(height: 12),
                     // Total Savings
                     _buildSummaryRowWithStyle(
-                      "Total Savings",
+                      'payment_total_savings'.tr,
                       "- ${formatPriceForSelected((_cartOriginalTotal - subtotal).clamp(0.0, double.infinity))}",
                       titleStyle: const TextStyle(
                         fontSize: 13,
@@ -652,7 +652,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     const SizedBox(height: 12),
                     // Subtotal
                     _buildSummaryRowWithStyle(
-                      "Subtotal",
+                      'payment_subtotal'.tr,
                       formatPriceForSelected(subtotal),
                       valueStyle: const TextStyle(
                         fontSize: 13,
@@ -671,10 +671,10 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSummaryRowWithStyle(
-                            "Shipping",
+                            'checkout_shipping'.tr,
                             fee > 0
                                 ? formatPriceForSelected(fee)
-                                : "Free",
+                                : 'checkout_free'.tr,
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -689,7 +689,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                       return Column(
                         children: [
                           _buildSummaryRowWithStyle(
-                            "First order discount",
+                            'payment_first_order_discount'.tr,
                             "- ${formatPriceForSelected(firstOrderDiscount)}",
                             titleStyle: const TextStyle(
                               fontSize: 13,
@@ -708,7 +708,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     }),
                     // VAT Included
                     _buildSummaryRowWithStyle(
-                      "VAT Included",
+                      'payment_vat_included'.tr,
                       "✓",
                       valueStyle: const TextStyle(
                         fontSize: 13,
@@ -728,7 +728,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                           (currentTotalBeforeDiscount - firstUserDiscount)
                               .clamp(0.0, double.infinity);
                       return _buildSummaryRowWithStyle(
-                        "Total Amount",
+                        'payment_total_amount'.tr,
                         formatPriceForSelected(displayTotal),
                         titleStyle: const TextStyle(
                           fontSize: 14,
@@ -764,9 +764,9 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                       ),
                     ),
                     child: Row(
-                      children: const [
+                      children: [
                         Text(
-                          "🎉 Free shipping is applied to this order.",
+                          'checkout_free_shipping_applied'.tr,
                           style: TextStyle(
                             color: Color(0xFF2E7D32), // Dark green text
                             fontSize: 13,
@@ -786,7 +786,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                 provider,
               ) {
                 return PrimaryButton(
-                  buttonText: "Continue to payment",
+                  buttonText: 'checkout_continue_to_payment'.tr,
                   onPressFunction: () async {
                     _userController.activeStep.value = 2;
                   },
