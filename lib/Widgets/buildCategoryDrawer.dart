@@ -73,7 +73,7 @@ Drawer buildCategoryDrawer() {
           GestureDetector(
             onTap: () async {
               Get.to(()=>offerDeals(
-                displayTitle:"Gaming Zone",
+                displayTitle: 'home_gaming_zone'.tr,
                 slug: "gaming-zone",
               ));
             },
@@ -84,8 +84,8 @@ Drawer buildCategoryDrawer() {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Gaming Zone',
+                  Text(
+                    'home_gaming_zone'.tr,
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.white,
