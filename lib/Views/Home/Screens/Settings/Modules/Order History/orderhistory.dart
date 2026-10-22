@@ -10,7 +10,7 @@ class OrderHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        titleText: "My Orders",
+        titleText: 'orders_my_orders'.tr,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
