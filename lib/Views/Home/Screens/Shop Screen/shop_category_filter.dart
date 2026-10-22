@@ -735,7 +735,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
       'subCategoryId': '',
       'selectedId': '',
       'parentType': '',
-      'title': 'All Products',
+      'title': 'shop_all_products'.tr,
       'selectedBrandIds': [],
       'selectedMakeIds': [],
       'selectedModelIds': [],
@@ -1017,7 +1017,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Filters',
+                    'shop_filters_title'.tr,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -1051,7 +1051,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                       // Model Section
                       if (_isModelsLoading || _modelOptions.isNotEmpty) ...[
                         _buildSystemOptionsSection(
-                          title: 'Model',
+                          title: 'shop_filter_model'.tr,
                           options: _modelOptions,
                           selectedIds: _selectedModelIds,
                           isExpanded: _isModelSectionExpanded,
@@ -1078,7 +1078,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                       // Make Section
                       if (_isMakesLoading || _makeOptions.isNotEmpty) ...[
                         _buildSystemOptionsSection(
-                          title: 'Make',
+                          title: 'shop_filter_make'.tr,
                           options: _makeOptions,
                           selectedIds: _selectedMakeIds,
                           isExpanded: _isMakeSectionExpanded,
@@ -1104,7 +1104,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                       // Series Section
                       if (_isSeriesLoading || _seriesOptions.isNotEmpty) ...[
                         _buildSystemOptionsSection(
-                          title: 'Series',
+                          title: 'shop_filter_series'.tr,
                           options: _seriesOptions,
                           selectedIds: _selectedSeriesIds,
                           isExpanded: _isSeriesSectionExpanded,
@@ -1132,7 +1132,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                       if (_isManufacturersLoading ||
                           _manufacturerOptions.isNotEmpty) ...[
                         _buildSystemOptionsSection(
-                          title: 'Manufacturer',
+                          title: 'shop_filter_manufacturer'.tr,
                           options: _manufacturerOptions,
                           selectedIds: _selectedManufacturerIds,
                           isExpanded: _isManufacturerSectionExpanded,
@@ -1159,7 +1159,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                       // Sold By Section
                       if (_isSoldByLoading || _soldByOptions.isNotEmpty) ...[
                         _buildSystemOptionsSection(
-                          title: 'Sold By',
+                          title: 'shop_filter_sold_by'.tr,
                           options: _soldByOptions,
                           selectedIds: _selectedSoldByIds,
                           isExpanded: _isSoldBySectionExpanded,
@@ -1195,8 +1195,8 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       onPressed: _resetFilters,
-                      child: const Text(
-                        "Reset",
+                      child: Text(
+                        'shop_reset_btn'.tr,
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
@@ -1248,8 +1248,8 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                         widget.onApplyFilters(filters);
                         Navigator.of(context).pop();
                       },
-                      child: const Text(
-                        "Apply Filters",
+                      child: Text(
+                        'shop_apply_filters_btn'.tr,
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
@@ -1279,7 +1279,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Categories",
+                'categories'.tr,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -1359,7 +1359,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          "All Categories",
+                          'shop_all_categories'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: _selectedCategoryId == 'all'
@@ -1527,8 +1527,9 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
             children: [
               Text(
                 _isBrandsLoading
-                    ? "Brands"
-                    : "Brands (${_availableBrands.length})",
+                    ? 'shop_brands'.tr
+                    : 'shop_brands_count'.trParams(
+                        {'count': _availableBrands.length.toString()}),
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -1557,10 +1558,10 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
               ),
             )
           else if (_availableBrands.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                'No brands available in this category',
+                'shop_no_brands_msg'.tr,
                 style: TextStyle(color: Colors.grey, fontSize: 13),
               ),
             )
