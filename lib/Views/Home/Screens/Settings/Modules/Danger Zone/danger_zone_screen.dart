@@ -33,8 +33,8 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
         _codeRequested = true;
       });
       Get.snackbar(
-        "Verification Code Sent",
-        "A 6-digit verification code has been sent to your registered email address.",
+        'profile_code_sent_title'.tr,
+        'profile_code_sent_body'.tr,
         backgroundColor: Colors.green,
         colorText: Colors.white,
         duration: const Duration(seconds: 5),
@@ -46,8 +46,8 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
     final code = _codeController.text.trim();
     if (code.isEmpty || code.length < 6) {
       Get.snackbar(
-        "Invalid Code",
-        "Please enter the 6-digit code sent to your email",
+        'profile_invalid_code_title'.tr,
+        'profile_invalid_code_body'.tr,
         backgroundColor: Colors.orange,
         colorText: Colors.white,
       );
@@ -56,13 +56,13 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
 
     Get.dialog(
       AlertDialog(
-        title: const Text("Final Confirmation"),
-        content: const Text(
-            "Are you absolutely sure you want to permanently delete your account? This action cannot be undone."),
+        title: Text('profile_final_confirmation'.tr),
+        content: Text(
+            'profile_delete_confirm_body'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text('cancel'.tr),
           ),
           TextButton(
             onPressed: () async {
@@ -71,15 +71,15 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
                   await _deleteAccountController.verifyAccountDeletion(code);
               if (success) {
                 Get.snackbar(
-                  "Account Deleted",
-                  "Your account has been deleted successfully.",
+                  'profile_account_deleted_title'.tr,
+                  'profile_account_deleted_body'.tr,
                   backgroundColor: Colors.red,
                   colorText: Colors.white,
                 );
                 Get.offAll(() => Home());
               }
             },
-            child: const Text("Delete Account",
+            child: Text('profile_delete_account'.tr,
                 style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
         ],
@@ -90,7 +90,7 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(titleText: "Danger Zone"),
+      appBar: CustomAppBar(titleText: 'profile_danger_zone'.tr),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -116,12 +116,12 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
                         color: Colors.red, size: 28),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Danger Zone",
+                          'profile_danger_zone'.tr,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -130,7 +130,7 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          "Account Deletion & Data Removal",
+                          'profile_deletion_data_removal'.tr,
                           style: TextStyle(fontSize: 12, color: kSecondaryColor),
                         ),
                       ],
@@ -141,8 +141,8 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
             ),
 
             const SizedBox(height: 24),
-            const Text(
-              "Account Deletion Warning",
+            Text(
+              'profile_deletion_warning'.tr,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -169,19 +169,19 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
                   _buildWarningItem(
                     icon: Icons.highlight_remove,
                     text:
-                        "Deleting your account will permanently remove your profile, address book, and account settings.",
+                        'profile_warning_1'.tr,
                   ),
                   const SizedBox(height: 12),
                   _buildWarningItem(
                     icon: Icons.history_toggle_off,
                     text:
-                        "You will lose access to order history links and saved discount preferences.",
+                        'profile_warning_2'.tr,
                   ),
                   const SizedBox(height: 12),
                   _buildWarningItem(
                     icon: Icons.security,
                     text:
-                        "This action is immediate and non-reversible. We will send a 6-digit security code to your email first.",
+                        'profile_warning_3'.tr,
                   ),
                 ],
               ),
@@ -194,7 +194,7 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : PrimaryButton(
                       buttonColor: Colors.red,
-                      buttonText: "Request Account Deletion Code",
+                      buttonText: 'profile_request_code'.tr,
                       onPressFunction: _onRequestCode,
                     )),
             ] else ...[
@@ -205,13 +205,13 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.green.withOpacity(0.3)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
                     Icon(Icons.check_circle_outline, color: Colors.green),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "Code sent! Please check your email inbox (and spam folder) for the 6-digit deletion code.",
+                        'profile_code_sent_info'.tr,
                         style: TextStyle(fontSize: 13, color: Colors.green),
                       ),
                     ),
@@ -219,8 +219,8 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                "Enter 6-Digit Verification Code *",
+              Text(
+                'profile_enter_code'.tr,
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
@@ -244,14 +244,14 @@ class _DangerZoneScreenState extends State<DangerZoneScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : PrimaryButton(
                       buttonColor: Colors.red,
-                      buttonText: "Permanently Delete My Account",
+                      buttonText: 'profile_delete_forever'.tr,
                       onPressFunction: _onConfirmDelete,
                     )),
               const SizedBox(height: 10),
               Center(
                 child: TextButton(
                   onPressed: _onRequestCode,
-                  child: const Text("Resend Code",
+                  child: Text('profile_resend_code'.tr,
                       style: TextStyle(color: kPrimaryColor)),
                 ),
               ),
