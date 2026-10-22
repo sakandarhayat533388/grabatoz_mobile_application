@@ -316,7 +316,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
   Future<void> _sendCode() async {
     final email = _userController.homeemailAddress.text.trim();
     if (email.isEmpty) {
-      Get.snackbar("Error", "Please enter email");
+      Get.snackbar('checkout_error_title'.tr, 'checkout_enter_email'.tr);
       return;
     }
     setState(() {
@@ -331,11 +331,11 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     final email = _userController.homeemailAddress.text.trim();
     final otp = otpController.text.trim();
     if (otp.isEmpty) {
-      EasyLoading.showError("Please enter the OTP");
+      EasyLoading.showError('checkout_enter_otp'.tr);
       return;
     }
 
-    EasyLoading.show(status: "Verifying OTP...");
+    EasyLoading.show(status: 'checkout_verifying_otp'.tr);
 
     final url =
         Uri.parse("${Configss.baseUrl}/api/request-callback/verify-code");
@@ -358,7 +358,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
         final data = jsonDecode(response.body);
         if (data['success'] == true) {
           final email = _userController.homeemailAddress.text.trim();
-          EasyLoading.showSuccess("OTP Verified Successfully");
+          EasyLoading.showSuccess('checkout_otp_verified'.tr);
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('guest_email', email);
 
@@ -369,22 +369,22 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
           });
           // Next step: navigate to another screen or mark verified
         } else {
-          EasyLoading.showError(data['message'] ?? "OTP Verification Failed");
+          EasyLoading.showError(data['message'] ?? 'checkout_otp_failed'.tr);
         }
       } else {
         EasyLoading.showError(
-            "OTP Verification Failed: ${response.statusCode}");
+            'checkout_otp_failed_code'.trParams({'code': response.statusCode.toString()}));
       }
     } catch (e) {
       EasyLoading.dismiss();
-      EasyLoading.showError("Error verifying OTP: $e");
+      EasyLoading.showError('checkout_otp_error'.trParams({'error': e.toString()}));
     }
   }
 
   // Send Email Verification code
   Future<void> sendEmailVerificationCode(String email) async {
     try {
-      EasyLoading.show(status: "Sending code...");
+      EasyLoading.show(status: 'checkout_sending_code'.tr);
 
       final response = await http.post(
         Uri.parse("${Configss.baseUrl}/api/request-callback/send-verification"),
@@ -407,8 +407,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
             isCodeSent = true; // 👈 SHOW OTP FIELD
           });
           Get.snackbar(
-            "Success",
-            "Verification code sent to your email",
+            'checkout_success_title'.tr,
+            'checkout_code_sent'.tr,
             backgroundColor: Colors.green,
             colorText: Colors.white,
           );
@@ -420,16 +420,16 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
           startOtpTimer();
         } else {
           Get.snackbar(
-            "Error",
-            data["message"] ?? "Failed to send code",
+            'checkout_error_title'.tr,
+            data["message"] ?? 'checkout_failed_send_code'.tr,
             backgroundColor: Colors.red,
             colorText: Colors.white,
           );
         }
       } else {
         Get.snackbar(
-          "Error",
-          "Server error. Try again",
+          'checkout_error_title'.tr,
+          'checkout_server_error'.tr,
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
@@ -437,8 +437,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     } catch (e) {
       EasyLoading.dismiss();
       Get.snackbar(
-        "Error",
-        "Something went wrong",
+        'checkout_error_title'.tr,
+        'checkout_something_wrong'.tr,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -559,8 +559,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
         state.isEmpty ||
         zipCode.isEmpty) {
       Get.snackbar(
-        'Warning',
-        'Please complete all guest details before continuing',
+        'checkout_warning_title'.tr,
+        'checkout_complete_guest_details'.tr,
         backgroundColor: Colors.red,
         colorText: Colors.white,
       );
@@ -568,7 +568,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     }
 
     setState(() => _isRegisteringGuest = true);
-    EasyLoading.show(status: 'Checking guest account...');
+    EasyLoading.show(status: 'checkout_checking_guest'.tr);
 
     try {
       final response = await http.post(
@@ -605,12 +605,12 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
       }
 
       EasyLoading.showError(
-        data['message']?.toString() ?? 'Unable to continue as guest',
+        data['message']?.toString() ?? 'checkout_unable_guest'.tr,
       );
       return false;
     } catch (e) {
       EasyLoading.dismiss();
-      EasyLoading.showError('Unable to continue as guest');
+      EasyLoading.showError('checkout_unable_guest'.tr);
       return false;
     } finally {
       if (mounted) {
@@ -648,8 +648,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                const Text(
-                  'Account Already Exists',
+                Text(
+                  'checkout_account_exists'.tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 22,
@@ -658,8 +658,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'This email is already registered. Please log in to continue with your order.',
+                Text(
+                  'checkout_email_registered'.tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -690,8 +690,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       Get.offAll(() => const Login());
                     },
                     icon: const Icon(Icons.login_rounded, size: 20),
-                    label: const Text(
-                      'Go to Login',
+                    label: Text(
+                      'checkout_go_to_login'.tr,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,
@@ -700,8 +700,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  'Your cart is safe while you sign in.',
+                Text(
+                  'checkout_cart_safe'.tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
@@ -755,7 +755,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
             icon: const Icon(Icons.arrow_back),
             onPressed: _handleBackPress,
           ),
-          title: const Text("Checkout"),
+          title: Text('checkout'.tr),
           surfaceTintColor: Colors.white,
         ),
       body: SafeArea(
@@ -775,12 +775,12 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                     internalPadding: 8,
                     unreachedStepTextColor: Colors.grey,
                     activeStepBorderColor: Colors.green,
-                    steps: const [
+                    steps: [
                       EasyStep(
-                          icon: Icon(Icons.local_shipping), title: 'Shipping'),
+                          icon: Icon(Icons.local_shipping), title: 'checkout_shipping'.tr),
                       EasyStep(
-                          icon: Icon(Icons.receipt_long), title: 'Summary'),
-                      EasyStep(icon: Icon(Icons.payment), title: 'Payment'),
+                          icon: Icon(Icons.receipt_long), title: 'checkout_summary'.tr),
+                      EasyStep(icon: Icon(Icons.payment), title: 'checkout_payment'.tr),
                     ],
                     onStepReached: (index) => setState(
                         () => _userController.activeStep.value = index),
@@ -853,7 +853,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                     child: Column(
                       children: [
                         Text(
-                          "Home Delivery",
+                          'checkout_home_delivery'.tr,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -870,7 +870,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                               .fold(0.0, (s, i) => s + (i.productPrice ?? 0.0) * (i.quantity ?? 1));
                           final fee = _deliveryCtrl.calculateShippingFee(subtotal);
                           final text = (fee == null || fee == 0.0)
-                              ? 'Free'
+                              ? 'checkout_free'.tr
                               : formatPriceForSelected(fee);
                           return Column(
                             children: [
@@ -890,7 +890,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         }),
                         4.0.heightbox,
                         Text(
-                          "Deliver at doorstep",
+                          'checkout_deliver_doorstep'.tr,
                           style: TextStyle(
                             fontSize: 13,
                             color: _userController.isHomeDelivery.value
@@ -918,7 +918,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                     child: Column(
                       children: [
                         Text(
-                          "Pick From Point",
+                          'checkout_pick_from_point'.tr,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -929,7 +929,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         ),
                         4.0.heightbox,
                         Text(
-                          "Free Delivery",
+                          'checkout_free_delivery'.tr,
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -940,7 +940,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         ),
                         4.0.heightbox,
                         Text(
-                          "Pick from the Store",
+                          'checkout_pick_from_store'.tr,
                           style: TextStyle(
                             fontSize: 13,
                             color: _userController.isHomeDelivery.value == false
@@ -960,7 +960,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Contact Details",
+                    Text('checkout_contact_details'.tr,
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     Row(
@@ -972,8 +972,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                             keyboardType: TextInputType.emailAddress,
                             readOnly: !widget
                                 .isforguest, // login user email edit na kar sake
-                            decoration: const InputDecoration(
-                              labelText: "E-mail",
+                            decoration: InputDecoration(
+                              labelText: 'checkout_email_label'.tr,
                               hintText: "example@email.com",
                               border: OutlineInputBorder(),
                             ),
@@ -993,8 +993,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                   ),
-                                  child: const Text(
-                                    "Verifed",
+                                  child: Text(
+                                    'checkout_verified'.tr,
                                     style: TextStyle(
                                         color: Colors.white, fontSize: 10),
                                   ),
@@ -1014,8 +1014,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                   ),
-                                  child: const Text(
-                                    "Verify",
+                                  child: Text(
+                                    'checkout_verify'.tr,
                                     style: TextStyle(
                                         color: Colors.white, fontSize: 13),
                                   ),
@@ -1041,18 +1041,18 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   controller: otpController,
                                   keyboardType: TextInputType.number,
                                   maxLength: 6,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     counterText: "",
-                                    labelText: "OTP",
-                                    hintText: "6-digit code",
+                                    labelText: 'checkout_otp_label'.tr,
+                                    hintText: 'checkout_otp_hint'.tr,
                                     border: OutlineInputBorder(),
                                   ),
                                 ),
                                 canResend
                                     ? GestureDetector(
                                         onTap: () {},
-                                        child: const Text(
-                                          "Resend",
+                                        child: Text(
+                                          'checkout_resend'.tr,
                                           style: TextStyle(
                                             color: Colors.green,
                                             fontSize: 12,
@@ -1061,7 +1061,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                         ),
                                       )
                                     : Text(
-                                        "$otpSeconds sec",
+                                        'checkout_otp_seconds'.trParams({'seconds': otpSeconds.toString()}),
                                         style: const TextStyle(
                                           color: Colors.grey,
                                           fontSize: 12,
@@ -1096,7 +1096,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                               color: Colors.white,
                                             ),
                                           )
-                                        : const Text("Verify Code"),
+                                        : Text('checkout_verify_code'.tr),
                                   ),
                                 ),
 
@@ -1117,8 +1117,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                           initialCountryCode), // Rebuild when country changes
                       controller: _userController.homePhoneController,
                       decoration: InputDecoration(
-                        labelText: 'Phone Number',
-                        hintText: 'Enter phone number',
+                        labelText: 'checkout_phone_label'.tr,
+                        hintText: 'checkout_phone_hint'.tr,
                         border: OutlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey),
                         ),
@@ -1145,7 +1145,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                           selectedCountryCode = dial.isNotEmpty ? dial : '+971';
                           completePhoneNumber = '$selectedCountryCode$numOnly';
                           if (numOnly.isEmpty) {
-                            _homePhoneError = 'Phone is required';
+                            _homePhoneError = 'checkout_phone_required'.tr;
                           } else {
                             _homePhoneError = null;
                           }
@@ -1189,7 +1189,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   if (widget.isforguest) {
                     if (checkguest && isVerifying) {
                       Get.snackbar(
-                          'Warning', 'Please enter a Email and verify it',
+                          'checkout_warning_title'.tr, 'checkout_enter_email_verify'.tr,
                           backgroundColor: Colors.red, colorText: Colors.white);
                       return;
                     }
@@ -1197,9 +1197,9 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   // Validate phone number - check both homePhone and completePhoneNumber
                   if (homePhone.isEmpty || fullPhoneNumber.isEmpty) {
                     setState(() {
-                      _homePhoneError = 'Phone is required';
+                      _homePhoneError = 'checkout_phone_required'.tr;
                     });
-                    Get.snackbar('Warning', 'Please enter a valid phone number',
+                    Get.snackbar('checkout_warning_title'.tr, 'checkout_valid_phone'.tr,
                         backgroundColor: Colors.red, colorText: Colors.white);
                     return;
                   }
@@ -1216,8 +1216,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   if (_selectedAddressId == null ||
                       _userController.street.value.trim().isEmpty) {
                     Get.snackbar(
-                      'Warning',
-                      'Please select or add a delivery address to continue',
+                      'checkout_warning_title'.tr,
+                      'checkout_select_address'.tr,
                       backgroundColor: Colors.red,
                       colorText: Colors.white,
                       snackPosition: SnackPosition.TOP,
@@ -1297,7 +1297,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   if (_userController.selectedStoreIndex?.value == null ||
                       _userController.selectedStoreIndex!.value == -1) {
                     print('❌ No store selected');
-                    Get.snackbar('Warning', 'Please choose one store address',
+                    Get.snackbar('checkout_warning_title'.tr, 'checkout_choose_store'.tr,
                         backgroundColor: Colors.red, colorText: Colors.white);
                     return;
                   }
@@ -1305,7 +1305,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   // Validate phone
                   if (pickupPhone.isEmpty || !_isValidUaePhone(pickupPhone)) {
                     print('❌ Invalid pickup phone');
-                    Get.snackbar('', 'Please enter a valid phone number',
+                    Get.snackbar('', 'checkout_valid_phone'.tr,
                         backgroundColor: Colors.red, colorText: Colors.white);
                     return;
                   }
@@ -1315,8 +1315,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       _userController.storeName.value.trim().isEmpty ||
                       _userController.storeAddress.value.trim().isEmpty) {
                     print('❌ Store details missing after selection');
-                    Get.snackbar('Error',
-                        'Store information is missing. Please select a store again.',
+                    Get.snackbar('checkout_error_title'.tr,
+                        'checkout_store_info_missing'.tr,
                         backgroundColor: Colors.red, colorText: Colors.white);
                     return;
                   }
@@ -1385,8 +1385,8 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                   }
                 }
               },
-              child: const Text(
-                "Continue",
+              child: Text(
+                'continue'.tr,
                 style: TextStyle(color: Colors.white),
               ),
             ),
@@ -1412,7 +1412,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Shipping Address",
+                    Text('checkout_shipping_address'.tr,
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 5),
                     Text(
@@ -1443,7 +1443,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                               ),
                             );
                           },
-                          child: const Text("Edit Address"),
+                          child: Text('checkout_edit_address'.tr),
                         ),
                       ],
                     )
@@ -1473,11 +1473,11 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
+            children: [
               Icon(Icons.location_on_outlined, color: kPrimaryColor, size: 20),
               SizedBox(width: 8),
               Text(
-                "Select Saved Address",
+                'checkout_select_saved_address'.tr,
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -1504,7 +1504,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
               addresses.add(
                 AddressModel(
                   id: 'profile_default',
-                  name: 'Primary Address',
+                  name: 'checkout_primary_address'.tr,
                   phone: completePhoneNumber,
                   email: userEmail,
                   address: _userController.street.value,
@@ -1553,7 +1553,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         size: 36, color: Colors.grey[400]),
                     const SizedBox(height: 6),
                     Text(
-                      "No saved addresses found.",
+                      'checkout_no_saved_addresses'.tr,
                       style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -1561,7 +1561,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      "Add a new address below to continue your order.",
+                      'checkout_add_address_below'.tr,
                       style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                   ],
@@ -1616,7 +1616,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                             children: [
                               Expanded(
                                 child: Text(
-                                  addr.name.isNotEmpty ? addr.name : "Address",
+                                  addr.name.isNotEmpty ? addr.name : 'checkout_address_fallback'.tr,
                                   style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.bold,
@@ -1701,12 +1701,12 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.add_circle_outline,
                       color: kPrimaryColor, size: 18),
                   SizedBox(width: 8),
                   Text(
-                    "Add New Address",
+                    'checkout_add_new_address'.tr,
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -1798,7 +1798,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            isEdit ? "Edit Address Details" : "Add Address Details",
+                            isEdit ? 'checkout_edit_address_details'.tr : 'checkout_add_address_details'.tr,
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -1815,7 +1815,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      const Text("ADDRESS LABEL *",
+                      Text('checkout_address_label'.tr,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -1825,7 +1825,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         controller: nameController,
                         style: const TextStyle(fontSize: 13),
                         decoration: InputDecoration(
-                          hintText: "e.g. Home, Office, Work",
+                          hintText: 'checkout_address_label_hint'.tr,
                           hintStyle:
                               const TextStyle(color: Colors.grey, fontSize: 13),
                           filled: true,
@@ -1849,7 +1849,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       const SizedBox(height: 14),
 
                       // PHONE *
-                      const Text("PHONE *",
+                      Text('checkout_phone_star'.tr,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -1869,7 +1869,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                             const EdgeInsets.only(left: 10),
                         showDropdownIcon: true,
                         decoration: InputDecoration(
-                          hintText: "Phone Number",
+                          hintText: 'checkout_phone_label'.tr,
                           hintStyle: const TextStyle(
                               color: Colors.grey, fontSize: 13),
                           filled: true,
@@ -1896,7 +1896,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       const SizedBox(height: 14),
 
                       // EMAIL
-                      const Text("EMAIL",
+                      Text('checkout_email_caps'.tr,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -1928,7 +1928,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       const SizedBox(height: 14),
 
                       // ADDRESS STREET *
-                      const Text("ADDRESS STREET *",
+                      Text('checkout_street_star'.tr,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -1938,7 +1938,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         controller: streetController,
                         style: const TextStyle(fontSize: 13),
                         decoration: InputDecoration(
-                          hintText: "Street name, Villa/Apartment details",
+                          hintText: 'checkout_street_hint'.tr,
                           hintStyle:
                               const TextStyle(color: Colors.grey, fontSize: 13),
                           filled: true,
@@ -1962,7 +1962,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       const SizedBox(height: 14),
 
                       // STATE / EMIRATE *
-                      const Text("STATE / EMIRATE *",
+                      Text('checkout_state_emirate'.tr,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -2001,7 +2001,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       const SizedBox(height: 14),
 
                       // CITY *
-                      const Text("CITY *",
+                      Text('checkout_city_star'.tr,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -2011,7 +2011,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         controller: cityController,
                         style: const TextStyle(fontSize: 13),
                         decoration: InputDecoration(
-                          hintText: "City",
+                          hintText: 'checkout_city_hint'.tr,
                           hintStyle: const TextStyle(
                               color: Colors.grey, fontSize: 13),
                           filled: true,
@@ -2029,7 +2029,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      const Text("ZIP CODE / POST CODE",
+                      Text('checkout_zipcode'.tr,
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -2069,7 +2069,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                               onChanged: (val) => setDialogState(
                                   () => isDefault = val ?? false),
                             ),
-                            const Text("Set as Default Address",
+                            Text('checkout_set_default'.tr,
                                 style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
@@ -2091,7 +2091,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                     borderRadius: BorderRadius.circular(12)),
                               ),
                               onPressed: () => Navigator.pop(context),
-                              child: const Text("Cancel",
+                              child: Text('cancel'.tr,
                                   style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold,
@@ -2121,15 +2121,15 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                           cityController.text.trim();
 
                                       if (labelVal.isEmpty) {
-                                        Get.snackbar("Warning",
-                                            "Address Label is required",
+                                        Get.snackbar('checkout_warning_title'.tr,
+                                            'checkout_address_label_required'.tr,
                                             backgroundColor: Colors.orange,
                                             colorText: Colors.white);
                                         return;
                                       }
                                       if (streetVal.isEmpty) {
-                                        Get.snackbar("Warning",
-                                            "Address Street is required",
+                                        Get.snackbar('checkout_warning_title'.tr,
+                                            'checkout_address_street_required'.tr,
                                             backgroundColor: Colors.orange,
                                             colorText: Colors.white);
                                         return;
@@ -2190,7 +2190,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                       }
                                     },
                                     child: Text(
-                                        isEdit ? "Update Address" : "Save Address",
+                                        isEdit ? 'checkout_update_address'.tr : 'checkout_save_address'.tr,
                                         style: const TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
