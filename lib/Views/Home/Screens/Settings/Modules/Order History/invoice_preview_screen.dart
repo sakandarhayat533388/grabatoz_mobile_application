@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:printing/printing.dart';
 import 'package:graba2z/Utils/invoice_generator.dart';
 import 'package:graba2z/Utils/packages.dart';
@@ -13,7 +14,7 @@ class InvoicePreviewScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: CustomAppBar(
-        titleText: "Invoice Preview",
+        titleText: 'orders_invoice_preview'.tr,
       ),
       body: PdfPreview(
         build: (format) => generateInvoicePdfBytes(order),
