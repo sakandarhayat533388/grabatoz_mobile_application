@@ -70,7 +70,7 @@ class _SettingsState extends State<Settings> {
   Future<void> _launchURL(String url) async {
     if (url.isEmpty) {
       print('URL is empty, cannot launch.');
-      Get.snackbar("Error", "Link is not available.",
+      Get.snackbar('settings_error'.tr, 'settings_link_unavailable'.tr,
           snackPosition: SnackPosition.BOTTOM);
       return;
     }
@@ -79,12 +79,12 @@ class _SettingsState extends State<Settings> {
         await launchUrlString(url);
       } else {
         print('Could not launch $url (canLaunchUrlString returned false).');
-        Get.snackbar("Error", "Could not open link.",
+        Get.snackbar('settings_error'.tr, 'settings_link_open_failed'.tr,
             snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
       print('Exception trying to launch $url: $e');
-      Get.snackbar("Error", "Error opening link.",
+      Get.snackbar('settings_error'.tr, 'settings_link_error'.tr,
           snackPosition: SnackPosition.BOTTOM);
     }
   }
@@ -112,7 +112,7 @@ class _SettingsState extends State<Settings> {
     final navigationProvider = Get.put(BottomNavigationController());
     return Scaffold(
       appBar: CustomAppBar(
-        titleText: "Settings",
+        titleText: 'settings'.tr,
         showLeading: true,
         leadingWidget: Builder(
           builder: (context) {
@@ -230,7 +230,7 @@ class _SettingsState extends State<Settings> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  "Guest",
+                                  'settings_guest'.tr,
                                   style: Get.textTheme.headlineSmall!.copyWith(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
@@ -246,7 +246,7 @@ class _SettingsState extends State<Settings> {
                                     // Navigate to Login screen
                                     context.route(Login());
                                   },
-                                  buttonText: "Login",
+                                  buttonText: 'settings_login'.tr,
                                 ),
                               ],
                             );
@@ -276,7 +276,7 @@ class _SettingsState extends State<Settings> {
                                     color: kSecondaryColor,
                                     width: 20,
                                     height: 20),
-                                title: const Text('Your Profile',
+                                title: Text('settings_your_profile'.tr,
                                     style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600)),
@@ -313,7 +313,7 @@ class _SettingsState extends State<Settings> {
                                     color: kSecondaryColor,
                                     width: 20,
                                     height: 20),
-                                title: Text('Order History',
+                                title: Text('settings_order_history'.tr,
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
@@ -345,7 +345,7 @@ class _SettingsState extends State<Settings> {
                                 context.route(TrackOrderScreen());
                               },
                               leading: Icon(Icons.local_shipping),
-                              title: Text('Track Order',
+                              title: Text('settings_track_order'.tr,
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -374,7 +374,7 @@ class _SettingsState extends State<Settings> {
                             },
                             leading: Image.asset("assets/icons/favor.png",
                                 color: kSecondaryColor, width: 20, height: 20),
-                            title: const Text('My WishList',
+                            title: Text('settings_wishlist'.tr,
                                 style: TextStyle(
                                     fontSize: 12, fontWeight: FontWeight.w600)),
                             trailing: const Icon(
@@ -420,7 +420,7 @@ class _SettingsState extends State<Settings> {
                                   color: kSecondaryColor, size: 20)
                               : CountryFlag(selected.flagSvg,
                                   width: 32, height: 22),
-                          title: const Text('Country / Currency',
+                          title: Text('country_currency'.tr,
                               style: TextStyle(
                                   fontSize: 12, fontWeight: FontWeight.w600)),
                           subtitle: selected == null
@@ -483,7 +483,7 @@ class _SettingsState extends State<Settings> {
                         },
                         leading: Image.asset("assets/icons/info.png",
                             color: kSecondaryColor, width: 20, height: 20),
-                        title: const Text('About Us',
+                        title: Text('settings_about_us'.tr,
                             style: TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.w600)),
                         trailing: const Icon(
@@ -506,7 +506,7 @@ class _SettingsState extends State<Settings> {
                         },
                         leading: Image.asset("assets/icons/policy.png",
                             color: kSecondaryColor, width: 20, height: 20),
-                        title: const Text('Privacy Policy',
+                        title: Text('settings_privacy_policy'.tr,
                             style: TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.w600)),
                         trailing: const Icon(
@@ -529,7 +529,7 @@ class _SettingsState extends State<Settings> {
                         },
                         leading: Image.asset("assets/icons/terms.png",
                             color: kSecondaryColor, width: 20, height: 20),
-                        title: const Text('Terms & Conditions',
+                        title: Text('settings_terms_conditions'.tr,
                             style: TextStyle(
                                 fontSize: 12, fontWeight: FontWeight.w600)),
                         trailing: const Icon(
@@ -598,8 +598,8 @@ class _SettingsState extends State<Settings> {
                                         child: Column(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            const Text(
-                                              'Logout',
+                                            Text(
+                                              'settings_logout'.tr,
                                               style: TextStyle(
                                                 fontSize: 20,
                                                 color: kPrimaryColor,
@@ -609,8 +609,8 @@ class _SettingsState extends State<Settings> {
                                             Divider(
                                                 color: kdefgreyColor.withValues(
                                                     alpha: .2)),
-                                            const Text(
-                                              'Are you sure you want to log out?',
+                                            Text(
+                                              'settings_logout_confirm'.tr,
                                               style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w600,
@@ -641,9 +641,9 @@ class _SettingsState extends State<Settings> {
                                                             BorderRadius
                                                                 .circular(12),
                                                       ),
-                                                      child: const Center(
+                                                      child: Center(
                                                         child: Text(
-                                                          'Cancel',
+                                                          'cancel'.tr,
                                                           style: TextStyle(
                                                               color:
                                                                   kPrimaryColor,
@@ -702,9 +702,9 @@ class _SettingsState extends State<Settings> {
                                                             BorderRadius
                                                                 .circular(12),
                                                       ),
-                                                      child: const Center(
+                                                      child: Center(
                                                         child: Text(
-                                                          'Yes, Logout',
+                                                          'settings_logout_yes'.tr,
                                                           style: TextStyle(
                                                               color:
                                                                   kdefwhiteColor,
@@ -730,7 +730,7 @@ class _SettingsState extends State<Settings> {
                                   color: kSecondaryColor,
                                   width: 20,
                                   height: 20),
-                              title: const Text('Logout',
+                              title: Text('settings_logout'.tr,
                                   style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600)),
@@ -822,14 +822,14 @@ class _SettingsState extends State<Settings> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           FooterTile(
-                            title: "Categories",
+                            title: 'categories'.tr,
                             children: [
                               ListTile(
                                   dense: true,
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Accessories & Components",
+                                    'settings_cat_accessories'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -850,7 +850,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "All in one",
+                                    'settings_cat_all_in_one'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -869,7 +869,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Desktop",
+                                    'settings_cat_desktop'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -888,7 +888,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Laptops",
+                                    'settings_cat_laptops'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -907,7 +907,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Mobiles",
+                                    'settings_cat_mobiles'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -926,7 +926,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Monitors",
+                                    'settings_cat_monitors'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -945,7 +945,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Networking",
+                                    'settings_cat_networking'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -964,7 +964,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Printers & Copier",
+                                    'settings_cat_printers'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -985,7 +985,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Projector",
+                                    'settings_cat_projector'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -1004,7 +1004,7 @@ class _SettingsState extends State<Settings> {
                                   contentPadding: EdgeInsets.zero,
                                   visualDensity: VisualDensity(vertical: -4),
                                   title: Text(
-                                    "Routers & Switches",
+                                    'settings_cat_routers'.tr,
                                     style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500),
@@ -1024,14 +1024,14 @@ class _SettingsState extends State<Settings> {
                           ),
                           Divider(height: 1, color: Color(0xFFEEEEEE)),
                           FooterTile(
-                            title: "Legal",
+                            title: 'settings_footer_legal'.tr,
                             children: [
                               ListTile(
                                 dense: true,
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "About Us",
+                                  'settings_about_us'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1044,7 +1044,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Contact Us",
+                                  'settings_contact_us'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1057,7 +1057,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Blog",
+                                  'settings_blog'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1070,7 +1070,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Shop",
+                                  'settings_shop'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1083,7 +1083,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Login",
+                                  'settings_login'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1095,7 +1095,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Register",
+                                  'settings_register'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1106,14 +1106,14 @@ class _SettingsState extends State<Settings> {
                           ),
                           Divider(height: 1, color: Color(0xFFEEEEEE)),
                           FooterTile(
-                            title: "Support",
+                            title: 'settings_footer_support'.tr,
                             children: [
                               ListTile(
                                 dense: true,
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Refund and Return",
+                                  'settings_refund_return'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1126,7 +1126,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Cookies Policy",
+                                  'settings_cookies_policy'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1139,7 +1139,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Terms & Conditions",
+                                  'settings_terms_conditions'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1152,7 +1152,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Privacy Policy",
+                                  'settings_privacy_policy'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1165,7 +1165,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Disclaimer Policy",
+                                  'settings_disclaimer_policy'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1178,7 +1178,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Track Order",
+                                  'settings_track_order'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1190,7 +1190,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Wishlist",
+                                  'settings_footer_wishlist'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1202,7 +1202,7 @@ class _SettingsState extends State<Settings> {
                                 contentPadding: EdgeInsets.zero,
                                 visualDensity: VisualDensity(vertical: -4),
                                 title: Text(
-                                  "Cart",
+                                  'cart'.tr,
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w500),
@@ -1213,7 +1213,7 @@ class _SettingsState extends State<Settings> {
                           ),
                           Divider(height: 1, color: Color(0xFFEEEEEE)),
                           FooterTile(
-                            title: "Connect",
+                            title: 'settings_footer_connect'.tr,
                             children: [
                               Padding(
                                 padding:
