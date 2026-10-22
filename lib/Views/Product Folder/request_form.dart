@@ -64,7 +64,7 @@ class _RequestFormState extends State<RequestForm> {
     if (response.statusCode == 200 || response.statusCode == 201) {
       // Success
 
-      EasyLoading.showSuccess('Request Submitted');
+      EasyLoading.showSuccess('product_callback_submitted'.tr);
       Navigator.pop(context);
       print('Request Submitted');
       print('Response: ${response.body}');
@@ -102,9 +102,9 @@ class _RequestFormState extends State<RequestForm> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
-            "Request a Callback",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            'product_callback_title'.tr,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
 
@@ -114,7 +114,7 @@ class _RequestFormState extends State<RequestForm> {
             decoration: InputDecoration(
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey)),
-                labelText: "Name",
+                labelText: 'product_review_name_label'.tr,
                 enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey))),
           ),
@@ -125,7 +125,7 @@ class _RequestFormState extends State<RequestForm> {
             controller: emailController,
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
-              labelText: "Email",
+              labelText: 'product_review_email_label'.tr,
               focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey)),
               enabledBorder: OutlineInputBorder(
@@ -141,7 +141,7 @@ class _RequestFormState extends State<RequestForm> {
             decoration: InputDecoration(
                 focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey)),
-                labelText: "Phone Number",
+                labelText: 'product_callback_phone_label'.tr,
                 enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.grey))),
           ),
@@ -169,8 +169,8 @@ class _RequestFormState extends State<RequestForm> {
                   ? CircularProgressIndicator(
                       color: Colors.white,
                     )
-                  : Text("Submit Request",
-                      style: TextStyle(color: Colors.white)),
+                  : Text('product_callback_submit'.tr,
+                      style: const TextStyle(color: Colors.white)),
             ),
           ),
           const SizedBox(height: 70),
