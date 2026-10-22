@@ -1621,7 +1621,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
       if (!mounted) return;
       setState(() => _reloadingVariationProductId = null);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to load selected product')),
+        SnackBar(content: Text('product_detail_load_failed'.tr)),
       );
     }
   }
@@ -2694,9 +2694,9 @@ class _NewProductDetailsState extends State<NewProductDetails>
                     fontWeight: FontWeight.bold,
                     color: kdefblackColor,
                   ),
-              children: const [
-                TextSpan(text: 'Color:'),
-                TextSpan(text: 'Select Color'),
+              children: [
+                TextSpan(text: 'product_detail_color_label'.tr),
+                TextSpan(text: 'product_detail_select_color'.tr),
               ],
             ),
           ),
@@ -2729,8 +2729,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
             ),
           ),
           const SizedBox(height: 10),
-          const Text(
-            'Select a color to view its image and price',
+          Text(
+            'product_detail_select_color_hint'.tr,
             style: TextStyle(
               fontSize: 13,
               color: kSecondaryColor,
@@ -2900,7 +2900,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
     final overlayState = Overlay.of(context, rootOverlay: true);
     if (overlayState == null) {
       Get.snackbar(
-        'Added to cart',
+        'product_added_to_cart'.tr,
         '',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.black87,
@@ -2923,11 +2923,11 @@ class _NewProductDetailsState extends State<NewProductDetails>
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.shopping_cart, color: Colors.white, size: 24),
                   SizedBox(width: 8),
                   Text(
-                    'Added to cart',
+                    'product_added_to_cart'.tr,
                     style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -2960,8 +2960,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
     if (overlayState == null) {
       log('⚠️ Overlay not available, using GetX snackbar');
       Get.snackbar(
-        'Bundle added',
-        '$itemCount items added to cart',
+        'product_detail_bundle_added'.tr,
+        'product_detail_items_added_to_cart'.trParams({'count': itemCount.toString()}),
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.black87,
         colorText: Colors.white,
@@ -3015,7 +3015,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '$itemCount items added to cart',
+                          'product_detail_items_added_to_cart'.trParams({'count': itemCount.toString()}),
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -3030,8 +3030,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                             color: Colors.green.shade600,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
-                            'BUNDLE DISCOUNT',
+                          child: Text(
+                            'product_detail_bundle_discount'.tr,
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -3441,7 +3441,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         Row(
                           children: [
                             Text(
-                              'Category:',
+                              'product_detail_category_label'.tr,
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium!
@@ -3469,7 +3469,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         Row(
                           children: [
                             Text(
-                              'Brand:',
+                              'product_detail_brand_label'.tr,
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium!
@@ -3498,7 +3498,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         Row(
                           children: [
                             Text(
-                              'SKU:',
+                              'product_detail_sku_label'.tr,
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium!
@@ -3589,7 +3589,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                   ),
                                   const SizedBox(width: 2),
                                   Text(
-                                    'VAT',
+                                    'product_detail_vat'.tr,
                                     style: TextStyle(
                                         fontWeight: FontWeight.normal,
                                         fontSize: 10,
@@ -3623,7 +3623,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                   ),
                                   const SizedBox(width: 2),
                                   Text(
-                                    'VAT',
+                                    'product_detail_vat'.tr,
                                     style: TextStyle(
                                         fontWeight: FontWeight.normal,
                                         fontSize: 10,
@@ -3632,8 +3632,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                 ],
                               );
                             } else {
-                              return const Text(
-                                'Price not available',
+                              return Text(
+                                'product_detail_price_unavailable'.tr,
                                 textAlign: TextAlign.right,
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -3645,8 +3645,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         ),
                         10.0.heightbox,
                         _buildProductOptions(),
-                        const Text(
-                          "Key Features:",
+                        Text(
+                          "product_detail_key_features".tr,
                           style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -3662,8 +3662,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                   color: kdefblackColor,
                                 ),
                               )
-                            : const Text(
-                                'No description available.',
+                            : Text(
+                                'product_detail_no_description'.tr,
                                 style: TextStyle(
                                   fontWeight: FontWeight.normal,
                                   fontSize: 12,
@@ -3889,7 +3889,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                           color: Colors.red),
                                       SizedBox(width: 8),
                                       Text(
-                                        "Get My Coupon",
+                                        "product_detail_get_coupon".tr,
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Colors.red,
@@ -3900,8 +3900,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
-                                    "Free shipping when you spend AED500 & above.\n"
-                                    "Unlimited destinations in Dubai and Abu Dhabi",
+                                    "product_detail_free_shipping_note".tr +
+                                    "product_detail_free_shipping_destinations".tr,
                                     style: TextStyle(fontSize: 14),
                                   ),
                                   const SizedBox(height: 8),
@@ -3914,7 +3914,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                     onPressed: () {
                                       showCouponBottomSheet(context);
                                     },
-                                    child: const Text("Get My Coupon",
+                                    child: Text("product_detail_get_coupon".tr,
                                         style: TextStyle(color: Colors.black)),
                                   ),
                                 ],
@@ -3953,8 +3953,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                       color: Colors.red.shade600,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Text(
-                                      "Payment Methods :",
+                                    child: Text(
+                                      "product_detail_payment_methods".tr,
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontWeight: FontWeight.bold,
@@ -4047,7 +4047,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
 
                         20.0.heightbox,
                         Text(
-                          'Related Products',
+                          'product_detail_related_products'.tr,
                           style: Theme.of(context)
                               .textTheme
                               .titleMedium!
@@ -4154,7 +4154,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         child: Padding(
                           padding: defaultPadding(),
                           child: Text(
-                            'Order By WhatsApp',
+                            'product_detail_order_whatsapp'.tr,
                             style: TextStyle(
                               color: kdefwhiteColor,
                               fontSize: 12,
@@ -4175,8 +4175,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                       onTap: () async {
                         if (isOutOfStock) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('This item is out of stock.'),
+                            SnackBar(
+                              content: Text('product_detail_out_of_stock_msg'.tr),
                               duration: Duration(seconds: 2),
                             ),
                           );
@@ -4233,7 +4233,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                           child: Padding(
                             padding: defaultPadding(),
                             child: Text(
-                              isOutOfStock ? 'OUT OF STOCK' : 'ADD TO CART',
+                              isOutOfStock ? 'product_detail_out_of_stock_btn'.tr : 'product_detail_add_to_cart_btn'.tr,
                               style: TextStyle(
                                 color: kdefwhiteColor,
                                 fontSize: 12,
@@ -4257,12 +4257,12 @@ class _NewProductDetailsState extends State<NewProductDetails>
       log('StackTrace: $stackTrace');
       log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
       return Scaffold(
-        appBar: AppBar(title: Text("Error")),
+        appBar: AppBar(title: Text("product_error_title".tr)),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Text(
-              "An error occurred while building this page. Please try again.\n\nError: $e",
+              "product_detail_build_error".trParams({"error": e.toString()}),
               textAlign: TextAlign.center,
             ),
           ),
@@ -4277,13 +4277,13 @@ class _NewProductDetailsState extends State<NewProductDetails>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Product Description",
+          Text("product_detail_description_title".tr,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           Html(
             data: widget.description.isNotEmpty
                 ? widget.description
-                : '<p>No description available.</p>',
+                : '<p>${'product_detail_no_description'.tr}</p>',
             style: {
               "body": Style(
                 fontSize: FontSize(14),
@@ -4333,8 +4333,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "More Information",
+          Text(
+            "product_detail_more_info".tr,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -4357,7 +4357,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                     color: Colors.grey.shade100,
                     padding: const EdgeInsets.all(10),
                     child: Text(
-                      'Brand',
+                      'product_title_brand'.tr,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -4374,7 +4374,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                     color: Colors.grey.shade100,
                     padding: const EdgeInsets.all(10),
                     child: Text(
-                      'Model Number',
+                      'product_detail_model_number'.tr,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -4390,7 +4390,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                     color: Colors.grey.shade100,
                     padding: const EdgeInsets.all(10),
                     child: Text(
-                      'Category',
+                      'product_title_category'.tr,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -4407,7 +4407,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                     color: Colors.grey.shade100,
                     padding: const EdgeInsets.all(10),
                     child: Text(
-                      'Specifications',
+                      'product_detail_specifications'.tr,
                       style: const TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -4421,7 +4421,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         )
                       : Container(
                           padding: const EdgeInsets.all(10),
-                          child: Text('No Data Available')),
+                          child: Text('product_detail_no_data'.tr)),
                 ],
               )
             ],
@@ -4515,7 +4515,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         await _onReviewAdded();
                       }
                     },
-                    child: const Text('Add Review',
+                    child: Text('product_detail_add_review'.tr,
                         style: TextStyle(color: Colors.white)),
                   ),
                 ),
@@ -4545,7 +4545,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                       }),
                     ),
                     const SizedBox(height: 4),
-                    Text('$totalReviews Product Ratings'),
+                    Text('product_detail_ratings_count'.trParams({'count': totalReviews.toString()})),
                   ],
                 ),
               ],
@@ -4563,7 +4563,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                           height: 16,
                           width: 16,
                           child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Text('Load more reviews'),
+                      : Text('product_detail_load_more_reviews'.tr),
                 ),
               ),
           ],
@@ -4956,7 +4956,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
             children: [
               Expanded(
                 child: Text(
-                  "Frequently Bought Together",
+                  "product_detail_frequently_bought".tr,
                   softWrap: true,
                   style: const TextStyle(
                       fontSize: 18,
@@ -4971,7 +4971,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                 decoration: BoxDecoration(
                     color: Colors.red.shade600,
                     borderRadius: BorderRadius.circular(999)),
-                child: const Text("25% OFF BUNDLE",
+                child: Text("product_detail_bundle_off".tr,
                     style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -5036,7 +5036,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         decoration: BoxDecoration(
                             color: const Color(0xFFFEF3C7),
                             borderRadius: BorderRadius.circular(999)),
-                        child: const Text("Current Item",
+                        child: Text("product_detail_current_item".tr,
                             style: TextStyle(
                                 fontSize: 11, color: Color(0xFF92400E))),
                       ),
@@ -5119,7 +5119,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                 decoration: BoxDecoration(
                                     color: const Color(0xFFFEF3C7),
                                     borderRadius: BorderRadius.circular(999)),
-                                child: const Text("Save 25%",
+                                child: Text("product_detail_save_25".tr,
                                     style: TextStyle(
                                         fontSize: 10,
                                         color: Color(0xFFB91C1C),
@@ -5128,7 +5128,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text("You save ${_fmt(savings)}",
+                          Text("product_detail_you_save".trParams({"amount": _fmt(savings)}),
                               style: const TextStyle(
                                   color: Color(0xFF16A34A),
                                   fontSize: 12,
@@ -5149,8 +5149,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                     decoration: TextDecoration.lineThrough,
                                   ),
                                 ),
-                                const Text(
-                                  "Already discounted",
+                                Text(
+                                  "product_detail_already_discounted".tr,
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: Color(0xFF2563EB), // blue-600
@@ -5185,7 +5185,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                   runSpacing: 2,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    const Text("Bundle price: ",
+                    Text("product_detail_bundle_price".tr,
                         style:
                             TextStyle(fontSize: 16, color: Color(0xFF374151))),
                     Text(_fmt(t.discountedTotal),
@@ -5202,13 +5202,13 @@ class _NewProductDetailsState extends State<NewProductDetails>
                   ],
                 ),
                 if (t.savings > 0)
-                  Text("You save ${_fmt(t.savings)} with bundle discount!",
+                  Text("product_detail_bundle_save_msg".trParams({"amount": _fmt(t.savings)}),
                       style: const TextStyle(
                           color: Color(0xFFB91C1C),
                           fontSize: 12,
                           fontWeight: FontWeight.w600)),
                 Text(
-                  "For ${t.selectedCount} item${t.selectedCount != 1 ? "s" : ""}",
+                  "product_detail_bundle_for_items".trParams({"count": t.selectedCount.toString()}),
                   style:
                       const TextStyle(fontSize: 12, color: Color(0xFF4B5563)),
                 ),
@@ -5235,7 +5235,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            "Add all ${t.selectedCount} to Cart",
+                            "product_detail_add_all_to_cart".trParams({"count": t.selectedCount.toString()}),
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
@@ -5253,7 +5253,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Text(
-                              "Save ${_fmt(t.savings)}",
+                              "product_detail_save_amount".trParams({"amount": _fmt(t.savings)}),
                               style: TextStyle(
                                 color: Colors.red.shade600,
                                 fontSize: 11,
