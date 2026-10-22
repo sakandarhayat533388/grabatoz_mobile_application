@@ -26,7 +26,7 @@ class AddressDetailsBottomSheet extends StatefulWidget {
 }
 
 class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
-  String addressType = 'Home';
+  String addressType = 'home'.tr;
   String selectedState = 'Select State';
   List<String> states = [
     'Select State',
@@ -113,7 +113,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
         _authController.address.value = addressController.text;
       }
     } else {
-      Get.snackbar('Warning', "Some fields are missing",
+      Get.snackbar('checkout_warning_title'.tr, 'checkout_missing_fields'.tr,
           backgroundColor: Colors.red, colorText: Colors.white);
     }
   }
@@ -148,27 +148,27 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                     ),
                   ),
                   Text(
-                    'Address Details',
+                    'checkout_address_details'.tr,
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 16),
                   Row(
                     children: [
-                      _buildRadioOption('Home'),
+                      _buildRadioOption('home'.tr),
                       SizedBox(width: 20),
-                      _buildRadioOption('Office'),
+                      _buildRadioOption('checkout_office'.tr),
                     ],
                   ),
                   SizedBox(height: 16),
                   if (widget.isforGuest) ...[
-                    _buildTextField('Name *', controller: nameController),
+                    _buildTextField('checkout_name_star'.tr, controller: nameController),
                     SizedBox(height: 12),
                   ],
-                  _buildTextField('Address *', controller: addressController),
+                  _buildTextField('checkout_address_star'.tr, controller: addressController),
                   SizedBox(height: 12),
-                  _buildTextField('Zip Code *', controller: zipCodeController),
+                  _buildTextField('checkout_zipcode_star'.tr, controller: zipCodeController),
                   SizedBox(height: 12),
-                  Text('Country'),
+                  Text('checkout_country_label'.tr),
                   SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     initialValue: 'UAE',
@@ -184,7 +184,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                     ),
                   ),
                   SizedBox(height: 12),
-                  Text('State/Region *'),
+                  Text('checkout_state_region'.tr),
                   SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     initialValue: selectedState,
@@ -204,7 +204,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                     ),
                   ),
                   SizedBox(height: 12),
-                  _buildTextField('City *', controller: cityController),
+                  _buildTextField('checkout_city_star'.tr, controller: cityController),
                   SizedBox(height: 12),
                   SizedBox(height: 20),
                   Row(
@@ -212,7 +212,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () => Navigator.pop(context),
-                          child: Text("Cancel"),
+                          child: Text('cancel'.tr),
                         ),
                       ),
                       SizedBox(width: 12),
@@ -229,7 +229,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                                 ),
                                 onPressed: _saveAndSyncAddress,
                                 child: Text(
-                                  "Save Address",
+                                  'checkout_save_address'.tr,
                                   style: TextStyle(color: Colors.white),
                                 ),
                               ),
