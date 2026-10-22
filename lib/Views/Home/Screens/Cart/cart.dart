@@ -115,7 +115,7 @@ class _CartState extends State<Cart> {
     final String pid = cartItem.productId?.toString() ?? '';
     if (pid.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Missing product ID')));
+          .showSnackBar(SnackBar(content: Text('cart_missing_product_id'.tr)));
       return;
     }
 
@@ -161,7 +161,7 @@ class _CartState extends State<Cart> {
 
       String name = product['name']?.toString() ??
           cartItem.productName ??
-          'Unknown Product';
+          'cart_unknown_product'.tr;
 
       // FIX: brand/category extraction without map?['key']
       String brandName = '';
@@ -226,8 +226,8 @@ class _CartState extends State<Cart> {
           cartItem.cartBasePrice.toString();
       String stockStatus = product['stockStatus']?.toString() ??
           ((product['stock'] is num && (product['stock'] as num) > 0)
-              ? 'Available'
-              : 'Out of Stock');
+              ? 'cart_stock_available'.tr
+              : 'cart_stock_out'.tr);
       String stockCount = (product['stock'] ??
               product['countInStock'] ??
               product['stockCount'] ??
@@ -273,7 +273,7 @@ class _CartState extends State<Cart> {
     } catch (e) {
       debugPrint('Error fetching product details: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to load product details')),
+        SnackBar(content: Text('cart_failed_load_details'.tr)),
       );
     }
   }
@@ -284,7 +284,7 @@ class _CartState extends State<Cart> {
 
     return Scaffold(
       appBar: CustomAppBar(
-        titleText: "My Cart",
+        titleText: 'cart_my_cart'.tr,
         actionicon: GestureDetector(
           onTap: () async {
             // Update the bottom navigation index safely
@@ -299,7 +299,7 @@ class _CartState extends State<Cart> {
               width: 28,
               height: 28,
               fit: BoxFit.contain,
-              semanticsLabel: 'Home',
+              semanticsLabel: 'home'.tr,
             ),
           ),
         ),
@@ -314,8 +314,8 @@ class _CartState extends State<Cart> {
                     'assets/images/emptycart.png',
                   ),
                   20.0.heightbox,
-                  const Text(
-                    "Your cart is empty\nYou haven't added any product yet.",
+                  Text(
+                    'cart_empty_message'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
@@ -361,7 +361,7 @@ class _CartState extends State<Cart> {
                         ),
                         10.0.widthbox,
                         Text(
-                            "${cartNotifier.cartOtherInfoList.length} products in your cart",
+                            'cart_products_in_cart'.trParams({'count': cartNotifier.cartOtherInfoList.length.toString()}),
                             style: const TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -405,7 +405,7 @@ class _CartState extends State<Cart> {
                                       duration:
                                           const Duration(milliseconds: 400),
                                       content: Text(
-                                          "${cartItem.productName} removed"),
+                                          'cart_item_removed'.trParams({'name': cartItem.productName ?? ''})),
                                     ),
                                   );
                                 },
@@ -498,8 +498,8 @@ class _CartState extends State<Cart> {
                                 height: 100,
                               ),
                               20.0.heightbox,
-                              const Text(
-                                "Your cart is empty\nYou haven't added any product yet.",
+                              Text(
+                                'cart_empty_message'.tr,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(fontSize: 16),
                               ),
@@ -530,8 +530,8 @@ class _CartState extends State<Cart> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Total Quantity:',
+                        Text(
+                          'cart_total_quantity'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -539,7 +539,7 @@ class _CartState extends State<Cart> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${cartNotifier.totalItems} pcs',
+                          'cart_pcs_count'.trParams({'count': cartNotifier.totalItems.toString()}),
                           style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -550,8 +550,8 @@ class _CartState extends State<Cart> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Products Price:',
+                        Text(
+                          'cart_products_price'.tr,
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -579,7 +579,7 @@ class _CartState extends State<Cart> {
                             textColor: kSecondaryColor,
                             hinttextColor: kmediumblackColor,
                             controller: couponController,
-                            hintText: 'Enter coupon code',
+                            hintText: 'cart_coupon_hint'.tr,
                           ),
                         ),
                         10.0.widthbox,
@@ -610,12 +610,12 @@ class _CartState extends State<Cart> {
                                   context);
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text("Enter a valid coupon!")),
+                                SnackBar(
+                                    content: Text('cart_enter_valid_coupon'.tr)),
                               );
                             }
                           },
-                          buttonText: "Grab Coupon",
+                          buttonText: 'cart_grab_coupon'.tr,
                         ),
                       ],
                     ),
@@ -627,8 +627,8 @@ class _CartState extends State<Cart> {
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'Discount Applied:',
+                                Text(
+                                  'cart_discount_applied'.tr,
                                   style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.bold),
@@ -660,8 +660,8 @@ class _CartState extends State<Cart> {
                             children: [
                               Text(
                                 isGuestPreview
-                                    ? 'App registration discount:'
-                                    : 'First app order discount:',
+                                    ? 'cart_app_registration_discount'.tr
+                                    : 'cart_first_app_order_discount'.tr,
                                 style: const TextStyle(
                                     fontSize: 14, fontWeight: FontWeight.bold),
                               ),
@@ -675,10 +675,10 @@ class _CartState extends State<Cart> {
                             ],
                           ),
                           if (isGuestPreview)
-                            const Align(
+                            Align(
                               alignment: Alignment.centerLeft,
                               child: Text(
-                                'Register before checkout to get this discount.',
+                                'cart_register_before_checkout'.tr,
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
@@ -694,8 +694,8 @@ class _CartState extends State<Cart> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Final Price:',
+                        Text(
+                          'cart_final_price'.tr,
                           style: TextStyle(
                               fontSize: 14, fontWeight: FontWeight.bold),
                         ),
@@ -728,11 +728,11 @@ class _CartState extends State<Cart> {
                               onPressed: () {
                                 cartNotifier.removeCoupon();
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text("Coupon Removed")),
+                                  SnackBar(
+                                      content: Text('cart_coupon_removed'.tr)),
                                 );
                               },
-                              child: const Text("Remove Coupon",
+                              child: Text('cart_remove_coupon'.tr,
                                   style: TextStyle(color: Colors.red)),
                             )
                           : SizedBox.shrink(),
@@ -762,8 +762,8 @@ class _CartState extends State<Cart> {
                                   }
                                 : null,
                         buttonText: cartNotifier.cartOtherInfoList.isNotEmpty
-                            ? 'Checkout'
-                            : 'Cart is Empty',
+                            ? 'checkout'.tr
+                            : 'cart_is_empty'.tr,
                       );
                     }),
                     10.0.heightbox,
@@ -792,8 +792,8 @@ class _CartState extends State<Cart> {
         return AlertDialog(
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text(
-            'Remove from Cart?',
+          title: Text(
+            'cart_remove_from_cart'.tr,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -856,7 +856,7 @@ class _CartState extends State<Cart> {
                             style: Get.textTheme.titleSmall),
                         const SizedBox(height: 6),
                         Text(
-                          "Quantity: $quantity pcs",
+                          'cart_quantity_pcs'.trParams({'quantity': quantity}),
                           style: const TextStyle(
                               color: kmediumblackColor,
                               fontSize: 13,
@@ -892,7 +892,7 @@ class _CartState extends State<Cart> {
                   side: const BorderSide(color: kPrimaryColor),
                 ),
               ),
-              child: const Text('Cancel',
+              child: Text('cancel'.tr,
                   style: TextStyle(fontWeight: FontWeight.w600)),
             ),
             TextButton(
@@ -915,7 +915,7 @@ class _CartState extends State<Cart> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(60)),
               ),
-              child: const Text('Yes, Remove',
+              child: Text('cart_yes_remove'.tr,
                   style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
@@ -939,8 +939,8 @@ Future<bool?> _confirmRemoveDialog(
     builder: (BuildContext dialogContext) {
       return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Remove from Cart?',
+        title: Text(
+          'cart_remove_from_cart'.tr,
           style: TextStyle(
               fontSize: 16, fontWeight: FontWeight.bold, color: kPrimaryColor),
         ),
@@ -998,7 +998,7 @@ Future<bool?> _confirmRemoveDialog(
                           overflow: TextOverflow.ellipsis,
                           style: Get.textTheme.titleSmall),
                       const SizedBox(height: 6),
-                      Text("Quantity: $quantity pcs",
+                      Text('cart_quantity_pcs'.trParams({'quantity': quantity}),
                           style: const TextStyle(
                               color: kmediumblackColor,
                               fontSize: 13,
@@ -1030,7 +1030,7 @@ Future<bool?> _confirmRemoveDialog(
                 side: const BorderSide(color: kPrimaryColor),
               ),
             ),
-            child: const Text('Cancel',
+            child: Text('cancel'.tr,
                 style: TextStyle(fontWeight: FontWeight.w600)),
           ),
           TextButton(
@@ -1044,7 +1044,7 @@ Future<bool?> _confirmRemoveDialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(60)),
             ),
-            child: const Text('Yes, Remove',
+            child: Text('cart_yes_remove'.tr,
                 style: TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
@@ -1060,13 +1060,13 @@ Future<bool?> showGuestDiscountWarning(BuildContext context) {
     builder: (BuildContext dialogContext) {
       return AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
+        title: Row(
           children: [
             Icon(Icons.error_outline, color: kredColor),
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Discount not available',
+                'cart_discount_not_available'.tr,
                 style: TextStyle(
                   color: kredColor,
                   fontSize: 18,
@@ -1076,8 +1076,8 @@ Future<bool?> showGuestDiscountWarning(BuildContext context) {
             ),
           ],
         ),
-        content: const Text(
-          'If you place the order as a guest, the app registration discount will not be applied. Please register or log in to get the discount.',
+        content: Text(
+          'cart_guest_discount_warning'.tr,
           style: TextStyle(
             color: kSecondaryColor,
             fontSize: 14,
@@ -1096,8 +1096,8 @@ Future<bool?> showGuestDiscountWarning(BuildContext context) {
                 side: const BorderSide(color: kPrimaryColor),
               ),
             ),
-            child: const Text(
-              'Cancel',
+            child: Text(
+              'cancel'.tr,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -1111,8 +1111,8 @@ Future<bool?> showGuestDiscountWarning(BuildContext context) {
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
-            child: const Text(
-              'Continue as Guest',
+            child: Text(
+              'cart_continue_as_guest'.tr,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -1146,7 +1146,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
     String formattedDate = widget.cartItem.addedToCartTime != null
         ? DateFormat('MMM dd, yyyy h:mm a')
             .format(widget.cartItem.addedToCartTime!)
-        : 'No Date';
+        : 'cart_no_date'.tr;
     return Padding(
       padding: defaultPadding(),
       child: defaultStyledContainer(
@@ -1209,7 +1209,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                         children: [
                           Expanded(
                               child: Text(
-                            widget.cartItem.productName ?? 'Unknown Product',
+                            widget.cartItem.productName ?? 'cart_unknown_product'.tr,
                             maxLines: 2,
                             style: TextStyle(
                               fontSize: 14,
@@ -1292,12 +1292,12 @@ class _CartItemWidgetState extends State<CartItemWidget> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Dated: $formattedDate",
+                  'cart_dated'.trParams({'date': formattedDate}),
                   style: const TextStyle(
                       fontSize: 10, fontWeight: FontWeight.bold),
                 ),
                 Text(
-                  "Quantity: ${widget.cartItem.quantity?.toString() ?? '0'} pcs",
+                  'cart_quantity_pcs'.trParams({'quantity': widget.cartItem.quantity?.toString() ?? '0'}),
                   style: const TextStyle(
                     color: kSecondaryColor,
                     fontSize: 10,
@@ -1362,14 +1362,14 @@ void showCheckoutDialog(BuildContext context) {
                       color: _discountSoftGold,
                       borderRadius: BorderRadius.circular(40),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(Icons.star_rounded,
                             color: _discountGold, size: 16),
                         SizedBox(width: 5),
                         Text(
-                          'WELCOME NEW USERS!',
+                          'cart_welcome_new_users'.tr,
                           style: TextStyle(
                             color: _discountGold,
                             fontSize: 11,
@@ -1380,8 +1380,8 @@ void showCheckoutDialog(BuildContext context) {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'New User Discount',
+                  Text(
+                    'cart_new_user_discount'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: _discountBrandColor,
@@ -1390,8 +1390,8 @@ void showCheckoutDialog(BuildContext context) {
                       height: 1.05,
                     ),
                   ),
-                  const Text(
-                    'Available!',
+                  Text(
+                    'cart_available_now'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: _discountGold,
@@ -1401,8 +1401,8 @@ void showCheckoutDialog(BuildContext context) {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Register or log in to unlock your exclusive new user discount and enjoy special offers.',
+                  Text(
+                    'cart_new_user_discount_desc'.tr,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: kSecondaryColor,
@@ -1420,29 +1420,29 @@ void showCheckoutDialog(BuildContext context) {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: const Color(0xFFE7ECF6)),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Expanded(
                           child: _CheckoutBenefitItem(
                             icon: Icons.local_offer_rounded,
-                            title: 'Discount',
-                            subtitle: 'First order',
+                            title: 'cart_benefit_discount'.tr,
+                            subtitle: 'cart_benefit_first_order'.tr,
                           ),
                         ),
                         _CheckoutBenefitDivider(),
                         Expanded(
                           child: _CheckoutBenefitItem(
                             icon: Icons.redeem_rounded,
-                            title: 'Offers',
-                            subtitle: 'Member deals',
+                            title: 'cart_benefit_offers'.tr,
+                            subtitle: 'cart_benefit_member_deals'.tr,
                           ),
                         ),
                         _CheckoutBenefitDivider(),
                         Expanded(
                           child: _CheckoutBenefitItem(
                             icon: Icons.speed_rounded,
-                            title: 'Fast',
-                            subtitle: 'Checkout',
+                            title: 'cart_benefit_fast'.tr,
+                            subtitle: 'checkout'.tr,
                           ),
                         ),
                       ],
@@ -1450,7 +1450,7 @@ void showCheckoutDialog(BuildContext context) {
                   ),
                   const SizedBox(height: 14),
                   _CheckoutActionButton(
-                    label: 'Login',
+                    label: 'cart_login_button'.tr,
                     icon: Icons.login_rounded,
                     backgroundColor: _discountBrandColor,
                     foregroundColor: kdefwhiteColor,
@@ -1461,7 +1461,7 @@ void showCheckoutDialog(BuildContext context) {
                   ),
                   const SizedBox(height: 10),
                   _CheckoutActionButton(
-                    label: 'Register',
+                    label: 'cart_register_button'.tr,
                     icon: Icons.person_add_alt_1_rounded,
                     backgroundColor: _discountBrandColor,
                     foregroundColor: kdefwhiteColor,
@@ -1472,7 +1472,7 @@ void showCheckoutDialog(BuildContext context) {
                   ),
                   const SizedBox(height: 10),
                   _CheckoutActionButton(
-                    label: 'Continue as Guest',
+                    label: 'cart_continue_as_guest'.tr,
                     icon: Icons.person_outline_rounded,
                     backgroundColor: kdefwhiteColor,
                     foregroundColor: _discountBrandColor,
@@ -1499,7 +1499,7 @@ void showCheckoutDialog(BuildContext context) {
                       color: _discountSoftGold,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Row(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Icon(Icons.warning_amber_rounded,
@@ -1507,7 +1507,7 @@ void showCheckoutDialog(BuildContext context) {
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Continue as Guest, you will lose your New User Discount.',
+                            'cart_guest_loses_discount'.tr,
                             style: TextStyle(
                               color: kSecondaryColor,
                               fontSize: 11.5,
