@@ -68,7 +68,7 @@ class _LoginViewBottomState extends State<LoginViewBottom> {
                 //   width: 150,
                 // ),
                 20.0.heightbox,
-                const Text('Login',
+                Text('auth_login_title'.tr,
                     style: TextStyle(
                         fontSize: 34.0,
                         fontWeight: FontWeight.bold,
@@ -94,7 +94,7 @@ class _LoginViewBottomState extends State<LoginViewBottom> {
                               //         color: kdefwhiteColor,
                               //       )
                               //     : null,
-                              hintText: 'Email Address',
+                              hintText: 'auth_email_hint'.tr,
                             ),
                             if (emailvalidate
                                 .loginemailErrorMessage.value.isNotEmpty)
@@ -131,7 +131,7 @@ class _LoginViewBottomState extends State<LoginViewBottom> {
                                   color: kdefwhiteColor,
                                 ),
                               ),
-                              hintText: 'Password',
+                              hintText: 'auth_password_hint'.tr,
                             ),
                             if (authProvider
                                 .loginpassworderrorMessage.value.isNotEmpty)
@@ -154,10 +154,10 @@ class _LoginViewBottomState extends State<LoginViewBottom> {
                   onTap: () {
                     context.route(const ForgetPassword());
                   },
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text('Forget your Password?  ',
+                      Text('auth_forgot_password'.tr,
                           style: TextStyle(
                               color: kdefwhiteColor,
                               fontSize: 14.0,
@@ -178,7 +178,7 @@ class _LoginViewBottomState extends State<LoginViewBottom> {
                     return PrimaryButton(
                       buttonColor: kdefwhiteColor,
                       textColor: kSecondaryColor,
-                      buttonText: "Log In",
+                      buttonText: 'auth_login_btn'.tr,
                       onPressFunction: () async {
                         final email = emailController.text.trim();
                         final password = passwordController.text.trim();
@@ -195,7 +195,7 @@ class _LoginViewBottomState extends State<LoginViewBottom> {
                           print(password);
 
                           try {
-                            EasyLoading.show(status: 'Logging in...');
+                            EasyLoading.show(status: 'auth_logging_in'.tr);
                             await authProvider.login(email, password, true);
                           } catch (error) {
                             EasyLoading.dismiss();
@@ -220,15 +220,15 @@ class _LoginViewBottomState extends State<LoginViewBottom> {
                   onTap: () {
                     context.route(const SignUp());
                   },
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Don\'t have an account?',
+                      Text('auth_no_account'.tr,
                           style: TextStyle(
                               color: kdefwhiteColor,
                               fontSize: 14.0,
                               fontWeight: FontWeight.w600)),
-                      Text(' Sign Up',
+                      Text(' ' + 'auth_signup_title'.tr,
                           style: TextStyle(
                             fontSize: 14.0,
                             fontWeight: FontWeight.w600,
