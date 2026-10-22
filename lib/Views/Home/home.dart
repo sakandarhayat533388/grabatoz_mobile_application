@@ -101,12 +101,12 @@ class _HomeState extends State<Home> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.warning, color: Colors.red),
                     SizedBox(width: 8),
                     Text(
-                      'Are you sure?',
+                      'home_exit_title'.tr,
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -116,7 +116,7 @@ class _HomeState extends State<Home> {
                   ],
                 ),
                 10.0.heightbox,
-                const Text('Do you want to exit the App?'),
+                Text('home_exit_msg'.tr),
                 20.0.heightbox,
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -131,8 +131,8 @@ class _HomeState extends State<Home> {
                         onPressed: () {
                           SystemNavigator.pop();
                         },
-                        child: const Text(
-                          'Yes',
+                        child: Text(
+                          'home_yes'.tr,
                           style: TextStyle(
                               color: kdefwhiteColor,
                               fontWeight: FontWeight.bold),
@@ -150,8 +150,8 @@ class _HomeState extends State<Home> {
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
-                        child: const Text(
-                          'No',
+                        child: Text(
+                          'home_no'.tr,
                           style: TextStyle(
                               color: kmediumblackColor,
                               fontWeight: FontWeight.bold),
@@ -220,35 +220,35 @@ class _HomeState extends State<Home> {
                       AssetImage("assets/icons/home.png"),
                       size: 20,
                     ),
-                    label: 'Home',
+                    label: 'home'.tr,
                   ),
                   BottomNavigationBarItem(
                     icon: ImageIcon(
                       AssetImage("assets/icons/favor.png"),
                       size: 20,
                     ),
-                    label: 'WishList',
+                    label: 'home_wishlist_tab'.tr,
                   ),
                   BottomNavigationBarItem(
                     icon: ImageIcon(
                       AssetImage("assets/icons/shop.png"),
                       size: 20,
                     ),
-                    label: 'Shop',
+                    label: 'home_shop_tab'.tr,
                   ),
                   BottomNavigationBarItem(
                     icon: ImageIcon(
                       AssetImage("assets/icons/profile.png"),
                       size: 20,
                     ),
-                    label: 'Profile',
+                    label: 'profile'.tr,
                   ),
                   BottomNavigationBarItem(
                     icon: ImageIcon(
                       AssetImage("assets/icons/chat.png"),
                       size: 20,
                     ),
-                    label: 'Chat',
+                    label: 'home_chat_tab'.tr,
                   ),
                 ],
               ),
@@ -274,7 +274,7 @@ class _HomeState extends State<Home> {
                   Shop(
                     id: '2',
                     parentType: '',
-                    displayTitle: 'All Products',
+                    displayTitle: 'shop_all_products'.tr,
                   ),
                   Settings(),
                   SizedBox(), // Empty placeholder for WhatsApp
