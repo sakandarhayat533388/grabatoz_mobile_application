@@ -103,14 +103,14 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                           ),
                         ),
                         50.0.heightbox,
-                        const Text('Forget Password',
+                        Text('auth_forget_password_title'.tr,
                             style: TextStyle(
                                 fontSize: 34.0,
                                 fontWeight: FontWeight.bold,
                                 color: kdefwhiteColor)),
                         20.0.heightbox,
-                        const Text(
-                          'Please, enter your email address. You will receive a link to create a new password via email.',
+                        Text(
+                          'auth_forget_password_subtitle'.tr,
                           style: TextStyle(
                               fontSize: 14.0,
                               fontWeight: FontWeight.w500,
@@ -131,7 +131,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                                     ? const Icon(Icons.check,
                                         color: kdefwhiteColor)
                                     : null,
-                                hintText: 'Email Address',
+                                hintText: 'auth_email_hint'.tr,
                               ),
                               if (emailvalidate.forgetemailErrorMessage != null)
                                 Padding(
@@ -156,7 +156,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                           return PrimaryButton(
                             buttonColor: kdefwhiteColor,
                             textColor: kSecondaryColor,
-                            buttonText: "Send",
+                            buttonText: 'auth_send_btn'.tr,
                             onPressFunction: () async {
                               final email = emailController.text.trim();
                               authProvider.validateForgetEmail(email);
@@ -167,14 +167,14 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                                   print(emailController.text);
 
                                   try {
-                                    EasyLoading.show(status: 'Sending...');
+                                    EasyLoading.show(status: 'auth_sending'.tr);
                                     final message = await apiservice.forgotPassword(email);
                                     EasyLoading.dismiss();
                                     
                                     // Show success dialog
                                     Get.dialog(
                                       AlertDialog(
-                                        title: const Text('Email Sent'),
+                                        title: Text('auth_email_sent_title'.tr),
                                         content: Text(message),
                                         actions: [
                                           TextButton(
@@ -182,7 +182,7 @@ class _ForgetPasswordState extends State<ForgetPassword> {
                                               Get.back(); // Close dialog
                                               Get.back(); // Go back to previous screen
                                             },
-                                            child: const Text('OK'),
+                                            child: Text('ok'.tr),
                                           ),
                                         ],
                                       ),
