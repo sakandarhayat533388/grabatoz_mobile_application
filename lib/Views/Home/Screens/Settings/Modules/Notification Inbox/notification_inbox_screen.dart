@@ -35,7 +35,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(titleText: 'Notifications'),
+      appBar: CustomAppBar(titleText: 'profile_notifications'.tr),
       body: Obx(() {
         if (_c.isLoading.value && _c.items.isEmpty) {
           return const Center(child: CircularProgressIndicator());
@@ -235,7 +235,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -243,12 +243,12 @@ class _EmptyState extends StatelessWidget {
               size: 64, color: klightblackColor),
           SizedBox(height: 12),
           Text(
-            'No notifications yet',
+            'settings_no_notifications'.tr,
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 4),
           Text(
-            'Offers and order updates will appear here.',
+            'settings_notifications_empty_hint'.tr,
             style: TextStyle(fontSize: 12, color: kmediumblackColor),
           ),
         ],
@@ -280,7 +280,7 @@ class _ErrorState extends StatelessWidget {
             style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimaryColor,
                 foregroundColor: kdefwhiteColor),
-            child: const Text('Retry'),
+            child: Text('retry'.tr),
           ),
         ],
       ),
@@ -290,10 +290,16 @@ class _ErrorState extends StatelessWidget {
 
 String _timeAgo(DateTime dt) {
   final diff = DateTime.now().toUtc().difference(dt.toUtc());
-  if (diff.inMinutes < 1) return 'Just now';
-  if (diff.inHours < 1) return '${diff.inMinutes}m ago';
-  if (diff.inDays < 1) return '${diff.inHours}h ago';
-  if (diff.inDays < 7) return '${diff.inDays}d ago';
+  if (diff.inMinutes < 1) return 'settings_time_just_now'.tr;
+  if (diff.inHours < 1) {
+    return 'settings_time_minutes_ago'.trParams({'m': '${diff.inMinutes}'});
+  }
+  if (diff.inDays < 1) {
+    return 'settings_time_hours_ago'.trParams({'h': '${diff.inHours}'});
+  }
+  if (diff.inDays < 7) {
+    return 'settings_time_days_ago'.trParams({'d': '${diff.inDays}'});
+  }
   return '${dt.day.toString().padLeft(2, '0')}/'
       '${dt.month.toString().padLeft(2, '0')}/${dt.year}';
 }
