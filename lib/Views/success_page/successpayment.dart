@@ -35,12 +35,12 @@ class SuccessPayment extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
-                  const Row(
+                  Row(
                     children: [
                       Icon(Icons.warning, color: Colors.red),
                       SizedBox(width: 8),
                       Text(
-                        'Are you sure?',
+                        'payment_are_you_sure'.tr,
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -50,7 +50,7 @@ class SuccessPayment extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  const Text('Do you want to exit the App?'),
+                  Text('payment_exit_app'.tr),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -65,8 +65,8 @@ class SuccessPayment extends StatelessWidget {
                           onPressed: () {
                             SystemNavigator.pop();
                           },
-                          child: const Text(
-                            'Yes',
+                          child: Text(
+                            'payment_yes'.tr,
                             style: TextStyle(
                                 color: kdefwhiteColor,
                                 fontWeight: FontWeight.bold),
@@ -84,7 +84,7 @@ class SuccessPayment extends StatelessWidget {
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: const Text('No',
+                          child: Text('payment_no'.tr,
                               style: TextStyle(
                                   color: kmediumblackColor,
                                   fontWeight: FontWeight.bold)),
@@ -111,7 +111,7 @@ class SuccessPayment extends StatelessWidget {
       },
       child: Scaffold(
         appBar:
-            const CustomAppBar(titleText: "Confirmation", showLeading: false),
+            CustomAppBar(titleText: 'payment_confirmation'.tr, showLeading: false),
         body: SafeArea(
           child: Padding(
             padding: defaultPadding(),
@@ -133,8 +133,8 @@ class SuccessPayment extends StatelessWidget {
                     ),
                   ),
                   20.0.heightbox,
-                  const Text(
-                    "Order Successful",
+                  Text(
+                    'payment_order_successful'.tr,
                     style: TextStyle(
                       fontSize: 28,
                       color: kdefblackColor,
@@ -144,7 +144,7 @@ class SuccessPayment extends StatelessWidget {
                   10.0.heightbox,
                   Text(
                     textAlign: TextAlign.center,
-                    "Your order has been successfully placed at Graba2z.",
+                    'payment_order_placed'.tr,
                     style: const TextStyle(
                         fontSize: 15,
                         color: kdefblackColor,
@@ -161,7 +161,7 @@ class SuccessPayment extends StatelessWidget {
                         border: Border.all(color: kPrimaryColor),
                       ),
                       child: Text(
-                        '${appDiscountName.isNotEmpty ? appDiscountName : 'First app order discount'} applied: AED ${appDiscountAmount.toStringAsFixed(2)}',
+                        '${appDiscountName.isNotEmpty ? appDiscountName : 'payment_first_app_order_discount'.tr} ${'payment_applied'.tr}: AED ${appDiscountAmount.toStringAsFixed(2)}',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Color(0xFF166534),
@@ -180,7 +180,7 @@ class SuccessPayment extends StatelessWidget {
           child: Padding(
             padding: defaultPadding(vertical: 10),
             child: PrimaryButton(
-              buttonText: "Continue Shopping",
+              buttonText: 'payment_continue_shopping'.tr,
               onPressFunction: () async {
                 showDialog(
                     context: context,
