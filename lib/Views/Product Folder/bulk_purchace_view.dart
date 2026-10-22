@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:get/get.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:graba2z/Views/Product%20Folder/request_form.dart';
 
@@ -11,43 +12,37 @@ class BulkPurchaceView extends StatefulWidget {
 
 class _BulkPurchaceViewState extends State<BulkPurchaceView> {
   final List<Map<String, String>> steps = [
-    {'step': 'Step 1', 'desc': 'Bulk Requirement'},
-    {'step': 'Step 2', 'desc': 'Request For Quote'},
-    {'step': 'Step 3', 'desc': 'Best Price Quoted'},
-    {'step': 'Step 4', 'desc': 'Proposals Evaluated'},
-    {'step': 'Step 5', 'desc': 'Invoice'},
-    {'step': 'Step 6', 'desc': 'Delivery & Payment'},
+    {'step': 'product_bulk_step1', 'desc': 'product_bulk_step1_desc'},
+    {'step': 'product_bulk_step2', 'desc': 'product_bulk_step2_desc'},
+    {'step': 'product_bulk_step3', 'desc': 'product_bulk_step3_desc'},
+    {'step': 'product_bulk_step4', 'desc': 'product_bulk_step4_desc'},
+    {'step': 'product_bulk_step5', 'desc': 'product_bulk_step5_desc'},
+    {'step': 'product_bulk_step6', 'desc': 'product_bulk_step6_desc'},
   ];
   final List<Map<String, String>> purchase = [
     {
-      'step': 'Trusted Platform',
-      'desc':
-          'Dedicated to serving SMBs in the UAE. Trust and reliability are our priority.'
+      'step': 'product_bulk_trusted_title',
+      'desc': 'product_bulk_trusted_desc'
     },
     {
-      'step': 'Authorized Sellers',
-      'desc':
-          'Over 100 authorized sellers ready to serve with better prices and availability.'
+      'step': 'product_bulk_sellers_title',
+      'desc': 'product_bulk_sellers_desc'
     },
     {
-      'step': 'Learn About Trends',
-      'desc':
-          'Join webinars by global brands to stay ahead and grow your business'
+      'step': 'product_bulk_trends_title',
+      'desc': 'product_bulk_trends_desc'
     },
     {
-      'step': 'Better Range and Information',
-      'desc':
-          'Access a wide range of products with accurate info from over 200 global brands.'
+      'step': 'product_bulk_range_title',
+      'desc': 'product_bulk_range_desc'
     },
     {
-      'step': 'Quantity Discounts & RFQ',
-      'desc':
-          'Get better prices for larger quantities or request quotes from multiple sellers.'
+      'step': 'product_bulk_qty_title',
+      'desc': 'product_bulk_qty_desc'
     },
     {
-      'step': 'Create Users & Manage Purchases',
-      'desc':
-          'Add team members and set buyer/approver roles for a seamless experience.'
+      'step': 'product_bulk_users_title',
+      'desc': 'product_bulk_users_desc'
     },
   ];
   @override
@@ -71,7 +66,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                   height: 10,
                 ),
                 Text(
-                  'Your One-Stop Solution for B2B Business Needs in UAE',
+                  'product_bulk_hero_title'.tr,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       fontWeight: FontWeight.w600, color: kPrimaryColor),
@@ -88,7 +83,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                     child: Column(
                       children: [
                         Text(
-                          'Graba2z- B2B Dedicated Wholesale Place',
+                          'product_bulk_headline'.tr,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontSize: 21, fontWeight: FontWeight.bold),
@@ -97,7 +92,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                           height: 10,
                         ),
                         Text(
-                          'Our trusted B2B wholesale place will cater to all your buisness needs',
+                          'product_bulk_headline_sub'.tr,
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -107,7 +102,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    'Welcome to Grabatoz.com your one-stop sourcing platform for all your business needs. Grabatoz.com, the omnichannel retailer that was established in Dubai, UAE. We are a business focused marketplace where small and medium businesses (SMBs) discover, interact, and buy products and services by engaging with brands and authorized sellers.',
+                    'product_bulk_welcome'.tr,
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -121,7 +116,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    'Benefits of being on Grabatoz.com',
+                    'product_bulk_benefits_title'.tr,
                     // textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
@@ -129,7 +124,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    'As a customer and as a business buyer, the platform offers great benefits and opportunities for small and medium businesses.',
+                    'product_bulk_benefits_desc'.tr,
                     // textAlign: TextAlign.center,
                   ),
                 ),
@@ -154,7 +149,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                   padding: const EdgeInsets.all(8.0),
                   child: Center(
                     child: Text(
-                      'Online BUYING journey',
+                      'product_bulk_journey_title'.tr,
                       style:
                           TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
@@ -182,13 +177,13 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            steps[index]['step']!,
+                            steps[index]['step']!.tr,
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            steps[index]['desc']!,
+                            steps[index]['desc']!.tr,
                             style: const TextStyle(fontSize: 12),
                             textAlign: TextAlign.center,
                           ),
@@ -201,7 +196,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                   height: 10,
                 ),
                 const Text(
-                  "Why Bulk Purchase from Grabatoz.com?",
+                  'product_bulk_why_title'.tr,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
@@ -223,12 +218,12 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                         padding: const EdgeInsets.all(6),
                         child: ListTile(
                           title: Text(
-                            purchase[index]['step']!,
+                            purchase[index]['step']!.tr,
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 14),
                           ),
                           subtitle: Text(
-                            purchase[index]['desc']!,
+                            purchase[index]['desc']!.tr,
                             style: const TextStyle(fontSize: 12),
                             // textAlign: TextAlign.center,
                           ),
@@ -262,7 +257,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                         borderRadius: BorderRadius.circular(8)),
                     child: Center(
                       child: Text(
-                        'Contact Sales',
+                        'product_bulk_contact_sales'.tr,
                         style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
