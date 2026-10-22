@@ -253,14 +253,14 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         Row(
           children: [
             Text(
-              "Payment Method",
+              'payment_method_title'.tr,
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         const SizedBox(height: 12),
         if (isLoadingPaymentMethods)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 24.0),
             child: Center(
               child: Column(
@@ -268,7 +268,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   CircularProgressIndicator(color: kPrimaryColor),
                   SizedBox(height: 12),
                   Text(
-                    "Loading available payment options...",
+                    'payment_loading_options'.tr,
                     style: TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
@@ -452,7 +452,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                             }
                           }
                         } else {
-                          EasyLoading.showError('Payment Method Not Available');
+                          EasyLoading.showError('payment_method_not_available'.tr);
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -470,7 +470,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                           }
                           final displayTotal = _selectedPayableTotal();
                           return Text(
-                            "Place Order - ${formatPriceForSelected(displayTotal)}",
+                            'payment_place_order'.trParams({'total': formatPriceForSelected(displayTotal)}),
                             style: TextStyle(color: Colors.white),
                           );
                         },
@@ -575,7 +575,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     // }
     // Validate based on actual cart content, not the passed orderItems list
     if (_cartNotifier.cartOtherInfoList.isEmpty) {
-      EasyLoading.showError('Your cart is empty.');
+      EasyLoading.showError('payment_cart_empty'.tr);
       return;
     }
     if (deliveryType == 'home') {
@@ -583,13 +583,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           normalizedShippingAddress['address']?.toString().trim().isNotEmpty ??
               false;
       if (!hasAddress) {
-        EasyLoading.showError('Please provide a valid shipping address.');
+        EasyLoading.showError('payment_valid_address'.tr);
         return;
       }
     }
     if (isGuestOrder && !_validateGuestOrderData(normalizedShippingAddress)) {
       EasyLoading.showError(
-        'Please enter guest name, email, phone and address before placing order.',
+        'payment_guest_details'.tr,
       );
       return;
     }
@@ -758,13 +758,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         print('Order Created: $data');
       } else {
         final msg = _extractServerMessage(response.body);
-        EasyLoading.showError('Create order failed: $msg');
+        EasyLoading.showError('payment_create_order_failed_msg'.trParams({'error': msg}));
         print('Failed to create order: ${response.statusCode}');
         print('Response: ${response.body}');
       }
     } catch (e) {
       _usercontroller.iscardLoading.value = false;
-      EasyLoading.showError('Create order error: ${e.toString()}');
+      EasyLoading.showError('payment_create_order_error'.trParams({'error': e.toString()}));
       print('Error creating order: $e');
     }
   }
@@ -823,7 +823,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     String appDiscountName = '',
   }) async {
     final url = Uri.parse("https://api.tabby.ai/api/v2/checkout");
-    EasyLoading.show(status: 'Please wait...');
+    EasyLoading.show(status: 'payment_please_wait'.tr);
 
     final name = (customer?['name'] as String? ?? '').trim();
     final email = (customer?['email'] as String? ?? '').trim();
@@ -892,7 +892,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         }
 
         if (checkoutUrl.isEmpty) {
-          EasyLoading.showError('Invalid Tabby response structure');
+          EasyLoading.showError('payment_invalid_tabby'.tr);
           return;
         }
 
@@ -905,12 +905,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ));
       } else {
         final msg = _extractServerMessage(response.body);
-        EasyLoading.showError('Tabby init failed: $msg');
+        EasyLoading.showError('payment_tabby_init_failed'.trParams({'error': msg}));
         log('Tabby init failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       EasyLoading.dismiss();
-      EasyLoading.showError('Tabby init error: ${e.toString()}');
+      EasyLoading.showError('payment_tabby_init_error'.trParams({'error': e.toString()}));
     }
   }
 
@@ -926,7 +926,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final url = Uri.parse(Configss.paymentTamaraRequest);
     SharedPreferences sp = await SharedPreferences.getInstance();
     _usercontroller.token.value = sp.getString('token') ?? '';
-    EasyLoading.show(status: 'Please wait...');
+    EasyLoading.show(status: 'payment_please_wait'.tr);
 
     // Derive customer info and split name
     final name = (customer?['name'] as String? ?? '').trim();
@@ -994,7 +994,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         final String checkoutUrl =
             data['checkout_url'] ?? data['paymentUrl'] ?? '';
         if (checkoutUrl.isEmpty) {
-          EasyLoading.showError('Invalid Tamara response');
+          EasyLoading.showError('payment_invalid_tamara'.tr);
           return;
         }
         Get.to(() => WebViewScreen(
@@ -1006,12 +1006,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ));
       } else {
         final msg = _extractServerMessage(response.body);
-        EasyLoading.showError('Tamara init failed: $msg');
+        EasyLoading.showError('payment_tamara_init_failed'.trParams({'error': msg}));
         log('Tamara init failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       EasyLoading.dismiss();
-      EasyLoading.showError('Tamara init error: ${e.toString()}');
+      EasyLoading.showError('payment_tamara_init_error'.trParams({'error': e.toString()}));
     }
   }
 
@@ -1085,7 +1085,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final url = Uri.parse(Configss.paymentCardRequest); // <-- replace this
     SharedPreferences sp = await SharedPreferences.getInstance();
     _usercontroller.token.value = sp.getString('token') ?? '';
-    EasyLoading.show(status: 'Please wait...');
+    EasyLoading.show(status: 'payment_please_wait'.tr);
     final Map<String, dynamic> orderData = {
       "amount": totalAmount,
       "currencyCode": "AED",
@@ -1107,7 +1107,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         final data = jsonDecode(response.body);
         final paymentUrl = data['paymentUrl']?.toString() ?? '';
         if (paymentUrl.isEmpty) {
-          EasyLoading.showError('Invalid payment response');
+          EasyLoading.showError('payment_invalid_response'.tr);
           return;
         }
         Get.to(() => WebViewScreen(
@@ -1119,7 +1119,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ));
         print('payment order Created: $data');
       } else {
-        EasyLoading.showError('Failed to create order');
+        EasyLoading.showError('payment_failed_create'.tr);
         print('Failed to create order: ${response.statusCode}');
         print('Response: ${response.body}');
       }
@@ -1165,8 +1165,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Order Summary",
+          Text(
+            'payment_order_summary'.tr,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -1175,7 +1175,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           ),
           const SizedBox(height: 14),
           _buildSummaryRowWithStyle(
-            "Original Price",
+            'payment_original_price'.tr,
             formatPriceForSelected(originalTotal),
             valueStyle: const TextStyle(
               fontSize: 13,
@@ -1185,7 +1185,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           ),
           const SizedBox(height: 12),
           _buildSummaryRowWithStyle(
-            "Discounted Price",
+            'payment_discounted_price'.tr,
             formatPriceForSelected(currentSubtotal),
             valueStyle: const TextStyle(
               fontSize: 13,
@@ -1195,7 +1195,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           ),
           const SizedBox(height: 12),
           _buildSummaryRowWithStyle(
-            "Total Savings",
+            'payment_total_savings'.tr,
             "- ${formatPriceForSelected(savings)}",
             titleStyle: const TextStyle(
               fontSize: 13,
@@ -1212,7 +1212,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           const Divider(color: Colors.black12, height: 1),
           const SizedBox(height: 12),
           _buildSummaryRowWithStyle(
-            "Subtotal",
+            'payment_subtotal'.tr,
             formatPriceForSelected(currentSubtotal),
             valueStyle: const TextStyle(
               fontSize: 13,
@@ -1223,10 +1223,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           if (_usercontroller.isHomeDelivery.value &&
               _deliveryCtrl.hasActiveDeliveryCharges) ...[
             _buildSummaryRowWithStyle(
-              "Shipping",
+              'checkout_shipping'.tr,
               standardShipping > 0
                   ? formatPriceForSelected(standardShipping)
-                  : "Free",
+                  : 'checkout_free'.tr,
             ),
             const SizedBox(height: 12),
           ],
@@ -1236,7 +1236,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               (charge) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _buildSummaryRowWithStyle(
-                  charge.name.isEmpty ? "Payment charge" : charge.name,
+                  charge.name.isEmpty ? 'payment_charge'.tr : charge.name,
                   formatPriceForSelected(charge.amount),
                   titleStyle: const TextStyle(
                     fontSize: 13,
@@ -1254,7 +1254,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           ],
           if (firstOrderDiscount > 0) ...[
             _buildSummaryRowWithStyle(
-              "First order discount",
+              'payment_first_order_discount'.tr,
               "- ${formatPriceForSelected(firstOrderDiscount)}",
               titleStyle: const TextStyle(
                 fontSize: 13,
@@ -1270,7 +1270,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             const SizedBox(height: 12),
           ],
           _buildSummaryRowWithStyle(
-            "VAT Included",
+            'payment_vat_included'.tr,
             "✓",
             valueStyle: const TextStyle(
               fontSize: 13,
@@ -1282,7 +1282,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           const Divider(color: Colors.black12, height: 1),
           const SizedBox(height: 16),
           _buildSummaryRowWithStyle(
-            "Total Amount",
+            'payment_total_amount'.tr,
             formatPriceForSelected(displayTotal),
             titleStyle: const TextStyle(
               fontSize: 14,
@@ -1361,7 +1361,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(
                 Icons.receipt_long_outlined,
@@ -1370,7 +1370,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               ),
               SizedBox(width: 10),
               Text(
-                "Payment Charges",
+                'payment_charges_title'.tr,
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -1395,7 +1395,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             (charge) => Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: _buildPaymentChargeLine(
-                charge.name.isEmpty ? 'Payment charge' : charge.name,
+                charge.name.isEmpty ? 'payment_charge'.tr : charge.name,
                 charge.amount,
               ),
             ),
@@ -1442,46 +1442,46 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     if (allowedPaymentMethods.contains('card')) {
       active.add({
         'value': 'Card',
-        'title': 'Debit/Credit Card',
+        'title': 'payment_card_title'.tr,
         'logo': _buildCardLogos(),
         'expand': _buildPaymentOptionExpandContent('Card',
-            "You'll be redirected to Debit/Credit Card to complete your purchase."),
+            'payment_redirect_card'.tr),
       });
     }
     if (allowedPaymentMethods.contains('tabby')) {
       active.add({
         'value': 'Tabby',
-        'title': 'Pay later with Tabby',
+        'title': 'payment_tabby_title'.tr,
         'logo': _buildTabbyLogo(),
         'expand': _buildPaymentOptionExpandContent('Tabby',
-            "You'll be redirected to Tabby to complete your purchase."),
+            'payment_redirect_tabby'.tr),
       });
     }
     if (allowedPaymentMethods.contains('tamara')) {
       active.add({
         'value': 'Tamara',
-        'title': 'Tamara - Monthly payments. Sharia compliant',
+        'title': 'payment_tamara_title'.tr,
         'logo': _buildTamaraLogo(),
         'expand': _buildPaymentOptionExpandContent('Tamara',
-            "You'll be redirected to Tamara to complete your purchase."),
+            'payment_redirect_tamara'.tr),
       });
     }
     if (allowedPaymentMethods.contains('cod')) {
       active.add({
         'value': 'COD',
-        'title': 'Cash on Delivery (COD)',
+        'title': 'payment_cod'.tr,
         'logo': const SizedBox.shrink(),
         'expand': _buildPaymentOptionExpandContent(
-            'COD', "Pay with cash upon delivery."),
+            'COD', 'payment_cod_desc'.tr),
       });
     }
 
     if (active.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 16.0),
         child: Center(
           child: Text(
-            "No payment methods are available for the items in your cart. Please contact support.",
+            'payment_no_methods'.tr,
             textAlign: TextAlign.center,
             style: TextStyle(
                 color: Colors.red, fontSize: 14, fontWeight: FontWeight.w500),
