@@ -145,10 +145,10 @@ class _offerDealsState extends State<offerDeals> {
           final id = (item['_id'] ?? item['id'] ?? '').toString().trim();
           if (id.isEmpty) continue;
 
-          final name = (item['name'] ?? item['nameAr'] ?? item['_name'] ?? 'Unknown Brand')
+          final name = (item['name'] ?? item['nameAr'] ?? item['_name'] ?? 'deals_unknown_brand'.tr)
               .toString()
               .trim();
-          brandLookup[id] = name.isEmpty ? 'Unknown Brand' : name;
+          brandLookup[id] = name.isEmpty ? 'deals_unknown_brand'.tr : name;
         }
 
         if (mounted) {
@@ -181,11 +181,11 @@ class _offerDealsState extends State<offerDeals> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(Icons.shopping_cart, color: Colors.white, size: 24),
                   SizedBox(width: 8),
                   Text(
-                    'Added to cart',
+                    'deals_added_to_cart'.tr,
                     style: TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
@@ -203,6 +203,20 @@ class _offerDealsState extends State<offerDeals> {
   }
 
   String _sortLabel = 'Newest First';
+
+  /// Translated label for the sort button (internal value stays English for logic).
+  String get _sortDisplayLabel {
+    switch (_sortLabel) {
+      case 'Price: Low to High':
+        return 'deals_sort_price_low'.tr;
+      case 'Price: High to Low':
+        return 'deals_sort_price_high'.tr;
+      case 'Name: A to Z':
+        return 'deals_sort_name_az'.tr;
+      default:
+        return 'deals_sort_newest'.tr;
+    }
+  }
   bool _sortMenuOpen = false;
 
   Widget _sortMenuButton() {
@@ -213,13 +227,17 @@ class _offerDealsState extends State<offerDeals> {
         _sortLabel = val;
         _sortMenuOpen = false;
       }),
-      itemBuilder: (_) => const [
-        PopupMenuItem(value: 'Newest First', child: Text('Newest First')),
+      itemBuilder: (_) => [
         PopupMenuItem(
-            value: 'Price: Low to High', child: Text('Price: Low to High')),
+            value: 'Newest First', child: Text('deals_sort_newest'.tr)),
         PopupMenuItem(
-            value: 'Price: High to Low', child: Text('Price: High to Low')),
-        PopupMenuItem(value: 'Name: A to Z', child: Text('Name: A to Z')),
+            value: 'Price: Low to High',
+            child: Text('deals_sort_price_low'.tr)),
+        PopupMenuItem(
+            value: 'Price: High to Low',
+            child: Text('deals_sort_price_high'.tr)),
+        PopupMenuItem(
+            value: 'Name: A to Z', child: Text('deals_sort_name_az'.tr)),
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -233,7 +251,7 @@ class _offerDealsState extends State<offerDeals> {
           children: [
             Expanded(
               child: Text(
-                _sortLabel,
+                _sortDisplayLabel,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(color: Colors.black),
               ),
@@ -440,7 +458,7 @@ class _offerDealsState extends State<offerDeals> {
 
       if (brandId != null && brandId.isNotEmpty) {
         if (brandName.isEmpty) {
-          brandName = _brandLookup[brandId] ?? 'Brand';
+          brandName = _brandLookup[brandId] ?? 'deals_brand_fallback'.tr;
         }
         brandNameMap[brandId] = brandName;
       }
@@ -570,7 +588,7 @@ class _offerDealsState extends State<offerDeals> {
           .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
           .join(' ');
     }
-    return 'Deals';
+    return 'deals_title'.tr;
   }
 
   @override
@@ -672,7 +690,7 @@ class _offerDealsState extends State<offerDeals> {
         }
 
         if (controller.productList.isEmpty) {
-          return const Center(child: Text("No products found"));
+          return Center(child: Text('deals_no_products_found'.tr));
         }
 
         // Get sorted products
@@ -717,12 +735,12 @@ class _offerDealsState extends State<offerDeals> {
                                   children: [
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
-                                      children: const [
+                                      children: [
                                         Icon(Icons.filter_list,
                                             size: 18, color: Colors.white),
                                         SizedBox(width: 4),
                                         Text(
-                                          'Filter',
+                                          'deals_filter_btn'.tr,
                                           style: TextStyle(
                                             color: Colors.white,
                                             fontSize: 12,
@@ -813,7 +831,7 @@ class _offerDealsState extends State<offerDeals> {
                               visibleCount = next > total ? total : next;
                             });
                           },
-                          child: const Text('Load More'),
+                          child: Text('deals_load_more_btn'.tr),
                         )
                       : const SizedBox.shrink(),
                 ),
