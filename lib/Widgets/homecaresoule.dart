@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:get/get.dart';
 import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/image_helper.dart';
@@ -168,8 +169,9 @@ class ImageCarouselSliderState extends State<ImageCarouselSlider> {
                   ),
                   errorWidget: (context, url, error) => Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Text("No image", style: TextStyle(color: Colors.red)),
+                    children: [
+                      Text('home_no_image'.tr,
+                          style: const TextStyle(color: Colors.red)),
                       SizedBox(height: 10),
                       Icon(Icons.error, color: Colors.red),
                     ],
