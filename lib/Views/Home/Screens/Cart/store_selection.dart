@@ -115,8 +115,8 @@ class _StoreSelectionScreenState extends State<StoreSelectionScreen> {
             key: ValueKey(initialCountryCode),
             controller: _userController.phoneController,
             decoration: InputDecoration(
-              labelText: 'Phone Number',
-              hintText: 'Enter phone number',
+              labelText: 'checkout_phone_label'.tr,
+              hintText: 'checkout_phone_hint'.tr,
               hintStyle: const TextStyle(color: Colors.grey),
               border: const OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.grey)),
@@ -135,7 +135,7 @@ class _StoreSelectionScreenState extends State<StoreSelectionScreen> {
                 completePhoneNumber = phone.completeNumber;
                 selectedCountryCode = '+${phone.countryCode}';
                 if (phone.number.isEmpty) {
-                  _pickupPhoneError = 'Phone is required';
+                  _pickupPhoneError = 'checkout_phone_required'.tr;
                 } else {
                   _pickupPhoneError = null;
                 }
@@ -155,7 +155,7 @@ class _StoreSelectionScreenState extends State<StoreSelectionScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Select Store *',
+                  'checkout_select_store'.tr,
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 TextButton(
@@ -164,7 +164,7 @@ class _StoreSelectionScreenState extends State<StoreSelectionScreen> {
                           _userController.storeAddress.value.toString());
                     },
                     child: Text(
-                      'Open In Map',
+                      'checkout_open_in_map'.tr,
                       style: TextStyle(
                           decoration: TextDecoration.underline,
                           decorationColor: kPrimaryColor),
