@@ -59,7 +59,7 @@ class _TabbyInfoScreenState extends State<TabbyInfoScreen> {
                     ),
                     const Spacer(),
                     IconButton(
-                      tooltip: 'Close',
+                      tooltip: 'payment_close_tooltip'.tr,
                       onPressed: () => Get.back(),
                       icon: const Icon(Icons.close, color: Colors.black87, size: 24),
                     ),
@@ -110,13 +110,13 @@ class _TabbyInfoScreenState extends State<TabbyInfoScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Get more time to pay',
+                    Text(
+                      'payment_tabby_headline'.tr,
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 24),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Split your purchase in up to 12 payments',
+                    Text(
+                      'payment_tabby_sub'.tr,
                       style: TextStyle(color: Color(0xFFE9D5FF), fontSize: 14),
                     ),
                   ],
@@ -128,32 +128,32 @@ class _TabbyInfoScreenState extends State<TabbyInfoScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Column(
                   children: [
-                    _optionTile('4 payments', '𝐃 ${four.toStringAsFixed(2)}', '/mo', 'No interest. No fees.', highlight: true),
+                    _optionTile('payment_4_payments'.tr, '𝐃 ${four.toStringAsFixed(2)}', 'payment_per_month'.tr, 'payment_no_interest_fees'.tr, highlight: true),
                     _divider(),
-                    _optionTile('6 payments', '𝐃 ${six.toStringAsFixed(2)}', '/mo', 'Includes 13.05 monthly fee'),
+                    _optionTile('payment_6_payments'.tr, '𝐃 ${six.toStringAsFixed(2)}', 'payment_per_month'.tr, 'payment_monthly_fee_note'.trParams({'amount': '13.05'})),
                     _divider(),
-                    _optionTile('8 payments', '𝐃 ${eight.toStringAsFixed(2)}', '/mo', 'Includes 17.61 monthly fee'),
+                    _optionTile('payment_8_payments'.tr, '𝐃 ${eight.toStringAsFixed(2)}', 'payment_per_month'.tr, 'payment_monthly_fee_note'.trParams({'amount': '17.61'})),
                     _divider(),
-                    _optionTile('12 payments', '𝐃 ${twelve.toStringAsFixed(2)}', '/mo', 'Includes 22.18 monthly fee'),
+                    _optionTile('payment_12_payments'.tr, '𝐃 ${twelve.toStringAsFixed(2)}', 'payment_per_month'.tr, 'payment_monthly_fee_note'.trParams({'amount': '22.18'})),
                   ],
                 ),
               ),
               // How it works
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-                child: const Text('How it works', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+                child: Text('payment_how_it_works'.tr, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
-                  children: const [
-                    _HowStep(n: 1, text: 'Choose Tabby at checkout to select a payment plan'),
+                  children: [
+                    _HowStep(n: 1, text: 'payment_tabby_step1'.tr),
                     SizedBox(height: 12),
-                    _HowStep(n: 2, text: 'Enter your information and add your debit or credit card'),
+                    _HowStep(n: 2, text: 'payment_tabby_step2'.tr),
                     SizedBox(height: 12),
-                    _HowStep(n: 3, text: 'Your first payment is taken when the order is made'),
+                    _HowStep(n: 3, text: 'payment_tabby_step3'.tr),
                     SizedBox(height: 12),
-                    _HowStep(n: 4, text: 'We\'ll send you a reminder when your next payment is due'),
+                    _HowStep(n: 4, text: 'payment_tabby_step4'.tr),
                   ],
                 ),
               ),
@@ -164,20 +164,20 @@ class _TabbyInfoScreenState extends State<TabbyInfoScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 child: Column(
-                  children: const [
+                  children: [
                     _BadgeTile(
                       iconBg: Color(0xFFF3E8FF),
                       iconColor: Color(0xFF7C3AED),
-                      title: 'Trusted by millions',
-                      subtitle: 'Over 20 million shoppers discover products and pay their way with Tabby',
+                      title: 'payment_trusted_millions'.tr,
+                      subtitle: 'payment_trusted_sub'.tr,
                       icon: Icons.groups_rounded,
                     ),
                     SizedBox(height: 12),
                     _BadgeTile(
                       iconBg: Color(0xFFE6F5EA),
                       iconColor: Color(0xFF16A34A),
-                      title: 'Shop safely with Tabby',
-                      subtitle: 'Buyer protection is included with every purchase',
+                      title: 'payment_shop_safely'.tr,
+                      subtitle: 'payment_buyer_protection_included'.tr,
                       icon: Icons.shield_outlined,
                     ),
                   ],
@@ -198,7 +198,7 @@ class _TabbyInfoScreenState extends State<TabbyInfoScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     onPressed: () => Get.back(),
-                    child: const Text('Continue shopping', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text('payment_continue_shopping'.tr, style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
