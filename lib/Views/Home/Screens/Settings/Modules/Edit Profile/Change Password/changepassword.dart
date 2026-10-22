@@ -31,13 +31,13 @@ class ChangePassword extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Change password',
+                    Text('profile_change_password'.tr,
                         style: TextStyle(
                             fontSize: 22.0,
                             fontWeight: FontWeight.bold,
                             color: kPrimaryColor)),
                     10.0.heightbox,
-                    const Text('Make a secure password for future log in.',
+                    Text('profile_secure_password_hint'.tr,
                         style:
                             TextStyle(fontSize: 15.0, color: kdefblackColor)),
                     30.0.heightbox,
@@ -55,17 +55,17 @@ class ChangePassword extends StatelessWidget {
                           color: kdefwhiteColor,
                         ),
                       ),
-                      hintText: 'Old Password',
+                      hintText: 'profile_old_password'.tr,
                     ),
                     15.0.heightbox,
                     GestureDetector(
                       onTap: () {
                         // context.route(const ForgetPassword());
                       },
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text('Forget your Password?  ',
+                          Text('profile_forgot_password'.tr,
                               style: TextStyle(
                                   fontSize: 14.0, fontWeight: FontWeight.w600)),
                           Icon(
@@ -82,7 +82,7 @@ class ChangePassword extends StatelessWidget {
                     ) {
                       return PrimaryTextField(
                         controller: newPasswordController,
-                        hintText: "New Password",
+                        hintText: 'profile_new_password'.tr,
                         obsecure: authProvider.isPasswordObscure,
                         suffix: GestureDetector(
                           onTap: () {
@@ -103,7 +103,7 @@ class ChangePassword extends StatelessWidget {
                     ) {
                       return PrimaryTextField(
                         controller: confirmpasswordcontroller,
-                        hintText: "Confirm Password",
+                        hintText: 'profile_confirm_password'.tr,
                         obsecure: authProvider.isPasswordObscure,
                         suffix: GestureDetector(
                           onTap: () {
@@ -128,7 +128,7 @@ class ChangePassword extends StatelessWidget {
           child: Padding(
             padding: defaultPadding(vertical: 10),
             child: PrimaryButton(
-                buttonText: "Save password",
+                buttonText: 'profile_save_password'.tr,
                 onPressFunction: () {
                   // context.routeoffall(const PasswordConfirmScreen());
                   Navigator.pop(context);
