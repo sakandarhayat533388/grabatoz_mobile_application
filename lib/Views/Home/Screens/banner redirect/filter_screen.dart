@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:graba2z/Utils/appcolors.dart';
 
 class FilterDrawer extends StatefulWidget {
@@ -58,7 +59,7 @@ class _FilterDrawerState extends State<FilterDrawer> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Filters',
+                    'shop_filters_title'.tr,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -110,8 +111,8 @@ class _FilterDrawerState extends State<FilterDrawer> {
                           _selectedCategoryIds.clear();
                         });
                       },
-                      child: const Text(
-                        'Reset',
+                      child: Text(
+                        'shop_reset_btn'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -132,8 +133,8 @@ class _FilterDrawerState extends State<FilterDrawer> {
                         // Close drawer
                         Navigator.pop(context);
                       },
-                      child: const Text(
-                        'Apply',
+                      child: Text(
+                        'shop_apply_btn'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -165,7 +166,8 @@ class _FilterDrawerState extends State<FilterDrawer> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Brands (${widget.availableBrands.length})',
+                'shop_brands_count'.trParams(
+                    {'count': widget.availableBrands.length.toString()}),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -182,10 +184,10 @@ class _FilterDrawerState extends State<FilterDrawer> {
         const SizedBox(height: 12),
         if (_isBrandExpanded) ...[
           if (widget.availableBrands.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                'No brands available',
+                'shop_no_brands'.tr,
                 style: TextStyle(color: Colors.grey),
               ),
             )
@@ -264,7 +266,8 @@ class _FilterDrawerState extends State<FilterDrawer> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Categories (${widget.availableCategories.length})',
+                'shop_categories_count'.trParams(
+                    {'count': widget.availableCategories.length.toString()}),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -281,10 +284,10 @@ class _FilterDrawerState extends State<FilterDrawer> {
         const SizedBox(height: 12),
         if (_isCategoryExpanded) ...[
           if (widget.availableCategories.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(16),
               child: Text(
-                'No categories available',
+                'shop_no_categories'.tr,
                 style: TextStyle(color: Colors.grey),
               ),
             )
