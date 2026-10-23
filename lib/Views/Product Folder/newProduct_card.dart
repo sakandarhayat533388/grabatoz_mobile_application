@@ -18,6 +18,7 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:graba2z/Controllers/review_update_bus.dart';
 import 'package:graba2z/Controllers/language_controller.dart';
+import 'package:graba2z/Controllers/home_controller.dart';
 
 import '../../Utils/packages.dart';
 
@@ -282,8 +283,11 @@ class _NewProductCardState extends State<NewProductCard> {
     }
 
     // Extract subcategory name for display under product name (fallbacks to category/parentCategory)
+    // Product API embeds category WITHOUT nameAr, so we look up the Arabic name
+    // from HomeController's category/subcategory lists by ID.
     String subcategoryNameForCard = '';
     String subcategoryNameArForCard = '';
+    String _lookupId = '';
     if (widget.prdouctList is Map) {
       final map = widget.prdouctList as Map;
       // Common API keys variations
@@ -300,19 +304,42 @@ class _NewProductCardState extends State<NewProductCard> {
       if (sc != null && (sc['name']?.toString().isNotEmpty ?? false)) {
         subcategoryNameForCard = sc['name'].toString();
         subcategoryNameArForCard = sc['nameAr']?.toString() ?? '';
+        _lookupId = sc['_id']?.toString() ?? sc['id']?.toString() ?? '';
       } else {
         // Fallbacks to keep UI populated if subcategory is missing
         final cat = map['category'];
         if (cat is Map && (cat['name']?.toString().isNotEmpty ?? false)) {
           subcategoryNameForCard = cat['name'].toString();
           subcategoryNameArForCard = cat['nameAr']?.toString() ?? '';
+          _lookupId = cat['_id']?.toString() ?? cat['id']?.toString() ?? '';
         } else {
           final pc = map['parentCategory'];
           if (pc is Map && (pc['name']?.toString().isNotEmpty ?? false)) {
             subcategoryNameForCard = pc['name'].toString();
             subcategoryNameArForCard = pc['nameAr']?.toString() ?? '';
+            _lookupId = pc['_id']?.toString() ?? pc['id']?.toString() ?? '';
           }
         }
+      }
+      // If embedded object lacks nameAr, look it up from loaded categories by ID
+      if (subcategoryNameArForCard.trim().isEmpty && _lookupId.isNotEmpty) {
+        try {
+          final hc = Get.find<HomeController>();
+          for (final c in hc.category) {
+            if (c.sId == _lookupId && (c.nameAr?.trim().isNotEmpty ?? false)) {
+              subcategoryNameArForCard = c.nameAr!;
+              break;
+            }
+          }
+          if (subcategoryNameArForCard.trim().isEmpty) {
+            for (final s in hc.subcategory) {
+              if (s.sId == _lookupId && (s.nameAr?.trim().isNotEmpty ?? false)) {
+                subcategoryNameArForCard = s.nameAr!;
+                break;
+              }
+            }
+          }
+        } catch (_) {}
       }
     }
 
