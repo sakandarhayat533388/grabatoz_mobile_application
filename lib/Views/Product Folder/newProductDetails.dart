@@ -15,6 +15,7 @@ import 'package:graba2z/Views/Product%20Folder/review_show_widget.dart';
 import 'package:html/parser.dart' as html_parser;
 
 import 'package:get/get.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Api/Services/apiservices.dart';
 import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
@@ -118,6 +119,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
 
   HomeController _homeController = Get.put(HomeController());
   late TabController _tabController;
+  String _productNameEn = '';
+  String _productNameAr = '';
 
   final List<String> _tabs = [
     "Description",
@@ -1264,8 +1267,18 @@ class _NewProductDetailsState extends State<NewProductDetails>
         ? forcedProductId!
         : _firstNonEmpty(product, const ['_id', 'id'],
             fallback: widget.productId);
-    widget.name =
-        _firstNonEmpty(product, const ['name', 'title'], fallback: widget.name);
+    final bool _isArName = Get.isRegistered<LanguageController>() &&
+        Get.find<LanguageController>().isArabic;
+    _productNameEn = _firstNonEmpty(product, const ['name', 'title'],
+        fallback: widget.name);
+    _productNameAr = _firstNonEmpty(product, const ['nameAr'],
+        fallback: '');
+    widget.name = _firstNonEmpty(
+        product,
+        _isArName
+            ? const ['nameAr', 'name', 'title']
+            : const ['name', 'title'],
+        fallback: widget.name);
     widget.brandName =
         _brandNameFromProduct(product, fallback: widget.brandName);
     widget.categoryName =
@@ -3085,7 +3098,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
     await cart.addItemInfo(
       CartOtherInfo(
         productId: widget.productId,
-        productName: widget.name,
+        productName: _productNameEn.isNotEmpty ? _productNameEn : widget.name,
+        productNameAr: _productNameAr,
         productImage: curImg,
         productPrice: curPrice,
         originalPrice: _toDouble(widget.price) > curPrice
@@ -3112,6 +3126,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
         CartOtherInfo(
           productId: id,
           productName: (p['name'] ?? 'Product').toString(),
+          productNameAr: (p['nameAr'] ?? '').toString(),
           productImage: _imgOf(p),
           productPrice: dp,
           originalPrice: op,
@@ -4210,7 +4225,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                           cart.addItemInfo(
                               CartOtherInfo(
                                 productId: widget.productId,
-                                productName: widget.name,
+                                productName: _productNameEn.isNotEmpty ? _productNameEn : widget.name,
+                                productNameAr: _productNameAr,
                                 productImage: productImageForCart,
                                 productPrice: (offerP > 0) ? offerP : regularP,
                                 originalPrice: regularP >
