@@ -283,6 +283,7 @@ class _NewProductCardState extends State<NewProductCard> {
 
     // Extract subcategory name for display under product name (fallbacks to category/parentCategory)
     String subcategoryNameForCard = '';
+    String subcategoryNameArForCard = '';
     if (widget.prdouctList is Map) {
       final map = widget.prdouctList as Map;
       // Common API keys variations
@@ -298,15 +299,18 @@ class _NewProductCardState extends State<NewProductCard> {
 
       if (sc != null && (sc['name']?.toString().isNotEmpty ?? false)) {
         subcategoryNameForCard = sc['name'].toString();
+        subcategoryNameArForCard = sc['nameAr']?.toString() ?? '';
       } else {
         // Fallbacks to keep UI populated if subcategory is missing
         final cat = map['category'];
         if (cat is Map && (cat['name']?.toString().isNotEmpty ?? false)) {
           subcategoryNameForCard = cat['name'].toString();
+          subcategoryNameArForCard = cat['nameAr']?.toString() ?? '';
         } else {
           final pc = map['parentCategory'];
           if (pc is Map && (pc['name']?.toString().isNotEmpty ?? false)) {
             subcategoryNameForCard = pc['name'].toString();
+            subcategoryNameArForCard = pc['nameAr']?.toString() ?? '';
           }
         }
       }
@@ -636,7 +640,14 @@ class _NewProductCardState extends State<NewProductCard> {
                                   if (subcategoryNameForCard.isNotEmpty) ...[
                                     gapTiny.heightbox,
                                     Text(
-                                      'product_card_category'.trParams({'category': subcategoryNameForCard}),
+                                      'product_card_category'.trParams({
+                                        'category': (_isAr &&
+                                                subcategoryNameArForCard
+                                                    .trim()
+                                                    .isNotEmpty)
+                                            ? subcategoryNameArForCard
+                                            : subcategoryNameForCard
+                                      }),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
