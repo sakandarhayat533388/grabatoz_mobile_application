@@ -409,7 +409,7 @@ class _CouponCardState extends State<_CouponCard> with SingleTickerProviderState
                                   ],
                                 ),
                                 const SizedBox(height: 6),
-                                const Align(
+                                Align(
                                   alignment: Alignment.center,
                                   child: Text(
                                     'product_coupon_promo_code'.tr,

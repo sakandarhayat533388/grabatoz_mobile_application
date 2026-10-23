@@ -96,7 +96,7 @@ class PrimaryTextField extends StatelessWidget {
 
       height: height ?? 55,
 
-      width: width ?? context.width * 0.85,
+      width: width ?? MediaQuery.of(context).size.width * 0.85,
 
       padding: const EdgeInsets.symmetric(horizontal: 8),
 

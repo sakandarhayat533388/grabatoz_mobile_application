@@ -195,7 +195,7 @@ class _BulkPurchaceViewState extends State<BulkPurchaceView> {
                 SizedBox(
                   height: 10,
                 ),
-                const Text(
+                Text(
                   'product_bulk_why_title'.tr,
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   textAlign: TextAlign.center,
