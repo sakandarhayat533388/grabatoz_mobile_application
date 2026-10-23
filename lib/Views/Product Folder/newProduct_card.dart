@@ -17,6 +17,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'package:graba2z/Controllers/review_update_bus.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 
 import '../../Utils/packages.dart';
 
@@ -469,13 +470,16 @@ class _NewProductCardState extends State<NewProductCard> {
                   final double _imgScale =
                       maxH < 190 ? 0.38 : (maxH < 210 ? 0.40 : 0.42);
                   final imgSize = (maxH * _imgScale).clamp(90.0, 120.0);
-                  final gapBelowImage = 6.0; // was 8.0
-                  final gapBelowChip = 4.0; // was 6.0
-                  final gapTiny = 2.0;
+                  final bool _isAr = Get.isRegistered<LanguageController>() &&
+                      Get.find<LanguageController>().isArabic;
+                  // Arabic glyphs render taller: shave vertical spacing to avoid overflow
+                  final gapBelowImage = _isAr ? 4.0 : 6.0; // was 8.0
+                  final gapBelowChip = _isAr ? 3.0 : 4.0; // was 6.0
+                  final gapTiny = _isAr ? 1.5 : 2.0;
                   final urlForImage =
                       ImageHelper.getUrl(imageUrlToDisplay ?? placeholderImage);
                   final addToCartH =
-                      26.0; // shave a bit to prevent 5px overflow
+                      _isAr ? 24.0 : 26.0; // shave a bit to prevent 5px overflow
                   return Column(
                     children: [
                       // Image
@@ -610,8 +614,16 @@ class _NewProductCardState extends State<NewProductCard> {
                                 children: [
                                   Text(
                                     (widget.prdouctList is Map
-                                            ? widget.prdouctList['name']
-                                                ?.toString()
+                                            ? (_isAr &&
+                                                    (widget.prdouctList['nameAr']
+                                                            ?.toString()
+                                                            .trim()
+                                                            .isNotEmpty ==
+                                                        true)
+                                                ? widget.prdouctList['nameAr']
+                                                    ?.toString()
+                                                : widget.prdouctList['name']
+                                                    ?.toString())
                                             : null) ??
                                         'product_name_fallback'.tr,
                                     maxLines: widget.maxLines,
