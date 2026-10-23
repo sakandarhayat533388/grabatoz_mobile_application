@@ -121,6 +121,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
   late TabController _tabController;
   String _productNameEn = '';
   String _productNameAr = '';
+  String _categoryNameAr = '';
+  String _subcategoryNameAr = '';
 
   final List<String> _tabs = [
     "Description",
@@ -1287,6 +1289,43 @@ class _NewProductDetailsState extends State<NewProductDetails>
         _categoryIdFromProduct(product, fallback: widget.categoryId);
     widget.subcategoryName =
         _subcategoryNameFromProduct(product, fallback: widget.subcategoryName);
+    // Arabic category names: product API embeds category without nameAr,
+    // so look up from HomeController by ID (same as product card)
+    _categoryNameAr = '';
+    _subcategoryNameAr = '';
+    if (_isArName) {
+      try {
+        final hc = Get.find<HomeController>();
+        final catId = widget.categoryId;
+        // Try direct nameAr from product first
+        final prodCat = product['category'];
+        if (prodCat is Map && (prodCat['nameAr']?.toString().trim().isNotEmpty ?? false)) {
+          _categoryNameAr = prodCat['nameAr'].toString();
+        }
+        final prodSub = product['subcategory'] ?? product['subCategory'];
+        if (prodSub is Map && (prodSub['nameAr']?.toString().trim().isNotEmpty ?? false)) {
+          _subcategoryNameAr = prodSub['nameAr'].toString();
+        }
+        // Fallback: lookup by ID from loaded lists
+        if (_categoryNameAr.isEmpty && catId.isNotEmpty) {
+          for (final c in hc.category) {
+            if (c.sId == catId && (c.nameAr?.trim().isNotEmpty ?? false)) {
+              _categoryNameAr = c.nameAr!;
+              break;
+            }
+          }
+        }
+        // Subcategory lookup by name match (ID may differ)
+        if (_subcategoryNameAr.isEmpty && widget.subcategoryName.isNotEmpty) {
+          for (final s in hc.subcategory) {
+            if (s.name == widget.subcategoryName && (s.nameAr?.trim().isNotEmpty ?? false)) {
+              _subcategoryNameAr = s.nameAr!;
+              break;
+            }
+          }
+        }
+      } catch (_) {}
+    }
     widget.sku =
         _firstNonEmpty(product, const ['sku', 'model'], fallback: widget.sku);
     widget.offerPrice = _firstNonEmpty(
@@ -3437,8 +3476,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                         AnimatedReadMoreText(
                           widget.name,
                           maxLines: 2,
-                          readMoreText: 'Read More',
-                          readLessText: 'Show Less',
+                          readMoreText: 'product_detail_read_more'.tr,
+                          readLessText: 'product_detail_show_less'.tr,
                           textStyle:
                               Theme.of(context).textTheme.titleMedium!.copyWith(
                                     fontWeight: FontWeight.bold,
@@ -3464,9 +3503,18 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                       fontSize: 14, color: kSecondaryColor),
                             ),
                             Expanded(
-                              child: Text(
-                                ' ${widget.subcategoryName.isNotEmpty ? widget.subcategoryName : widget.categoryName}',
-                                // CHANGED: prefer subcategory, fallback to category
+                              child: Builder(builder: (_) {
+                                final String _displayCat =
+                                    (_subcategoryNameAr.trim().isNotEmpty)
+                                        ? _subcategoryNameAr
+                                        : (_categoryNameAr.trim().isNotEmpty
+                                            ? _categoryNameAr
+                                            : (widget.subcategoryName.isNotEmpty
+                                                ? widget.subcategoryName
+                                                : widget.categoryName));
+                                return Text(
+                                  ' $_displayCat',
+                                  // CHANGED: prefer subcategory, fallback to category
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleMedium!
@@ -3474,7 +3522,8 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                         fontWeight: FontWeight.bold,
                                         fontSize: 14,
                                         color: kPrimaryColor),
-                              ),
+                                );
+                              }),
                             ),
                           ],
                         ),
@@ -3561,8 +3610,11 @@ class _NewProductDetailsState extends State<NewProductDetails>
                                   Expanded(
                                     child: Text(
                                       widget.stockCount.isNotEmpty
-                                          ? ' Available in Stock (${widget.stockCount})'
-                                          : ' Available in Stock',
+                                          ? 'product_detail_available_stock'
+                                              .trParams({
+                                              'count': widget.stockCount
+                                            })
+                                          : 'product_detail_in_stock'.tr,
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium!
