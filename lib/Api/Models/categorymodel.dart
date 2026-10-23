@@ -3,6 +3,7 @@
 class SubCategoryModel {
   String? sId;
   String? name;
+  String? nameAr;
   String? slug;
   Category? category;
   bool? isActive;
@@ -16,6 +17,7 @@ class SubCategoryModel {
   SubCategoryModel(
       {this.sId,
       this.name,
+      this.nameAr,
       this.slug,
       this.category,
       this.isActive,
@@ -29,6 +31,7 @@ class SubCategoryModel {
   SubCategoryModel.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     name = json['name'];
+    nameAr = json['nameAr'];
     slug = json['slug'];
     category = json['category'] != null
         ? new Category.fromJson(json['category'])
@@ -46,6 +49,7 @@ class SubCategoryModel {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['_id'] = this.sId;
     data['name'] = this.name;
+    data['nameAr'] = this.nameAr;
     data['slug'] = this.slug;
     if (this.category != null) {
       data['category'] = this.category!.toJson();
@@ -64,14 +68,16 @@ class SubCategoryModel {
 class Category {
   String? sId;
   String? name;
+  String? nameAr;
   String? slug;
   String? image;
 
-  Category({this.sId, this.name, this.slug});
+  Category({this.sId, this.name, this.nameAr, this.slug});
 
   Category.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     name = json['name'];
+    nameAr = json['nameAr'];
     slug = json['slug'];
     image = json['image'];
   }
@@ -80,6 +86,7 @@ class Category {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['_id'] = this.sId;
     data['name'] = this.name;
+    data['nameAr'] = this.nameAr;
     data['slug'] = this.slug;
     data['image'] = this.image;
     return data;
@@ -89,6 +96,7 @@ class Category {
 class categoriesModel {
   String? sId;
   String? name;
+  String? nameAr;
   String? slug;
   String? description;
   String? image;
@@ -102,6 +110,7 @@ class categoriesModel {
   categoriesModel(
       {this.sId,
       this.name,
+      this.nameAr,
       this.slug,
       this.description,
       this.image,
@@ -115,6 +124,7 @@ class categoriesModel {
   categoriesModel.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
     name = json['name'];
+    nameAr = json['nameAr'];
     slug = json['slug'];
     description = json['description'];
     image = json['image'];
@@ -130,6 +140,7 @@ class categoriesModel {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['_id'] = this.sId;
     data['name'] = this.name;
+    data['nameAr'] = this.nameAr;
     data['slug'] = this.slug;
     data['description'] = this.description;
     data['image'] = this.image;

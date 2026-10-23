@@ -1,6 +1,7 @@
 class CategorySliderItem {
   final String? id;
   final String? name;
+  final String? nameAr;
   final String? image;
   final String? redirectUrl;
   final String? slug;
@@ -9,6 +10,7 @@ class CategorySliderItem {
   CategorySliderItem({
     this.id,
     this.name,
+    this.nameAr,
     this.image,
     this.redirectUrl,
     this.slug,
@@ -19,6 +21,7 @@ class CategorySliderItem {
     return CategorySliderItem(
       id: json['_id']?.toString() ?? json['id']?.toString(),
       name: json['title']?.toString() ?? json['name']?.toString() ?? '',
+      nameAr: json['titleAr']?.toString() ?? json['nameAr']?.toString(),
       image: json['image']?.toString() ?? json['imageUrl']?.toString() ?? '',
       redirectUrl: json['redirectUrl']?.toString() ??
           json['redirect_url']?.toString() ??
@@ -33,6 +36,7 @@ class CategorySliderItem {
     return CategorySliderItem(
       id: json['_id']?.toString() ?? json['id']?.toString(),
       name: json['name']?.toString() ?? json['title']?.toString() ?? '',
+      nameAr: json['nameAr']?.toString(),
       image: json['image']?.toString() ?? json['imageUrl']?.toString() ?? '',
       slug: json['slug']?.toString(),
       redirectUrl: json['redirectUrl']?.toString() ??
@@ -46,6 +50,7 @@ class CategorySliderItem {
     return {
       '_id': id,
       'name': name,
+      'nameAr': nameAr,
       'image': image,
       'redirectUrl': redirectUrl,
       'slug': slug,

@@ -4,6 +4,7 @@ import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/brand_controller.dart';
 import 'package:graba2z/Controllers/homeSliderController.dart';
 import 'package:graba2z/Controllers/home_controller.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/image_helper.dart';
 import 'package:graba2z/Views/Home/Screens/Deals%20Screen/dealsview.dart';
@@ -630,6 +631,7 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                                   .map((c) => CategorySliderItem(
                                         id: c.sId,
                                         name: c.name,
+                                        nameAr: c.nameAr,
                                         image: c.image,
                                         slug: c.slug,
                                         type: 'category',
@@ -738,14 +740,24 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                                             ),
                                           ),
                                           8.0.heightbox,
-                                          Text(
-                                            ((item.name ?? '')
-                                                    .characters
-                                                    .take(12)
-                                                    .toString()) +
-                                                (((item.name?.length ?? 0) > 12)
-                                                    ? '...'
-                                                    : ''),
+                                          Builder(builder: (_) {
+                                            final bool _isArCat =
+                                                Get.isRegistered<LanguageController>() &&
+                                                    Get.find<LanguageController>()
+                                                        .isArabic;
+                                            final String _catName = (_isArCat &&
+                                                    (item.nameAr
+                                                            ?.trim()
+                                                            .isNotEmpty ==
+                                                        true))
+                                                ? item.nameAr!
+                                                : (item.name ?? '');
+                                            return Text(
+                                              (_catName.characters
+                                                      .take(12)
+                                                      .toString()) +
+                                                  ((_catName.length > 12)
+                                                      ? '...': ''),
                                             style: const TextStyle(
                                               fontSize: 10,
                                               fontWeight: FontWeight.w600,
@@ -753,7 +765,8 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                                             ),
                                             textAlign: TextAlign.center,
                                             maxLines: 1,
-                                          ),
+                                            );
+                                          }),
                                         ],
                                       ),
                                     );
