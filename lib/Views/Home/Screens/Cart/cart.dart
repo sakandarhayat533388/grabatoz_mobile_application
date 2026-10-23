@@ -8,6 +8,7 @@ import 'package:graba2z/Utils/popup_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:graba2z/Configs/config.dart';
 import 'package:get/get.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
@@ -1208,16 +1209,29 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                              child: Text(
-                            widget.cartItem.productName ?? 'cart_unknown_product'.tr,
-                            maxLines: 2,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: kSecondaryColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          )),
+                              child: Builder(builder: (_) {
+                            final bool _isArCart =
+                                Get.isRegistered<LanguageController>() &&
+                                    Get.find<LanguageController>().isArabic;
+                            final String _displayName = (_isArCart &&
+                                    (widget.cartItem.productNameAr
+                                            ?.trim()
+                                            .isNotEmpty ==
+                                        true))
+                                ? widget.cartItem.productNameAr!
+                                : (widget.cartItem.productName ??
+                                    'cart_unknown_product'.tr);
+                            return Text(
+                              _displayName,
+                              maxLines: 2,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: kSecondaryColor,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          })),
                           GestureDetector(
                             onTap: widget.onRemove,
                             child: const Icon(Icons.delete,

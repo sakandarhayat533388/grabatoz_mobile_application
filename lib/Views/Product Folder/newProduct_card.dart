@@ -830,6 +830,8 @@ class _NewProductCardState extends State<NewProductCard> {
                                       final String productName =
                                           (map['name'] ?? 'Unknown Product')
                                               .toString();
+                                      final String productNameAr =
+                                          (map['nameAr'] ?? '').toString();
 
                                       // Price: prefer offerPrice if > 0
                                       final double offerP =
@@ -881,6 +883,7 @@ class _NewProductCardState extends State<NewProductCard> {
                                         CartOtherInfo(
                                           productId: productId,
                                           productName: productName,
+                                          productNameAr: productNameAr,
                                           productImage: productImageForCart,
                                           productPrice: finalPrice,
                                           originalPrice: regularP > finalPrice
