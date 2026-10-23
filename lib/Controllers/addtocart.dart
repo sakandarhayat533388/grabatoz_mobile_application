@@ -428,6 +428,7 @@ class CartOtherInfo {
   String? productId;
   String? type;
   String? productName;
+  String? productNameAr;
   String? productImage;
   double? productPrice;
   double? originalPrice;
@@ -450,6 +451,7 @@ class CartOtherInfo {
     this.productId,
     this.type,
     this.productName,
+    this.productNameAr,
     this.productImage,
     this.productPrice,
     this.originalPrice,
@@ -474,6 +476,7 @@ class CartOtherInfo {
     productId = json['productId'];
     type = json['type'];
     productName = json['productName'];
+    productNameAr = json['productNameAr'];
     productImage = json['productImage'];
     productPrice = json['productPrice'] != null
         ? double.tryParse(json['productPrice'].toString())
@@ -513,6 +516,7 @@ class CartOtherInfo {
     data['productId'] = productId;
     data['type'] = type;
     data['productName'] = productName;
+    data['productNameAr'] = productNameAr;
     data['productImage'] = productImage;
     data['productPrice'] = productPrice;
     data['originalPrice'] = originalPrice;
