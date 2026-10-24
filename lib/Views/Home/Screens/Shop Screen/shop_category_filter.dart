@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:graba2z/Api/Models/menumodel.dart';
 import 'package:graba2z/Controllers/menuController.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Utils/appcolors.dart';
 
@@ -84,7 +85,18 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
   // Brand filter
   final Map<String, String> _allBrandsMap =
       {}; // All brands from API: {id: name}
+  final Map<String, String> _allBrandsArMap =
+      {}; // All brands Arabic names: {id: nameAr}
   List<Map<String, String>> _availableBrands = []; // Brands in current products
+
+  bool get _isArabic =>
+      Get.isRegistered<LanguageController>() &&
+      Get.find<LanguageController>().isArabic;
+
+  String _localizedName(String name, String? nameAr) {
+    if (_isArabic && (nameAr?.trim().isNotEmpty ?? false)) return nameAr!;
+    return name;
+  }
   Set<String> _selectedBrandIds = {};
   bool _isBrandSectionExpanded = true;
   bool _isBrandsLoading = true;
@@ -279,8 +291,12 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
             if (brand is Map<String, dynamic>) {
               final brandId = brand['_id']?.toString() ?? '';
               final brandName = brand['name']?.toString() ?? '';
+              final brandNameAr = brand['nameAr']?.toString() ?? '';
               if (brandId.isNotEmpty && brandName.isNotEmpty) {
                 _allBrandsMap[brandId] = brandName;
+                if (brandNameAr.isNotEmpty) {
+                  _allBrandsArMap[brandId] = brandNameAr;
+                }
               }
             }
           }
@@ -693,7 +709,11 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
     for (final brandId in brandIdsInProducts) {
       final brandName = _allBrandsMap[brandId];
       if (brandName != null && brandName.isNotEmpty) {
-        brandsList.add({'id': brandId, 'name': brandName});
+        brandsList.add({
+          'id': brandId,
+          'name': brandName,
+          'nameAr': _allBrandsArMap[brandId] ?? '',
+        });
       }
     }
 
@@ -751,7 +771,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
   // Build parent category tile (level 0)
   Widget _buildCategoryTile(Menumodel category) {
     final categoryId = category.id;
-    final categoryName = category.name;
+    final categoryName = _localizedName(category.name, category.nameAr);
     final hasChildren = category.children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(categoryId);
     final isSelected =
@@ -871,7 +891,7 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
   Widget _buildChildTile(Child child,
       {required String parentId, int level = 1}) {
     final childId = child.id;
-    final childName = child.name;
+    final childName = _localizedName(child.name, child.nameAr);
     final hasChildren = child.children.isNotEmpty;
     final isExpanded = _expandedCategories.contains(childId);
     final isSelected = _selectedSubCategoryId == childId;
@@ -1569,7 +1589,8 @@ class _ShopCategoryFilterState extends State<ShopCategoryFilter> {
             // Brand list with checkboxes
             ..._availableBrands.map((brand) {
               final brandId = brand['id'] ?? '';
-              final brandName = brand['name'] ?? '';
+              final brandName = _localizedName(
+                  brand['name'] ?? '', brand['nameAr']);
               final isSelected = _selectedBrandIds.contains(brandId);
 
               return InkWell(
