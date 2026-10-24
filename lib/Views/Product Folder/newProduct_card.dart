@@ -497,12 +497,16 @@ class _NewProductCardState extends State<NewProductCard> {
                   final maxH = constraints.maxHeight.isFinite
                       ? constraints.maxHeight
                       : 220.0;
-                  // Slightly smaller image on tighter cards
-                  final double _imgScale =
-                      maxH < 190 ? 0.38 : (maxH < 210 ? 0.40 : 0.42);
-                  final imgSize = (maxH * _imgScale).clamp(90.0, 120.0);
                   final bool _isAr = Get.isRegistered<LanguageController>() &&
                       Get.find<LanguageController>().isArabic;
+                  // Slightly smaller image on tighter cards.
+                  // Arabic text (name + category) takes more vertical room,
+                  // so shrink the image further in Arabic to avoid overflow.
+                  final double _imgScaleBase =
+                      maxH < 190 ? 0.38 : (maxH < 210 ? 0.40 : 0.42);
+                  final double _imgScale =
+                      _isAr ? _imgScaleBase - 0.05 : _imgScaleBase;
+                  final imgSize = (maxH * _imgScale).clamp(80.0, 120.0);
                   // Arabic glyphs render taller: shave vertical spacing to avoid overflow
                   final gapBelowImage = _isAr ? 4.0 : 6.0; // was 8.0
                   final gapBelowChip = _isAr ? 3.0 : 4.0; // was 6.0
@@ -510,7 +514,7 @@ class _NewProductCardState extends State<NewProductCard> {
                   final urlForImage =
                       ImageHelper.getUrl(imageUrlToDisplay ?? placeholderImage);
                   final addToCartH =
-                      _isAr ? 24.0 : 26.0; // shave a bit to prevent 5px overflow
+                      _isAr ? 23.0 : 26.0; // shave a bit to prevent 5px overflow
                   return Column(
                     children: [
                       // Image

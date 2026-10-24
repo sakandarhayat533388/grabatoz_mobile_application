@@ -775,7 +775,8 @@ class _ShopState extends State<Shop> {
                               width: 10,
                             ),
                             Text(
-                              '${filteredProducts.length} products found',
+                              'shop_products_found'.trParams(
+                                  {'count': '${filteredProducts.length}'}),
                               style: const TextStyle(
                                   fontSize: 14, fontWeight: FontWeight.w700),
                               overflow: TextOverflow.ellipsis,
