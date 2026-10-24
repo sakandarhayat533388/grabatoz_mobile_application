@@ -8,6 +8,8 @@ import 'package:graba2z/Utils/appextensions.dart';
 import '../../../../Controllers/addtocart.dart';
 import '../../../../Controllers/bottomController.dart';
 import '../../../../Controllers/deals_controller.dart';
+import 'package:graba2z/Controllers/home_controller.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import '../../../../Utils/appcolors.dart';
 import '../../../../Widgets/customappbar.dart';
 import '../../../../Configs/config.dart';
@@ -49,6 +51,7 @@ class _offerDealsState extends State<offerDeals> {
   Map<String, String> _brandLookup = {};
   List<Map<String, String>> _availableBrands = [];
   List<Map<String, String>> _availableCategories = [];
+  final Map<String, String> _brandArLookup = {};
   Set<String> _selectedBrandIds = {};
   Set<String> _selectedCategoryIds = {};
 
@@ -149,6 +152,8 @@ class _offerDealsState extends State<offerDeals> {
               .toString()
               .trim();
           brandLookup[id] = name.isEmpty ? 'deals_unknown_brand'.tr : name;
+          final nameAr = (item['nameAr'] ?? '').toString().trim();
+          if (nameAr.isNotEmpty) _brandArLookup[id] = nameAr;
         }
 
         if (mounted) {
@@ -433,7 +438,9 @@ class _offerDealsState extends State<offerDeals> {
     }
 
     final Map<String, String> brandNameMap = {};
+    final Map<String, String> brandNameArMap = {};
     final Map<String, String> categoryNameMap = {};
+    final Map<String, String> categoryNameArMap = {};
 
     for (final product in controller.productList) {
       if (product is! Map<String, dynamic>) {
@@ -445,12 +452,14 @@ class _offerDealsState extends State<offerDeals> {
       String? brandId;
       String brandName = '';
 
+      String brandNameAr = '';
       if (brand is Map) {
         final brandMap = Map<String, dynamic>.from(brand);
         brandId = (brandMap['_id'] ?? brandMap['id'] ?? '').toString().trim();
         brandName = (brandMap['name'] ?? brandMap['nameAr'] ?? brandMap['_name'] ?? '')
             .toString()
             .trim();
+        brandNameAr = (brandMap['nameAr'] ?? '').toString().trim();
       } else if (brand is String) {
         brandId = brand.trim();
         brandName = _brandLookup[brandId] ?? '';
@@ -461,6 +470,10 @@ class _offerDealsState extends State<offerDeals> {
           brandName = _brandLookup[brandId] ?? 'deals_brand_fallback'.tr;
         }
         brandNameMap[brandId] = brandName;
+        final arName = brandNameAr.isNotEmpty
+            ? brandNameAr
+            : (_brandArLookup[brandId] ?? '');
+        if (arName.isNotEmpty) brandNameArMap[brandId] = arName;
       }
 
       // Extract deepest category level
@@ -479,7 +492,11 @@ class _offerDealsState extends State<offerDeals> {
           final id = (cat['_id'] ?? cat['id'])?.toString();
           final name = cat['name']?.toString();
           if (id != null && id.isNotEmpty && name != null && name.isNotEmpty) {
-            deepestCategory = {'id': id, 'name': name};
+            deepestCategory = {
+              'id': id,
+              'name': name,
+              'nameAr': cat['nameAr']?.toString() ?? '',
+            };
             break; // Stop at deepest level found
           }
         }
@@ -487,17 +504,51 @@ class _offerDealsState extends State<offerDeals> {
 
       if (deepestCategory != null) {
         categoryNameMap[deepestCategory['id']!] = deepestCategory['name']!;
+        var arName = (deepestCategory['nameAr'] ?? '').trim();
+        if (arName.isEmpty) {
+          // Product API embeds categories without nameAr: resolve by ID
+          try {
+            final hc = Get.find<HomeController>();
+            for (final s in hc.subcategory) {
+              if (s.sId == deepestCategory['id'] &&
+                  (s.nameAr?.trim().isNotEmpty ?? false)) {
+                arName = s.nameAr!;
+                break;
+              }
+            }
+            if (arName.isEmpty) {
+              for (final c in hc.category) {
+                if (c.sId == deepestCategory['id'] &&
+                    (c.nameAr?.trim().isNotEmpty ?? false)) {
+                  arName = c.nameAr!;
+                  break;
+                }
+              }
+            }
+          } catch (_) {}
+        }
+        if (arName.isNotEmpty) {
+          categoryNameArMap[deepestCategory['id']!] = arName;
+        }
       }
     }
 
     // Convert to sorted lists - only brands available in this deals page
     final brandsList = brandNameMap.entries
-        .map((e) => {'id': e.key, 'name': e.value})
+        .map((e) => {
+              'id': e.key,
+              'name': e.value,
+              'nameAr': brandNameArMap[e.key] ?? '',
+            })
         .toList();
     brandsList.sort((a, b) => (a['name'] ?? '').compareTo(b['name'] ?? ''));
 
     final categoriesList = categoryNameMap.entries
-        .map((e) => {'id': e.key, 'name': e.value})
+        .map((e) => {
+              'id': e.key,
+              'name': e.value,
+              'nameAr': categoryNameArMap[e.key] ?? '',
+            })
         .toList();
     categoriesList.sort((a, b) => (a['name'] ?? '').compareTo(b['name'] ?? ''));
 
@@ -767,8 +818,7 @@ class _offerDealsState extends State<offerDeals> {
                                 size: 18, color: kPrimaryColor),
                             SizedBox(width: 10,),
                             Text(
-                              'shop_products_found'.trParams(
-                                  {'count': '${filtered.length}'}),
+                              '${filtered.length} products found',
                               style: const TextStyle(
                                   fontSize: 14, fontWeight: FontWeight.w700),
                               overflow: TextOverflow.ellipsis,

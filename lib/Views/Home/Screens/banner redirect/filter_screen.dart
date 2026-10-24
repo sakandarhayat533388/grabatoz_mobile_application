@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:graba2z/Utils/appcolors.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 
 class FilterDrawer extends StatefulWidget {
   final List<Map<String, String>> availableBrands;
@@ -23,6 +24,14 @@ class FilterDrawer extends StatefulWidget {
 }
 
 class _FilterDrawerState extends State<FilterDrawer> {
+  String _displayName(Map<String, String> item) {
+    final bool isAr = Get.isRegistered<LanguageController>() &&
+        Get.find<LanguageController>().isArabic;
+    final ar = (item['nameAr'] ?? '').trim();
+    if (isAr && ar.isNotEmpty) return ar;
+    return item['name'] ?? '';
+  }
+
   late Set<String> _selectedBrandIds;
   late Set<String> _selectedCategoryIds;
   late bool _isBrandExpanded;
@@ -194,7 +203,7 @@ class _FilterDrawerState extends State<FilterDrawer> {
           else
             ...widget.availableBrands.map((brand) {
               final brandId = brand['id'] ?? '';
-              final brandName = brand['name'] ?? '';
+              final brandName = _displayName(brand);
               final isSelected = _selectedBrandIds.contains(brandId);
 
               return Padding(
@@ -294,7 +303,7 @@ class _FilterDrawerState extends State<FilterDrawer> {
           else
             ...widget.availableCategories.map((category) {
               final categoryId = category['id'] ?? '';
-              final categoryName = category['name'] ?? '';
+              final categoryName = _displayName(category);
               final isSelected = _selectedCategoryIds.contains(categoryId);
 
               return Padding(
