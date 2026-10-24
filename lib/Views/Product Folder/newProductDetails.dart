@@ -702,7 +702,43 @@ class _NewProductDetailsState extends State<NewProductDetails>
     return fallback;
   }
 
-  String _optionLabel(dynamic option, List<String> preferredKeys) {
+    /// Map common color names to Arabic when Arabic is active
+  /// (API colorVariations carry no Arabic color names).
+  String _localizedColor(String color) {
+    final bool isAr = Get.isRegistered<LanguageController>() &&
+        Get.find<LanguageController>().isArabic;
+    if (!isAr) return color;
+    const Map<String, String> arColors = {
+      'black': 'أسود',
+      'white': 'أبيض',
+      'blue': 'أزرق',
+      'red': 'أحمر',
+      'green': 'أخضر',
+      'brown': 'بني',
+      'grey': 'رمادي',
+      'gray': 'رمادي',
+      'silver': 'فضي',
+      'gold': 'ذهبي',
+      'pink': 'وردي',
+      'purple': 'بنفسجي',
+      'orange': 'برتقالي',
+      'yellow': 'أصفر',
+      'beige': 'بيج',
+      'navy': 'كحلي',
+      'navy blue': 'كحلي',
+      'maroon': 'عنابي',
+      'teal': 'أخضر مزرق',
+      'cream': 'كريمي',
+      'transparent': 'شفاف',
+      'clear': 'شفاف',
+      'multi': 'متعدد الألوان',
+      'multicolor': 'متعدد الألوان',
+    };
+    final key = color.trim().toLowerCase();
+    return arColors[key] ?? color;
+  }
+
+String _optionLabel(dynamic option, List<String> preferredKeys) {
     final direct = _directOptionLabel(option, preferredKeys);
     return direct.isNotEmpty ? direct : 'Option';
   }
@@ -1344,12 +1380,21 @@ class _NewProductDetailsState extends State<NewProductDetails>
         _stockCountFromMap(product, fallback: widget.stockCount);
     widget.description = _firstNonEmpty(
       product,
-      const ['description', 'longDescription'],
+      _isArName
+          ? const ['descriptionAr', 'description', 'longDescription']
+          : const ['description', 'longDescription'],
       fallback: widget.description,
     );
     widget.shortdesc = _firstNonEmpty(
       product,
-      const ['shortDescription', 'shortdesc', 'shortDesc'],
+      _isArName
+          ? const [
+              'shortDescriptionAr',
+              'shortDescription',
+              'shortdesc',
+              'shortDesc'
+            ]
+          : const ['shortDescription', 'shortdesc', 'shortDesc'],
       fallback: widget.shortdesc,
     );
     widget.images = _imagesFromProductMap(product, fallback: widget.images);
@@ -2773,7 +2818,7 @@ class _NewProductDetailsState extends State<NewProductDetails>
 
                 return _buildColorOptionCard(
                   option: option,
-                  label: label,
+                  label: _localizedColor(label),
                   selected: selected,
                   onTap: () => _applyColorVariation(option, index),
                 );
@@ -3916,11 +3961,11 @@ class _NewProductDetailsState extends State<NewProductDetails>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 _actionButtonWithSvg(
-                                    _chat, "Chat\nWith Specialist", () {
+                                    _chat, 'product_detail_chat_specialist'.tr, () {
                                   requestCall();
                                 }),
                                 _actionButton(
-                                    Icons.phone_outlined, "Request a\nCallback",
+                                    Icons.phone_outlined, 'product_detail_request_callback'.tr,
                                     () {
                                   showModalBottomSheet(
                                     context: context,
@@ -3988,18 +4033,18 @@ class _NewProductDetailsState extends State<NewProductDetails>
                               ),
                             ),
                             const SizedBox(height: 20),
-                            _infoTile(Icons.local_shipping, "Express Delivery",
-                                "Free shipping when you spend AED500 & above.\nUnlimited destinations in Dubai and Abu Dhabi"),
+                            _infoTile(Icons.local_shipping, 'product_detail_express_delivery'.tr,
+                                'product_detail_express_delivery_desc'.tr),
                             const SizedBox(height: 12),
                             _infoTile(
                                 Icons.refresh,
-                                "Delivery & Returns Policy",
-                                "Delivery in remote areas will be considered as normal delivery which takes place with 1 working day delivery."),
+                                'product_detail_delivery_returns'.tr,
+                                'product_detail_delivery_returns_desc'.tr),
                             const SizedBox(height: 12),
                             _infoTile(
                                 Icons.verified_user,
-                                "Warranty Information",
-                                "Standard warranty applies as per manufacturer terms"),
+                                'product_detail_warranty'.tr,
+                                'product_detail_warranty_desc'.tr),
                             // NEW: Payment Methods section
                             const SizedBox(height: 19),
                             Container(
@@ -4074,7 +4119,11 @@ class _NewProductDetailsState extends State<NewProductDetails>
                               fontSize: 14, fontWeight: FontWeight.bold),
                           indicatorSize: TabBarIndicatorSize.tab,
                           dividerColor: Colors.grey,
-                          tabs: _tabs.map((e) => Tab(text: e)).toList(),
+                          tabs: [
+                            Tab(text: 'product_detail_tab_description'.tr),
+                            Tab(text: 'product_detail_tab_more_info'.tr),
+                            Tab(text: 'product_detail_tab_reviews'.tr),
+                          ],
                         ),
                         Builder(
                           builder: (_) {
