@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Views/Home/Screens/Shop%20Screen/Shop.dart';
 import '../Api/Models/menumodel.dart';
 import '../Utils/packages.dart';
@@ -6,6 +7,7 @@ import '../Views/Product Folder/new_all_products.dart';
 
 class CategoryTile extends StatefulWidget {
   final String title;
+  final String? titleAr;
   final String slug;
   final List<Child> children;
   final String id;
@@ -14,6 +16,7 @@ class CategoryTile extends StatefulWidget {
   const CategoryTile({
     Key? key,
     required this.title,
+    this.titleAr,
     required this.slug,
     required this.children,
     required this.id,
@@ -26,6 +29,15 @@ class CategoryTile extends StatefulWidget {
 
 class _CategoryTileState extends State<CategoryTile> {
   bool _isExpanded = false;
+
+  String get _displayTitle {
+    final bool isAr = Get.isRegistered<LanguageController>() &&
+        Get.find<LanguageController>().isArabic;
+    if (isAr && (widget.titleAr?.trim().isNotEmpty ?? false)) {
+      return widget.titleAr!;
+    }
+    return widget.title;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +54,7 @@ class _CategoryTileState extends State<CategoryTile> {
       return ListTile(
         contentPadding: EdgeInsets.only(left: leftPadding, right: 20),
         title: Text(
-          widget.title,
+          _displayTitle,
           style: TextStyle(color: textColor),
         ),
         onTap: () {
@@ -52,7 +64,7 @@ class _CategoryTileState extends State<CategoryTile> {
           Get.to(() => Shop(
             id: widget.id,
             parentType: parentType,
-            displayTitle: widget.title,
+            displayTitle: _displayTitle,
           ));
         },
       );
@@ -69,7 +81,7 @@ class _CategoryTileState extends State<CategoryTile> {
             Get.to(() => Shop(
               id: widget.id,
               parentType: parentType,
-              displayTitle: widget.title,
+              displayTitle: _displayTitle,
             ));
           },
           child: Container(
@@ -81,7 +93,7 @@ class _CategoryTileState extends State<CategoryTile> {
                 // ---------------- Text with proper overflow ----------------
                 Expanded(
                   child: Text(
-                    widget.title,
+                    _displayTitle,
                     style: TextStyle(
                         color: textColor, fontWeight: FontWeight.w600),
                     overflow: TextOverflow.ellipsis, // prevents overflow
@@ -118,6 +130,7 @@ class _CategoryTileState extends State<CategoryTile> {
             children: widget.children.map((child) {
               return CategoryTile(
                 title: child.name,
+                titleAr: child.nameAr,
                 slug: child.slug,
                 id: child.id,
                 children: child.children,

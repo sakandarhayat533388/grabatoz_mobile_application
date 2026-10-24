@@ -111,6 +111,7 @@ Drawer buildCategoryDrawer() {
               children: controller.categories.map((category) {
                 return CategoryTile(
                   title: category.name,
+                  titleAr: category.nameAr,
                   slug: category.slug,
                   id: category.id,
                   children: category.children.where((c) => c.level == 1).toList(),
