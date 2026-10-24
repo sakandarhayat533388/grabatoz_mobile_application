@@ -6,6 +6,9 @@ import 'package:get/get_core/src/get_main.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import '../../../../Controllers/addtocart.dart';
 import '../../../../Controllers/bannerProductController.dart';
+import 'package:graba2z/Controllers/home_controller.dart';
+import 'package:graba2z/Controllers/brand_controller.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
 import '../../../../Controllers/bottomController.dart';
 import '../../../../Utils/appcolors.dart';
 import '../../../../Widgets/customappbar.dart';
@@ -430,7 +433,9 @@ class _bannerProductState extends State<bannerProduct> {
     }
 
     final Map<String, String> brandNameMap = {};
+    final Map<String, String> brandNameArMap = {};
     final Map<String, String> categoryNameMap = {};
+    final Map<String, String> categoryNameArMap = {};
 
     for (final product in controller.bannerProductList) {
       if (product is! Map<String, dynamic>) {
@@ -444,6 +449,8 @@ class _bannerProductState extends State<bannerProduct> {
         final brandName = brand['name']?.toString();
         if (brandId != null && brandId.isNotEmpty && brandName != null && brandName.isNotEmpty) {
           brandNameMap[brandId] = brandName;
+          final bAr = brand['nameAr']?.toString() ?? '';
+          if (bAr.trim().isNotEmpty) brandNameArMap[brandId] = bAr;
         }
       } else if (brand is String && brand.isNotEmpty) {
         final brandName = product['brandName']?.toString() ?? 'Unknown Brand';
@@ -457,6 +464,8 @@ class _bannerProductState extends State<bannerProduct> {
         final categoryName = category['name']?.toString();
         if (categoryId != null && categoryId.isNotEmpty && categoryName != null && categoryName.isNotEmpty) {
           categoryNameMap[categoryId] = categoryName;
+          final cAr = category['nameAr']?.toString() ?? '';
+          if (cAr.trim().isNotEmpty) categoryNameArMap[categoryId] = cAr;
         }
       } else if (category is String && category.isNotEmpty) {
         final categoryName = product['categoryName']?.toString() ?? 'Unknown Category';
@@ -464,14 +473,64 @@ class _bannerProductState extends State<bannerProduct> {
       }
     }
 
+    // Arabic fallbacks: product embeds usually lack nameAr, resolve by ID
+    final bool isArBanner = Get.isRegistered<LanguageController>() &&
+        Get.find<LanguageController>().isArabic;
+    if (isArBanner) {
+      try {
+        final hc = Get.find<HomeController>();
+        for (final id in categoryNameMap.keys) {
+          if (categoryNameArMap.containsKey(id)) continue;
+          for (final c in hc.category) {
+            if (c.sId == id && (c.nameAr?.trim().isNotEmpty ?? false)) {
+              categoryNameArMap[id] = c.nameAr!;
+              break;
+            }
+          }
+          if (!categoryNameArMap.containsKey(id)) {
+            for (final s in hc.subcategory) {
+              if (s.sId == id && (s.nameAr?.trim().isNotEmpty ?? false)) {
+                categoryNameArMap[id] = s.nameAr!;
+                break;
+              }
+            }
+          }
+        }
+      } catch (_) {}
+      try {
+        if (Get.isRegistered<BrandController>()) {
+          final bc = Get.find<BrandController>();
+          for (final id in brandNameMap.keys) {
+            if (brandNameArMap.containsKey(id)) continue;
+            for (final b in bc.brandList) {
+              if (b is Map &&
+                  (b['_id']?.toString() ?? '') == id &&
+                  (b['nameAr']?.toString().trim().isNotEmpty ?? false)) {
+                brandNameArMap[id] = b['nameAr'].toString();
+                break;
+              }
+            }
+          }
+        }
+      } catch (_) {}
+    }
+
     // Convert to sorted lists
     final brandsList = brandNameMap.entries
-        .map((e) => {'id': e.key, 'name': e.value})
+        .map((e) => {
+              'id': e.key,
+              'name': e.value,
+              'nameAr': brandNameArMap[e.key] ?? '',
+            })
         .toList();
     brandsList.sort((a, b) => (a['name'] ?? '').compareTo(b['name'] ?? ''));
 
     final categoriesList = categoryNameMap.entries
-        .map((e) => {'id': e.key, 'name': e.value})
+        .map((e) => {
+              'id': e.key,
+              'name': e.value,
+              'nameAr': categoryNameArMap[e.key] ?? '',
+            })
         .toList();
     categoriesList.sort((a, b) => (a['name'] ?? '').compareTo(b['name'] ?? ''));
 
