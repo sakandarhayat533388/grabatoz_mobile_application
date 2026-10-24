@@ -14,6 +14,9 @@ import 'package:http/http.dart' as http;
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'package:graba2z/Controllers/review_update_bus.dart';
+import 'package:graba2z/Controllers/language_controller.dart';
+import 'package:graba2z/Controllers/home_controller.dart';
+import 'package:graba2z/Controllers/brand_controller.dart';
 import '../../../../../../Utils/packages.dart';
 
 // Add: small white shopping bag SVG for the button
@@ -446,7 +449,11 @@ class _DealsProductCardState extends State<DealsProductCard> {
 
     // Extract subcategory and brand names for display
     String subcategoryNameForCard = '';
+    String subcategoryNameArForCard = '';
     String brandNameForCard = '';
+    String brandNameArForCard = '';
+    String _catLookupId = '';
+    String _brandLookupId = '';
 
     if (widget.productList is Map) {
       final map = widget.productList as Map;
@@ -456,6 +463,9 @@ class _DealsProductCardState extends State<DealsProductCard> {
       if (brand is Map) {
         brandNameForCard =
             (brand['name'] ?? brand['_name'] ?? '').toString().trim();
+        brandNameArForCard = (brand['nameAr'] ?? '').toString().trim();
+        _brandLookupId =
+            (brand['_id'] ?? brand['id'] ?? '').toString().trim();
       }
 
       // Common API keys variations for subcategory
@@ -471,15 +481,64 @@ class _DealsProductCardState extends State<DealsProductCard> {
 
       if (sc != null && (sc['name']?.toString().isNotEmpty ?? false)) {
         subcategoryNameForCard = sc['name'].toString();
+        subcategoryNameArForCard = sc['nameAr']?.toString() ?? '';
+        _catLookupId = sc['_id']?.toString() ?? sc['id']?.toString() ?? '';
       } else {
         final cat = map['category'];
         if (cat is Map && (cat['name']?.toString().isNotEmpty ?? false)) {
           subcategoryNameForCard = cat['name'].toString();
+          subcategoryNameArForCard = cat['nameAr']?.toString() ?? '';
+          _catLookupId = cat['_id']?.toString() ?? cat['id']?.toString() ?? '';
         } else {
           final pc = map['parentCategory'];
           if (pc is Map && (pc['name']?.toString().isNotEmpty ?? false)) {
             subcategoryNameForCard = pc['name'].toString();
+            subcategoryNameArForCard = pc['nameAr']?.toString() ?? '';
+            _catLookupId = pc['_id']?.toString() ?? pc['id']?.toString() ?? '';
           }
+        }
+      }
+
+      // Arabic lookups: embedded objects often lack nameAr, so resolve by ID
+      final bool _isArExtract = Get.isRegistered<LanguageController>() &&
+          Get.find<LanguageController>().isArabic;
+      if (_isArExtract) {
+        if (subcategoryNameArForCard.trim().isEmpty &&
+            _catLookupId.isNotEmpty) {
+          try {
+            final hc = Get.find<HomeController>();
+            for (final c in hc.category) {
+              if (c.sId == _catLookupId &&
+                  (c.nameAr?.trim().isNotEmpty ?? false)) {
+                subcategoryNameArForCard = c.nameAr!;
+                break;
+              }
+            }
+            if (subcategoryNameArForCard.trim().isEmpty) {
+              for (final s in hc.subcategory) {
+                if (s.sId == _catLookupId &&
+                    (s.nameAr?.trim().isNotEmpty ?? false)) {
+                  subcategoryNameArForCard = s.nameAr!;
+                  break;
+                }
+              }
+            }
+          } catch (_) {}
+        }
+        if (brandNameArForCard.trim().isEmpty && _brandLookupId.isNotEmpty) {
+          try {
+            if (Get.isRegistered<BrandController>()) {
+              final bc = Get.find<BrandController>();
+              for (final b in bc.brandList) {
+                if (b is Map &&
+                    (b['_id']?.toString() ?? '') == _brandLookupId &&
+                    (b['nameAr']?.toString().trim().isNotEmpty ?? false)) {
+                  brandNameArForCard = b['nameAr'].toString();
+                  break;
+                }
+              }
+            }
+          } catch (_) {}
         }
       }
     }
@@ -499,15 +558,20 @@ class _DealsProductCardState extends State<DealsProductCard> {
                     final maxH = constraints.maxHeight.isFinite
                         ? constraints.maxHeight
                         : 220.0;
-                    final double _imgScale =
+                    final bool _isAr = Get.isRegistered<LanguageController>() &&
+                        Get.find<LanguageController>().isArabic;
+                    // Arabic text is taller: shrink image + spacing in Arabic
+                    final double _imgScaleBase =
                         maxH < 190 ? 0.38 : (maxH < 210 ? 0.40 : 0.42);
-                    final imgSize = (maxH * _imgScale).clamp(90.0, 120.0);
-                    final gapBelowImage = 6.0;
-                    final gapBelowChip = 4.0;
-                    final gapTiny = 2.0;
+                    final double _imgScale =
+                        _isAr ? _imgScaleBase - 0.05 : _imgScaleBase;
+                    final imgSize = (maxH * _imgScale).clamp(80.0, 120.0);
+                    final gapBelowImage = _isAr ? 4.0 : 6.0;
+                    final gapBelowChip = _isAr ? 3.0 : 4.0;
+                    final gapTiny = _isAr ? 1.5 : 2.0;
                     final urlForImage = ImageHelper.getUrl(
                         imageUrlToDisplay ?? placeholderImage);
-                    final addToCartH = 26.0;
+                    final addToCartH = _isAr ? 23.0 : 26.0;
                     return Column(
                       children: [
                         CachedNetworkImage(
@@ -647,8 +711,16 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                   children: [
                                     Text(
                                       (widget.productList is Map
-                                              ? widget.productList['name']
-                                                  ?.toString()
+                                              ? (_isAr &&
+                                                      (widget.productList['nameAr']
+                                                              ?.toString()
+                                                              .trim()
+                                                              .isNotEmpty ==
+                                                          true)
+                                                  ? widget.productList['nameAr']
+                                                      ?.toString()
+                                                  : widget.productList['name']
+                                                      ?.toString())
                                               : null) ??
                                           'deals_product_name'.tr,
                                       maxLines: widget.maxLines,
@@ -662,7 +734,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                     if (brandNameForCard.isNotEmpty) ...[
                                       gapTiny.heightbox,
                                       Text(
-                                        'Brand: $brandNameForCard',
+                                        '${'product_detail_brand_label'.tr} ${(_isAr && brandNameArForCard.trim().isNotEmpty) ? brandNameArForCard : brandNameForCard}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
@@ -676,7 +748,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                     if (subcategoryNameForCard.isNotEmpty) ...[
                                       gapTiny.heightbox,
                                       Text(
-                                        'Category: $subcategoryNameForCard',
+                                        '${'product_detail_category_label'.tr} ${(_isAr && subcategoryNameArForCard.trim().isNotEmpty) ? subcategoryNameArForCard : subcategoryNameForCard}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
@@ -834,6 +906,8 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                             (map['name'] ??
                                                     'deals_unknown_product'.tr)
                                                 .toString();
+                                        final String productNameAr =
+                                            (map['nameAr'] ?? '').toString();
 
                                         final double offerP =
                                             _toDouble(map['offerPrice']);
@@ -881,6 +955,7 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                           CartOtherInfo(
                                             productId: productId,
                                             productName: productName,
+                                            productNameAr: productNameAr,
                                             productImage: productImageForCart,
                                             productPrice: finalPrice,
                                             originalPrice: regularP > finalPrice

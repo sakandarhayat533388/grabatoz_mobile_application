@@ -767,7 +767,8 @@ class _offerDealsState extends State<offerDeals> {
                                 size: 18, color: kPrimaryColor),
                             SizedBox(width: 10,),
                             Text(
-                              '${filtered.length} products found',
+                              'shop_products_found'.trParams(
+                                  {'count': '${filtered.length}'}),
                               style: const TextStyle(
                                   fontSize: 14, fontWeight: FontWeight.w700),
                               overflow: TextOverflow.ellipsis,
