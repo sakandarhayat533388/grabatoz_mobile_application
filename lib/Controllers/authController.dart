@@ -530,8 +530,9 @@ class AuthController extends GetxController {
   signUp(
     String userName,
     String email,
-    String password,
-  ) async {
+    String password, {
+    String? referralCode,
+  }) async {
     String url = Configss.signup;
 
     setLoading(true);
@@ -544,6 +545,10 @@ class AuthController extends GetxController {
       "password": password,
       "registrationSource": "app",
       "registrationPlatform": _registrationPlatform,
+      // TODO(backend): 'referralCode' field name assumed — confirm with
+      // backend (plan open question 2).
+      if (referralCode != null && referralCode.trim().isNotEmpty)
+        "referralCode": referralCode.trim(),
     };
 
     final response = await http.post(

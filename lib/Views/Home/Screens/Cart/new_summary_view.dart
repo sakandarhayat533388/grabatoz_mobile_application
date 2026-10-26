@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'dart:convert';
+import 'dart:math';
 import 'package:get/get.dart';
 import 'package:graba2z/Api/Services/apiservices.dart';
 import 'package:graba2z/Configs/config.dart';
@@ -8,6 +9,8 @@ import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/checkout_controller.dart';
 import 'package:graba2z/Controllers/deliveryController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
+import 'package:graba2z/Controllers/loyalty_controller.dart';
+import 'package:graba2z/Controllers/referral_controller.dart';
 import 'package:graba2z/Utils/appcolors.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/price_formatter.dart';
@@ -50,6 +53,10 @@ class _NewSummaryViewState extends State<NewSummaryView> {
   late DeliveryController _deliveryCtrl;
   final TextEditingController couponController = TextEditingController();
   bool _cartPricesHydrated = false;
+  Worker? _loyaltyQuoteWorker;
+  Worker? _referralQuoteWorker;
+  Worker? _referralSelectionWorker;
+  double? _lastQuotedSubtotal;
 
   double get _cartSubtotal => _cartNotifier.cartOtherInfoList.fold(
         0.0,
@@ -83,6 +90,37 @@ class _NewSummaryViewState extends State<NewSummaryView> {
     if (!discountController.previewApplied.value) return 0.0;
 
     return discountController.previewDiscountAmount.value;
+  }
+
+  double get _loyaltyDiscountAed {
+    if (!Get.isRegistered<LoyaltyController>()) return 0.0;
+    return Get.find<LoyaltyController>().checkoutDiscountAed;
+  }
+
+  double get _referralDiscountAed {
+    if (!Get.isRegistered<ReferralController>()) return 0.0;
+    return Get.find<ReferralController>().checkoutDiscountAed;
+  }
+
+  int _snapPoints(double value, int step, int balance) {
+    final effectiveStep = step <= 0 ? 1 : step;
+    final snapped = (value / effectiveStep).round() * effectiveStep;
+    if (snapped < 0) return 0;
+    if (snapped > balance) return balance;
+    return snapped;
+  }
+
+  void _maybeQuoteReferral(double subtotal) {
+    if (!Get.isRegistered<ReferralController>()) return;
+    final last = _lastQuotedSubtotal;
+    if (last != null && (subtotal - last).abs() <= 0.01) return;
+    // Set BEFORE calling so a build/quote feedback loop cannot form.
+    _lastQuotedSubtotal = subtotal;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!Get.isRegistered<ReferralController>()) return;
+      Get.find<ReferralController>().quoteCheckout(subtotal);
+    });
   }
 
   double _toDouble(dynamic value) {
@@ -309,8 +347,29 @@ class _NewSummaryViewState extends State<NewSummaryView> {
   void initState() {
     super.initState();
     _deliveryCtrl = Get.find<DeliveryController>();
+    if (Get.isRegistered<LoyaltyController>()) {
+      _loyaltyQuoteWorker =
+          ever(Get.find<LoyaltyController>().checkoutQuote, (_) {
+        _syncSummaryTotals();
+      });
+    }
+    if (Get.isRegistered<ReferralController>()) {
+      final referralCtrl = Get.find<ReferralController>();
+      _referralQuoteWorker = ever(referralCtrl.checkoutQuote, (_) {
+        _syncSummaryTotals();
+      });
+      _referralSelectionWorker = ever(referralCtrl.checkoutRewardId, (_) {
+        _syncSummaryTotals();
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncSummaryTotals();
+      if (Get.isRegistered<ReferralController>()) {
+        // Set BEFORE calling (see _maybeQuoteReferral) so build() does
+        // not immediately fire a duplicate quote for the same subtotal.
+        _lastQuotedSubtotal = _cartSubtotal;
+        Get.find<ReferralController>().quoteCheckout(_cartSubtotal);
+      }
       _hydrateCartPricesFromProducts();
       if (!mounted || !Get.isRegistered<FirstUserDiscountController>()) return;
       final discountController = Get.find<FirstUserDiscountController>();
@@ -330,16 +389,30 @@ class _NewSummaryViewState extends State<NewSummaryView> {
     });
   }
 
+  @override
+  void dispose() {
+    _loyaltyQuoteWorker?.dispose();
+    _referralQuoteWorker?.dispose();
+    _referralSelectionWorker?.dispose();
+    super.dispose();
+  }
+
   void _syncSummaryTotals() {
     final subtotal = _cartSubtotal;
     _userController.subtotalAmount.value = subtotal;
     _cartNotifier.deliveryFeeCharge.value = _shippingChargeFor(subtotal);
-    _cartNotifier.totalAmount.value = _totalBeforeFirstOrderDiscount(subtotal);
+    final total = (_totalBeforeFirstOrderDiscount(subtotal) -
+            _loyaltyDiscountAed -
+            _referralDiscountAed)
+        .clamp(0.0, double.infinity)
+        .toDouble();
+    _cartNotifier.totalAmount.value = total;
   }
 
   @override
   Widget build(BuildContext context) {
     final subtotal = _cartSubtotal;
+    _maybeQuoteReferral(subtotal);
 
     return Column(
       children: [
@@ -595,6 +668,187 @@ class _NewSummaryViewState extends State<NewSummaryView> {
         Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Loyalty points redemption (checkout)
+            Obx(() {
+              if (!Get.isRegistered<LoyaltyController>()) {
+                return const SizedBox.shrink();
+              }
+              final loyaltyCtrl = Get.find<LoyaltyController>();
+              final loyaltyAccount = loyaltyCtrl.account.value;
+              if (!loyaltyCtrl.isEnabled || loyaltyAccount == null) {
+                return const SizedBox.shrink();
+              }
+              final loyaltySettings = loyaltyCtrl.settings.value;
+              if (!loyaltyAccount.canRedeem) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: defaultStyledContainer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.stars,
+                                size: 20, color: kPrimaryColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '${loyaltyCtrl.pointsName}: ${loyaltyAccount.balance}',
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'loyalty_below_min'.trParams({
+                            'points':
+                                '${loyaltySettings?.minPointsToRedeem ?? 0}'
+                          }),
+                          style: const TextStyle(
+                              fontSize: 12, color: kmediumblackColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              final redeemStep = loyaltySettings?.redeemStep ?? 1;
+              final quote = loyaltyCtrl.checkoutQuote.value;
+              final sliderMax = max(1, loyaltyAccount.balance).toDouble();
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: defaultStyledContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.stars,
+                              size: 20, color: kPrimaryColor),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${'loyalty_use_points'.tr} (${loyaltyCtrl.pointsName})',
+                              style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Slider(
+                        value: min(
+                            loyaltyCtrl.checkoutPoints.value.toDouble(),
+                            sliderMax),
+                        min: 0,
+                        max: sliderMax,
+                        onChanged: (value) {
+                          loyaltyCtrl.checkoutPoints.value = _snapPoints(
+                              value, redeemStep, loyaltyAccount.balance);
+                        },
+                        onChangeEnd: (value) {
+                          final snapped = _snapPoints(
+                              value, redeemStep, loyaltyAccount.balance);
+                          loyaltyCtrl.checkoutPoints.value = snapped;
+                          loyaltyCtrl.quoteCheckout(_cartSubtotal, snapped);
+                        },
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${loyaltyCtrl.checkoutPoints.value} ${loyaltyCtrl.pointsName}',
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w500),
+                          ),
+                          if (quote != null &&
+                              loyaltyCtrl.checkoutPoints.value > 0)
+                            Text(
+                              '= -${formatPriceForSelected(quote.discountAed)}',
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E7D32)),
+                            ),
+                        ],
+                      ),
+                      if (quote != null &&
+                          loyaltyCtrl.checkoutPoints.value > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            'max ${quote.maxPoints}',
+                            style: const TextStyle(
+                                fontSize: 11, color: kmediumblackColor),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            // Referral reward selection (checkout)
+            Obx(() {
+              if (!Get.isRegistered<ReferralController>()) {
+                return const SizedBox.shrink();
+              }
+              final referralCtrl = Get.find<ReferralController>();
+              if (!referralCtrl.isEnabled) {
+                return const SizedBox.shrink();
+              }
+              final referralQuote = referralCtrl.checkoutQuote.value;
+              if (referralQuote == null) {
+                return const SizedBox.shrink();
+              }
+              final activeRewards = referralQuote.rewards
+                  .where((reward) => reward.isActive)
+                  .toList();
+              if (activeRewards.isEmpty) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: defaultStyledContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'referral_reward_line'.tr,
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      RadioListTile<String>(
+                        value: '',
+                        groupValue: referralCtrl.checkoutRewardId.value,
+                        onChanged: (value) {
+                          referralCtrl.checkoutRewardId.value = value ?? '';
+                          _syncSummaryTotals();
+                        },
+                        title: Text('referral_none'.tr),
+                      ),
+                      for (final reward in activeRewards)
+                        RadioListTile<String>(
+                          value: reward.id,
+                          groupValue: referralCtrl.checkoutRewardId.value,
+                          onChanged: (value) {
+                            referralCtrl.checkoutRewardId.value =
+                                value ?? '';
+                            _syncSummaryTotals();
+                          },
+                          title: Text(reward.description.isNotEmpty
+                              ? reward.description
+                              : reward.referralTypeName),
+                          subtitle: Text(
+                              '-${formatPriceForSelected(reward.quoteDiscountAed)}'),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: defaultStyledContainer(
@@ -706,6 +960,65 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                         ],
                       );
                     }),
+                    Obx(() {
+                      if (!Get.isRegistered<LoyaltyController>()) {
+                        return const SizedBox.shrink();
+                      }
+                      final loyaltyCtrl = Get.find<LoyaltyController>();
+                      final loyaltyDiscount = loyaltyCtrl.checkoutDiscountAed;
+                      if (loyaltyDiscount <= 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        children: [
+                          _buildSummaryRowWithStyle(
+                            'loyalty_redeem_line'.trParams(
+                                {'name': loyaltyCtrl.pointsName}),
+                            "- ${formatPriceForSelected(loyaltyDiscount)}",
+                            titleStyle: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.bold,
+                            ),
+                            valueStyle: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    }),
+                    Obx(() {
+                      if (!Get.isRegistered<ReferralController>()) {
+                        return const SizedBox.shrink();
+                      }
+                      final referralDiscount =
+                          Get.find<ReferralController>().checkoutDiscountAed;
+                      if (referralDiscount <= 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        children: [
+                          _buildSummaryRowWithStyle(
+                            'referral_reward_line'.tr,
+                            "- ${formatPriceForSelected(referralDiscount)}",
+                            titleStyle: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.bold,
+                            ),
+                            valueStyle: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF2E7D32),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                      );
+                    }),
                     // VAT Included
                     _buildSummaryRowWithStyle(
                       'payment_vat_included'.tr,
@@ -724,9 +1037,11 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                       final currentShipping = _shippingChargeFor(subtotal);
                       final currentTotalBeforeDiscount = subtotal + currentShipping;
                       final firstUserDiscount = _firstOrderDiscountAmount();
-                      final displayTotal =
-                          (currentTotalBeforeDiscount - firstUserDiscount)
-                              .clamp(0.0, double.infinity);
+                      final displayTotal = (currentTotalBeforeDiscount -
+                              firstUserDiscount -
+                              _loyaltyDiscountAed -
+                              _referralDiscountAed)
+                          .clamp(0.0, double.infinity);
                       return _buildSummaryRowWithStyle(
                         'payment_total_amount'.tr,
                         formatPriceForSelected(displayTotal),

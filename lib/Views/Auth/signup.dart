@@ -2,6 +2,7 @@
 
 import 'package:get/get.dart';
 import 'package:graba2z/Api/Services/apiservices.dart';
+import 'package:graba2z/Services/referral_api.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Views/Auth/otp_view.dart';
 import 'package:intl_phone_field/country_picker_dialog.dart';
@@ -23,6 +24,11 @@ class _SignUpState extends State<SignUp> {
   TextEditingController passwordController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
   TextEditingController addressController = TextEditingController();
+  final TextEditingController referralCodeController =
+      TextEditingController();
+  String? _referralMessage;
+  bool _referralValid = false;
+  bool _referralChecking = false;
   final formKey = GlobalKey<FormState>();
   bool _isCurvedContainerVisible = false; // For curved container
   bool _isBodyVisible = false; // For the form and content
@@ -35,6 +41,25 @@ class _SignUpState extends State<SignUp> {
     passwordController = TextEditingController();
     phoneController = TextEditingController();
     addressController = TextEditingController();
+
+    // Referral code prefill — the screen may be opened with a code
+    // (deep link / navigation argument): a bare String, or a Map with a
+    // 'refCode' / 'referralCode' key.
+    try {
+      final args = Get.arguments;
+      String? prefilled;
+      if (args is String) {
+        prefilled = args;
+      } else if (args is Map) {
+        prefilled = (args['refCode'] ?? args['referralCode'])?.toString();
+      }
+      if (prefilled != null && prefilled.trim().isNotEmpty) {
+        referralCodeController.text = prefilled.trim();
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _validateReferralCode();
+        });
+      }
+    } catch (_) {}
 
     // Trigger animations after the screen builds
     Future.delayed(const Duration(milliseconds: 300), () {
@@ -59,8 +84,59 @@ class _SignUpState extends State<SignUp> {
     passwordController.dispose();
     phoneController.dispose();
     addressController.dispose();
+    referralCodeController.dispose();
 
     super.dispose();
+  }
+
+  /// Validates the entered referral code against
+  /// GET /api/referrals/validate/<code> (HTTP is always 200 — the
+  /// `valid` field is the truth, not the status code).
+  Future<void> _validateReferralCode() async {
+    final code = referralCodeController.text.trim();
+    if (code.isEmpty) {
+      setState(() {
+        _referralMessage = null;
+        _referralValid = false;
+      });
+      return;
+    }
+    setState(() {
+      _referralChecking = true;
+      _referralMessage = null;
+    });
+    try {
+      final v = await ReferralApi.validate(code);
+      if (!mounted) return;
+      setState(() {
+        _referralValid = v.valid;
+        if (v.valid) {
+          _referralMessage =
+              'referral_invited_by'.trParams({'name': v.firstName ?? ''});
+        } else {
+          final reason = v.reason ?? '';
+          if (reason == 'programme_disabled') {
+            _referralMessage = 'referral_invalid_programme_disabled'.tr;
+          } else if (reason == 'empty') {
+            _referralMessage = 'referral_invalid_empty'.tr;
+          } else {
+            _referralMessage = 'referral_invalid_unknown_code'.tr;
+          }
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _referralValid = false;
+        _referralMessage = 'referral_invalid_unknown_code'.tr;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _referralChecking = false;
+        });
+      }
+    }
   }
 
   @override
@@ -309,6 +385,90 @@ class _SignUpState extends State<SignUp> {
                           }),
                           25.0.heightbox,
 
+                          // Referral code (optional) — PrimaryTextField has
+                          // no label/title and no onFieldSubmitted param, so
+                          // the label is a Text above the field and
+                          // validation runs from the Verify button below it.
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(left: 5, bottom: 8),
+                                child: Text(
+                                  'referral_code_field'.tr,
+                                  style: const TextStyle(
+                                      color: kdefwhiteColor,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              PrimaryTextField(
+                                controller: referralCodeController,
+                                hintText: 'referral_code_hint'.tr,
+                                onChanged: (_) {
+                                  // Editing the code invalidates any
+                                  // previous validation result.
+                                  if (_referralMessage != null ||
+                                      _referralValid) {
+                                    setState(() {
+                                      _referralMessage = null;
+                                      _referralValid = false;
+                                    });
+                                  }
+                                },
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(top: 8.0, left: 5),
+                                child: Row(
+                                  children: [
+                                    TextButton(
+                                      onPressed: _referralChecking
+                                          ? null
+                                          : _validateReferralCode,
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: kSecondaryColor,
+                                        padding: EdgeInsets.zero,
+                                        minimumSize: Size.zero,
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                      ),
+                                      child: Text('referral_verify'.tr,
+                                          style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600)),
+                                    ),
+                                    if (_referralChecking) ...[
+                                      const SizedBox(width: 10),
+                                      const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: kdefwhiteColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              if (_referralMessage != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                      top: 8.0, left: 5),
+                                  child: Text(
+                                    _referralMessage!,
+                                    style: TextStyle(
+                                        color: _referralValid
+                                            ? Colors.green
+                                            : Colors.red),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          25.0.heightbox,
+
                           // GetBuilder<AuthController>(
                           //   builder: (
                           //     authProvider,
@@ -467,10 +627,20 @@ class _SignUpState extends State<SignUp> {
                                 try {
                                   EasyLoading.show(status: 'auth_signing_up'.tr);
 
+                                  // TODO(backend): 'referralCode' field name
+                                  // assumed — confirm with backend (plan
+                                  // open question 2). Passed through to
+                                  // AuthController.signUp, which includes it
+                                  // in the register payload when non-empty.
+                                  final referralCode =
+                                      referralCodeController.text.trim();
+
                                   await authProvider.signUp(
                                     firstname,
                                     email,
                                     password,
+                                    referralCode:
+                                        referralCode.isEmpty ? null : referralCode,
                                   );
 
                                   await Future.delayed(
