@@ -26,6 +26,8 @@ import 'package:graba2z/Api/Models/category_slider_item.dart';
 import 'package:graba2z/Controllers/dynamic_section_controller.dart';
 import 'package:graba2z/Widgets/HomeSections/home_section_builder.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:graba2z/Controllers/loyalty_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreenView extends StatefulWidget {
   const HomeScreenView({super.key});
@@ -94,6 +96,31 @@ class _HomeScreenViewState extends State<HomeScreenView> {
 
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _startBrandsAutoScroll());
+
+    // Loyalty: show any pending points announcement once per session.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        if (!Get.isRegistered<LoyaltyController>()) return;
+        final controller = Get.find<LoyaltyController>();
+        if (controller.announcementsShownThisSession) return;
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token') ?? '';
+        if (token.isEmpty) return;
+        final ann = await controller.checkAnnouncements();
+        if (!ann.hasAny) return;
+        controller.announcementsShownThisSession = true;
+        Get.snackbar(
+          'loyalty_earned_title'.tr,
+          'loyalty_earned_body'.trParams(
+              {'points': '${ann.totalPoints}', 'name': controller.pointsName}),
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: kPrimaryColor,
+        );
+        await controller.ackAnnouncements();
+      } catch (_) {
+        // Announcements are best-effort; never block the home screen.
+      }
+    });
   }
 
   @override

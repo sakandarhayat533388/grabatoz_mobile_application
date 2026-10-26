@@ -21,6 +21,10 @@ import '../../../Auth/signup.dart';
 import 'Modules/profile_menu_screen.dart';
 import 'package:graba2z/Controllers/country_controller.dart';
 import 'package:graba2z/Controllers/language_controller.dart';
+import 'package:graba2z/Controllers/loyalty_controller.dart';
+import 'package:graba2z/Controllers/referral_controller.dart';
+import 'package:graba2z/Views/Loyalty/loyalty_screen.dart';
+import 'package:graba2z/Views/Referrals/referral_screen.dart';
 import 'package:graba2z/Widgets/country_selector.dart';
 
 class Settings extends StatefulWidget {
@@ -385,6 +389,93 @@ class _SettingsState extends State<Settings> {
                           return Container();
                         }
                       }),
+                      // Grabian Points — visible to guests too (screen prompts login)
+                      Obx(() {
+                        final lc = Get.isRegistered<LoyaltyController>()
+                            ? Get.find<LoyaltyController>()
+                            : null;
+                        final settings = lc?.settings.value;
+                        final lang = Get.isRegistered<LanguageController>()
+                            ? Get.find<LanguageController>()
+                            : null;
+                        String name = 'loyalty_title'.tr;
+                        if (lc != null &&
+                            settings != null &&
+                            settings.pointsName.isNotEmpty) {
+                          name = (lang != null &&
+                                  lang.isArabic &&
+                                  settings.pointsNameAr.isNotEmpty)
+                              ? settings.pointsNameAr
+                              : settings.pointsName;
+                        }
+                        final bal = lc?.account.value;
+                        return ListTile(
+                          minLeadingWidth: 0,
+                          onTap: () => Get.to(() => const LoyaltyScreen()),
+                          leading: const Icon(Icons.stars,
+                              color: kSecondaryColor, size: 20),
+                          title: Text(name,
+                              style: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w600)),
+                          subtitle: bal != null
+                              ? Text(
+                                  'loyalty_balance_subtitle'.trParams({
+                                    'points': '${bal.balance}',
+                                    'name': name,
+                                  }),
+                                  style: const TextStyle(fontSize: 11),
+                                )
+                              : null,
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: kSecondaryColor,
+                          ),
+                        );
+                      }),
+                      Divider(
+                        height: 0,
+                        color: Colors.grey.withValues(alpha: .2),
+                      ),
+
+                      // Refer a Friend — only when the programme is enabled
+                      // and the backend says to show it in the profile.
+                      Obx(() {
+                        if (!Get.isRegistered<ReferralController>()) {
+                          return const SizedBox.shrink();
+                        }
+                        final rc = Get.find<ReferralController>();
+                        if (!rc.settingsLoaded.value ||
+                            !rc.isEnabled ||
+                            !(rc.settings.value?.showInProfile ?? false)) {
+                          return const SizedBox.shrink();
+                        }
+                        return Column(
+                          children: [
+                            ListTile(
+                              minLeadingWidth: 0,
+                              onTap: () =>
+                                  Get.to(() => const ReferralScreen()),
+                              leading: const Icon(Icons.card_giftcard,
+                                  color: kSecondaryColor, size: 20),
+                              title: Text(rc.programmeName,
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600)),
+                              trailing: const Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                                color: kSecondaryColor,
+                              ),
+                            ),
+                            Divider(
+                              height: 0,
+                              color: Colors.grey.withValues(alpha: .2),
+                            ),
+                          ],
+                        );
+                      }),
+
                       Divider(
                         height: 0,
                         color: Colors.grey.withValues(alpha: .2),
