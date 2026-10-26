@@ -21,6 +21,7 @@ import 'package:graba2z/Configs/config.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/favController.dart';
 import 'package:graba2z/Controllers/home_controller.dart';
+import 'package:graba2z/Controllers/loyalty_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Views/Home/Screens/Cart/cart.dart';
@@ -3755,6 +3756,15 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
                             }
                           },
                         ),
+                        Obx(() {
+                          if (!Get.isRegistered<LoyaltyController>()) return const SizedBox.shrink();
+                          final lc = Get.find<LoyaltyController>();
+                          final s = lc.settings.value;
+                          if (s == null || !s.isEnabled || !s.showOnProductPage) return const SizedBox.shrink();
+                          final est = (((double.tryParse(widget.offerPrice) ?? 0.0) > 0.001 && (double.tryParse(widget.offerPrice) ?? 0.0) < (double.tryParse(widget.price) ?? 0.0) ? (double.tryParse(widget.offerPrice) ?? 0.0) : (double.tryParse(widget.price) ?? 0.0)) * s.earnPointsPerAed).floor();
+                          if (est <= 0) return const SizedBox.shrink();
+                          return Padding(padding: const EdgeInsets.only(top: 4), child: Row(children: [const Icon(Icons.stars, size: 14, color: kPrimaryColor), const SizedBox(width: 4), Text('loyalty_earn_hint'.trParams({'points': '$est', 'name': lc.pointsName}), style: const TextStyle(fontSize: 12, color: kPrimaryColor))]));
+                        }),
                         10.0.heightbox,
                         _buildProductOptions(),
                         Text(
