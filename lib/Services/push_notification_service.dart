@@ -60,6 +60,33 @@ class PushNotificationService {
     return soundChannels[key] ?? soundChannels['default']!;
   }
 
+  /// All channel keys created in main.dart. The backend now sends
+  /// `android.notification.channel_id` in the FCM payload (and may mirror it
+  /// in the data block); when the app renders a message itself (foreground,
+  /// or data-only in background) it must honour that channel so the custom
+  /// sound matches what the OS plays for background/terminated messages.
+  static const Set<String> knownChannels = {
+    'push_default',
+    'push_chime',
+    'push_ding',
+    'push_cash',
+    'push_alert',
+    'push_silent',
+  };
+
+  /// Priority: explicit channel id from the payload (android notification
+  /// block or data), then the payload's sound id, then the default channel.
+  static String resolveChannelKey({String? channelId, String? sound}) {
+    final cid = (channelId ?? '').trim();
+    if (cid.isNotEmpty) {
+      if (knownChannels.contains(cid)) return cid;
+      // Backend might send the bare sound id (e.g. "chime") as channel id.
+      final mapped = soundChannels[cid.toLowerCase()];
+      if (mapped != null) return mapped;
+    }
+    return channelForSound(sound);
+  }
+
   /// Call once from main() after Firebase.initializeApp() succeeded.
   Future<void> init() async {
     if (!firebaseReady) return;
@@ -213,7 +240,17 @@ class PushNotificationService {
           : s(message.notification?.android?.sound ??
               message.notification?.apple?.sound ??
               'default');
-      final channelKey = channelForSound(sound);
+      // Backend sends android.notification.channel_id: prefer it so the
+      // locally rendered notification uses the same channel (and custom
+      // sound) the OS would use when the app is backgrounded/terminated.
+      final payloadChannelId = s(message.notification?.android?.channelId)
+              .isNotEmpty
+          ? s(message.notification?.android?.channelId)
+          : (s(data['channel_id']).isNotEmpty
+              ? s(data['channel_id'])
+              : s(data['channelId']));
+      final channelKey =
+          resolveChannelKey(channelId: payloadChannelId, sound: sound);
       final notificationId = s(data['notificationId']);
       final id = notificationId.isEmpty
           ? DateTime.now().millisecondsSinceEpoch.remainder(0x7fffffff)
