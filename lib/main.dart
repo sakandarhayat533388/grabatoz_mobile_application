@@ -2,6 +2,8 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:graba2z/Controllers/language_controller.dart';
+import 'package:graba2z/Controllers/loyalty_controller.dart';
+import 'package:graba2z/Controllers/referral_controller.dart';
 import 'package:graba2z/Services/push_notification_service.dart';
 import 'package:graba2z/Utils/app_translations.dart';
 import 'package:graba2z/Api/Services/apiservices.dart';
@@ -40,6 +42,19 @@ Future<void> main() async {
   Get.put(LanguageController(), permanent: true);
   Get.find<LanguageController>().currentLang.value =
       await LanguageController.loadLanguageCode();
+  // Grabian Points + Referrals — registered permanently at launch so their
+  // settings are cached before any screen reads them.
+  Get.put<LoyaltyController>(LoyaltyController(), permanent: true);
+  Get.put<ReferralController>(ReferralController(), permanent: true);
+  // Fire-and-forget settings fetch (controllers also load in onInit; these
+  // guarded calls are a belt-and-braces kick-off and must never block or
+  // crash startup).
+  try {
+    Get.find<LoyaltyController>().loadSettings();
+  } catch (_) {}
+  try {
+    Get.find<ReferralController>().loadSettings();
+  } catch (_) {}
   final prefs = await SharedPreferences.getInstance();
   String? userId = prefs.getString('userId')?.toString();
   HttpOverrides.global = MyHttpOverrides();

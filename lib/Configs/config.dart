@@ -92,4 +92,17 @@ class Configss {
   static String getActiveHomeSections = "$baseUrl/api/home-sections/active";
   static String getBannerCardsBySection(String slug) =>
       "$baseUrl/api/banner-cards/section/$slug";
+
+  // Grabian Points (loyalty) + Referrals
+  static String loyaltySettings = '$baseUrl/api/loyalty/settings';
+  static String loyaltyMe = '$baseUrl/api/loyalty/me';
+  static String loyaltyQuote = '$baseUrl/api/loyalty/quote';
+  static String loyaltyAnnouncements = '$baseUrl/api/loyalty/announcements';
+  static String loyaltyAnnouncementsAck =
+      '$baseUrl/api/loyalty/announcements/ack';
+  static String referralSettings = '$baseUrl/api/referrals/settings';
+  static String referralMe = '$baseUrl/api/referrals/me';
+  static String referralQuote = '$baseUrl/api/referrals/quote';
+  static String referralValidate(String code) =>
+      '$baseUrl/api/referrals/validate/$code';
 }
