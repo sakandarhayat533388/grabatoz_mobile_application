@@ -11,6 +11,8 @@ import 'package:get/get.dart';
 import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
+import 'package:graba2z/Controllers/loyalty_controller.dart';
+import 'package:graba2z/Views/Loyalty/loyalty_screen.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Utils/guest_checkout_storage.dart';
@@ -568,6 +570,48 @@ class _CartState extends State<Cart> {
                         ),
                       ],
                     ),
+                    // Loyalty points strip (display only; redemption happens at checkout)
+                    Obx(() {
+                      if (!Get.isRegistered<LoyaltyController>()) {
+                        return const SizedBox.shrink();
+                      }
+                      final loyaltyCtrl = Get.find<LoyaltyController>();
+                      final loyaltySettings = loyaltyCtrl.settings.value;
+                      final loyaltyAccount = loyaltyCtrl.account.value;
+                      if (!loyaltyCtrl.isEnabled ||
+                          loyaltySettings == null ||
+                          !loyaltySettings.showOnCart ||
+                          loyaltyAccount == null) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(
+                        children: [
+                          InkWell(
+                            onTap: () =>
+                                Get.to(() => const LoyaltyScreen()),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.stars,
+                                    size: 20, color: kPrimaryColor),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    '${loyaltyCtrl.pointsName}: ${loyaltyAccount.balance} (= ${formatPriceForSelected(loyaltyAccount.balanceValueAed)})',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const Icon(Icons.chevron_right,
+                                    size: 20, color: kPrimaryColor),
+                              ],
+                            ),
+                          ),
+                          10.0.heightbox,
+                        ],
+                      );
+                    }),
                     10.0.heightbox,
                     // Coupon Input Field
                     Row(

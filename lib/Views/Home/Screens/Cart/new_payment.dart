@@ -6,6 +6,8 @@ import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/checkout_controller.dart';
 import 'package:graba2z/Controllers/deliveryController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
+import 'package:graba2z/Controllers/loyalty_controller.dart';
+import 'package:graba2z/Controllers/referral_controller.dart';
 import 'package:graba2z/Controllers/payment_charges_controller.dart';
 import 'package:graba2z/Controllers/country_controller.dart';
 import 'package:graba2z/Utils/price_formatter.dart';
@@ -629,6 +631,20 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       couponCode = _cartNotifier.appliedCouponCode.value;
     }
 
+    int loyaltyPointsToRedeem = 0;
+    String referralRewardIdToApply = '';
+    if (Get.isRegistered<LoyaltyController>()) {
+      final loyaltyCtrl = Get.find<LoyaltyController>();
+      if (loyaltyCtrl.checkoutQuote.value != null &&
+          loyaltyCtrl.checkoutPoints.value > 0) {
+        loyaltyPointsToRedeem = loyaltyCtrl.checkoutPoints.value;
+      }
+    }
+    if (Get.isRegistered<ReferralController>()) {
+      referralRewardIdToApply =
+          Get.find<ReferralController>().checkoutRewardId.value;
+    }
+
     final Map<String, dynamic> orderData = {
       "orderSource": "app",
       "orderItems": composedOrderItems,
@@ -649,6 +665,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       "appDiscountAmount": firstOrderDiscount,
       "appDiscountPreviewApplied": firstOrderDiscount > 0,
       "couponCode": couponCode,
+      // TODO(backend): field names assumed ('loyaltyPoints', 'referralRewardId') — confirm with backend (plan open question 1).
+      if (loyaltyPointsToRedeem > 0)
+        'loyaltyPoints': loyaltyPointsToRedeem,
+      if (referralRewardIdToApply.isNotEmpty)
+        'referralRewardId': referralRewardIdToApply,
       "paymentMethod": paymentMethod,
       "actualPaymentMethod": paymentMethod,
       "customerNotes": customerNotes
@@ -675,6 +696,16 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       _usercontroller.iscardLoading.value = false;
 
       if (response.statusCode == 201 || response.statusCode == 200) {
+        if (Get.isRegistered<LoyaltyController>()) {
+          final loyaltyCtrl = Get.find<LoyaltyController>();
+          loyaltyCtrl.clearCheckout();
+          loyaltyCtrl.refreshAccount();
+        }
+        if (Get.isRegistered<ReferralController>()) {
+          final referralCtrl = Get.find<ReferralController>();
+          referralCtrl.clearCheckout();
+          referralCtrl.refreshPanel();
+        }
         final data = jsonDecode(response.body);
         final serverTotalPrice = _toDouble(
           data['totalPrice'],
