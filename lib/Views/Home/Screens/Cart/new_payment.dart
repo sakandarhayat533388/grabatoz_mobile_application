@@ -506,6 +506,12 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     return double.tryParse(value.toString()) ?? fallback;
   }
 
+  int _toInt(dynamic value, {int fallback = 0}) {
+    if (value == null) return fallback;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString()) ?? fallback;
+  }
+
   double _codHandlingCharge(String paymentMethod) {
     final handling =
         _paymentChargesCtrl.amountMatching(paymentMethod, ['handling']);
@@ -707,6 +713,27 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           referralCtrl.refreshPanel();
         }
         final data = jsonDecode(response.body);
+        // Grabian Points + Referrals outcome from the order response (the
+        // authority, not the quote). Fields may sit at the top level or
+        // nested under 'order' — check both.
+        final orderNode = data['order'] is Map
+            ? Map<String, dynamic>.from(data['order'] as Map)
+            : data;
+        final int loyaltyPointsEarned = _toInt(
+            orderNode['loyaltyPointsEarned'] ?? data['loyaltyPointsEarned']);
+        final int loyaltyPointsRedeemed = _toInt(
+            orderNode['loyaltyPointsRedeemed'] ??
+                data['loyaltyPointsRedeemed']);
+        final double loyaltyDiscountAmount = _toDouble(
+            orderNode['loyaltyDiscountAmount'] ??
+                data['loyaltyDiscountAmount']);
+        final double referralDiscountAmount = _toDouble(
+            orderNode['referralDiscountAmount'] ??
+                data['referralDiscountAmount']);
+        final String loyaltyPointsName =
+            Get.isRegistered<LoyaltyController>()
+                ? Get.find<LoyaltyController>().pointsName
+                : '';
         final serverTotalPrice = _toDouble(
           data['totalPrice'],
           fallback:
@@ -740,6 +767,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             appDiscountApplied: appDiscountApplied,
             appDiscountAmount: appDiscountAmount,
             appDiscountName: appDiscountName,
+            loyaltyPointsEarned: loyaltyPointsEarned,
+            loyaltyPointsRedeemed: loyaltyPointsRedeemed,
+            loyaltyDiscountAmount: loyaltyDiscountAmount,
+            referralDiscountAmount: referralDiscountAmount,
+            loyaltyPointsName: loyaltyPointsName,
           );
         } else if (selectedMethod == 'Tabby') {
           await tabbyPaymentRequest(
@@ -754,6 +786,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             appDiscountApplied: appDiscountApplied,
             appDiscountAmount: appDiscountAmount,
             appDiscountName: appDiscountName,
+            loyaltyPointsEarned: loyaltyPointsEarned,
+            loyaltyPointsRedeemed: loyaltyPointsRedeemed,
+            loyaltyDiscountAmount: loyaltyDiscountAmount,
+            referralDiscountAmount: referralDiscountAmount,
+            loyaltyPointsName: loyaltyPointsName,
           );
         } else if (selectedMethod == 'Tamara') {
           await tamaraPaymentRequest(
@@ -768,6 +805,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             appDiscountApplied: appDiscountApplied,
             appDiscountAmount: appDiscountAmount,
             appDiscountName: appDiscountName,
+            loyaltyPointsEarned: loyaltyPointsEarned,
+            loyaltyPointsRedeemed: loyaltyPointsRedeemed,
+            loyaltyDiscountAmount: loyaltyDiscountAmount,
+            referralDiscountAmount: referralDiscountAmount,
+            loyaltyPointsName: loyaltyPointsName,
           );
         } else {
           final navigationProvider = Get.put(BottomNavigationController());
@@ -784,6 +826,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 appDiscountApplied: appDiscountApplied,
                 appDiscountAmount: appDiscountAmount,
                 appDiscountName: appDiscountName,
+                loyaltyPointsEarned: loyaltyPointsEarned,
+                loyaltyPointsRedeemed: loyaltyPointsRedeemed,
+                loyaltyDiscountAmount: loyaltyDiscountAmount,
+                referralDiscountAmount: referralDiscountAmount,
+                loyaltyPointsName: loyaltyPointsName,
               ));
         }
         print('Order Created: $data');
@@ -852,6 +899,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     bool appDiscountApplied = false,
     double appDiscountAmount = 0.0,
     String appDiscountName = '',
+    int loyaltyPointsEarned = 0,
+    int loyaltyPointsRedeemed = 0,
+    double loyaltyDiscountAmount = 0.0,
+    double referralDiscountAmount = 0.0,
+    String loyaltyPointsName = '',
   }) async {
     final url = Uri.parse("https://api.tabby.ai/api/v2/checkout");
     EasyLoading.show(status: 'payment_please_wait'.tr);
@@ -933,6 +985,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               appDiscountApplied: appDiscountApplied,
               appDiscountAmount: appDiscountAmount,
               appDiscountName: appDiscountName,
+              loyaltyPointsEarned: loyaltyPointsEarned,
+              loyaltyPointsRedeemed: loyaltyPointsRedeemed,
+              loyaltyDiscountAmount: loyaltyDiscountAmount,
+              referralDiscountAmount: referralDiscountAmount,
+              loyaltyPointsName: loyaltyPointsName,
             ));
       } else {
         final msg = _extractServerMessage(response.body);
@@ -953,6 +1010,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     bool appDiscountApplied = false,
     double appDiscountAmount = 0.0,
     String appDiscountName = '',
+    int loyaltyPointsEarned = 0,
+    int loyaltyPointsRedeemed = 0,
+    double loyaltyDiscountAmount = 0.0,
+    double referralDiscountAmount = 0.0,
+    String loyaltyPointsName = '',
   }) async {
     final url = Uri.parse(Configss.paymentTamaraRequest);
     SharedPreferences sp = await SharedPreferences.getInstance();
@@ -1034,6 +1096,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               appDiscountApplied: appDiscountApplied,
               appDiscountAmount: appDiscountAmount,
               appDiscountName: appDiscountName,
+              loyaltyPointsEarned: loyaltyPointsEarned,
+              loyaltyPointsRedeemed: loyaltyPointsRedeemed,
+              loyaltyDiscountAmount: loyaltyDiscountAmount,
+              referralDiscountAmount: referralDiscountAmount,
+              loyaltyPointsName: loyaltyPointsName,
             ));
       } else {
         final msg = _extractServerMessage(response.body);
@@ -1112,6 +1179,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     bool appDiscountApplied = false,
     double appDiscountAmount = 0.0,
     String appDiscountName = '',
+    int loyaltyPointsEarned = 0,
+    int loyaltyPointsRedeemed = 0,
+    double loyaltyDiscountAmount = 0.0,
+    double referralDiscountAmount = 0.0,
+    String loyaltyPointsName = '',
   }) async {
     final url = Uri.parse(Configss.paymentCardRequest); // <-- replace this
     SharedPreferences sp = await SharedPreferences.getInstance();
@@ -1147,6 +1219,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               appDiscountApplied: appDiscountApplied,
               appDiscountAmount: appDiscountAmount,
               appDiscountName: appDiscountName,
+              loyaltyPointsEarned: loyaltyPointsEarned,
+              loyaltyPointsRedeemed: loyaltyPointsRedeemed,
+              loyaltyDiscountAmount: loyaltyDiscountAmount,
+              referralDiscountAmount: referralDiscountAmount,
+              loyaltyPointsName: loyaltyPointsName,
             ));
         print('payment order Created: $data');
       } else {

@@ -1,6 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'package:get/get.dart';
+import 'package:graba2z/Controllers/loyalty_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Views/Home/home.dart';
 import '../../Utils/packages.dart';
@@ -9,16 +10,35 @@ class SuccessPayment extends StatelessWidget {
   final bool appDiscountApplied;
   final double appDiscountAmount;
   final String appDiscountName;
+  // Grabian Points + Referrals outcome of this order, as reported by the
+  // order endpoint (the authority — never the quote values).
+  final int loyaltyPointsEarned;
+  final int loyaltyPointsRedeemed;
+  final double loyaltyDiscountAmount;
+  final double referralDiscountAmount;
+  final String loyaltyPointsName;
 
   const SuccessPayment({
     super.key,
     this.appDiscountApplied = false,
     this.appDiscountAmount = 0.0,
     this.appDiscountName = '',
+    this.loyaltyPointsEarned = 0,
+    this.loyaltyPointsRedeemed = 0,
+    this.loyaltyDiscountAmount = 0.0,
+    this.referralDiscountAmount = 0.0,
+    this.loyaltyPointsName = '',
   });
 
   @override
   Widget build(BuildContext context) {
+    // Points programme name comes from the API (never hardcoded); the
+    // payment flow passes it in, with the controller as a fallback.
+    String pointsName = loyaltyPointsName;
+    if (pointsName.isEmpty && Get.isRegistered<LoyaltyController>()) {
+      pointsName = Get.find<LoyaltyController>().pointsName;
+    }
+
     void showBackDialog(BuildContext context) {
       showDialog(
         context: context,
@@ -168,6 +188,118 @@ class SuccessPayment extends StatelessWidget {
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    ),
+                  ],
+                  if (loyaltyPointsEarned > 0 && pointsName.isNotEmpty) ...[
+                    12.0.heightbox,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFDCFCE7),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: kPrimaryColor),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.stars,
+                              size: 16, color: Color(0xFF166534)),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              'loyalty_earned_body'.trParams({
+                                'points': '$loyaltyPointsEarned',
+                                'name': pointsName,
+                              }),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Color(0xFF166534),
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  if (loyaltyDiscountAmount > 0 ||
+                      referralDiscountAmount > 0) ...[
+                    12.0.heightbox,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: kdefwhiteColor,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: kPrimaryColor),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (loyaltyDiscountAmount > 0)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    'loyalty_redeem_line'.trParams({
+                                          'name': pointsName.isNotEmpty
+                                              ? pointsName
+                                              : 'loyalty_title'.tr,
+                                        }) +
+                                        (loyaltyPointsRedeemed > 0
+                                            ? ' ($loyaltyPointsRedeemed)'
+                                            : ''),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: kdefblackColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  '- AED ${loyaltyDiscountAmount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF166534),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          if (loyaltyDiscountAmount > 0 &&
+                              referralDiscountAmount > 0)
+                            const Divider(height: 16),
+                          if (referralDiscountAmount > 0)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    'referral_reward_line'.tr,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: kdefblackColor,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  '- AED ${referralDiscountAmount.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF166534),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
                       ),
                     ),
                   ],

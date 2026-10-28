@@ -14,6 +14,11 @@ class WebViewScreen extends StatefulWidget {
   final bool appDiscountApplied;
   final double appDiscountAmount;
   final String appDiscountName;
+  final int loyaltyPointsEarned;
+  final int loyaltyPointsRedeemed;
+  final double loyaltyDiscountAmount;
+  final double referralDiscountAmount;
+  final String loyaltyPointsName;
 
   const WebViewScreen({
     Key? key,
@@ -22,6 +27,11 @@ class WebViewScreen extends StatefulWidget {
     this.appDiscountApplied = false,
     this.appDiscountAmount = 0.0,
     this.appDiscountName = '',
+    this.loyaltyPointsEarned = 0,
+    this.loyaltyPointsRedeemed = 0,
+    this.loyaltyDiscountAmount = 0.0,
+    this.referralDiscountAmount = 0.0,
+    this.loyaltyPointsName = '',
   }) : super(key: key);
 
   @override
@@ -47,6 +57,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
           appDiscountApplied: widget.appDiscountApplied,
           appDiscountAmount: widget.appDiscountAmount,
           appDiscountName: widget.appDiscountName,
+          loyaltyPointsEarned: widget.loyaltyPointsEarned,
+          loyaltyPointsRedeemed: widget.loyaltyPointsRedeemed,
+          loyaltyDiscountAmount: widget.loyaltyDiscountAmount,
+          referralDiscountAmount: widget.referralDiscountAmount,
+          loyaltyPointsName: widget.loyaltyPointsName,
         ));
   }
 
