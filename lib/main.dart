@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:graba2z/Controllers/language_controller.dart';
 import 'package:graba2z/Controllers/loyalty_controller.dart';
 import 'package:graba2z/Controllers/referral_controller.dart';
+import 'package:graba2z/Controllers/theme_controller.dart';
 import 'package:graba2z/Services/push_notification_service.dart';
 import 'package:graba2z/Utils/app_translations.dart';
 import 'package:graba2z/Api/Services/apiservices.dart';
@@ -47,6 +48,10 @@ Future<void> main() async {
   // settings are cached before any screen reads them.
   Get.put<LoyaltyController>(LoyaltyController(), permanent: true);
   Get.put<ReferralController>(ReferralController(), permanent: true);
+  // Website Appearance theme — registered permanently; cached palette is
+  // applied before the first frame so chrome paints branded immediately.
+  Get.put<AppThemeController>(AppThemeController(), permanent: true);
+  await Get.find<AppThemeController>().loadFromCache();
   // Fire-and-forget settings fetch (controllers also load in onInit; these
   // guarded calls are a belt-and-braces kick-off and must never block or
   // crash startup).
@@ -162,6 +167,10 @@ Future<void> main() async {
   // it before runApp left the app stuck on the white launch screen
   // until it was killed and relaunched (token then served from cache).
   unawaited(_initFcmPush());
+  // Theme refresh — fire-and-forget after runApp; never blocks startup.
+  try {
+    unawaited(Get.find<AppThemeController>().refresh());
+  } catch (_) {}
 }
 
 /// FCM startup, run after the first frame (see the call site in main).
@@ -250,7 +259,7 @@ class _MyAppState extends State<MyApp> {
         Locale('ar', 'AE'),
       ],
       theme: ThemeData(
-        scaffoldBackgroundColor: kdefwhiteColor,
+        scaffoldBackgroundColor: Get.isRegistered<AppThemeController>() ? Get.find<AppThemeController>().pageBackground : kdefwhiteColor,
         fontFamily: "Montserrat",
         primaryColor: kPrimaryColor,
         colorScheme: Get.find<ThemeController>().currentColorScheme,

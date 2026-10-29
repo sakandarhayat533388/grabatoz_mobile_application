@@ -1,4 +1,6 @@
 import 'package:graba2z/Utils/appextensions.dart';
+import 'package:get/get.dart' hide ContextExtensionss;
+import 'package:graba2z/Controllers/theme_controller.dart';
 
 import '../Utils/packages.dart';
 
@@ -35,13 +37,13 @@ class PrimaryButton extends StatelessWidget {
           boxShadow: defaultBoxShadow,
           border: Border.all(color: borderColor ?? Colors.transparent),
           borderRadius: BorderRadius.circular(60),
-          color: buttonColor ?? kPrimaryColor,
+          color: buttonColor ?? (Get.isRegistered<AppThemeController>() ? Get.find<AppThemeController>().primaryButtonBg : kPrimaryColor),
         ),
         child: Center(
           child: Text(
             buttonText.toUpperCase(),
             style: TextStyle(
-                color: textColor ?? kdefwhiteColor,
+                color: textColor ?? (Get.isRegistered<AppThemeController>() ? Get.find<AppThemeController>().primaryButtonText : kdefwhiteColor),
                 fontSize: fontSize ?? 14,
                 fontWeight: FontWeight.bold),
           ),

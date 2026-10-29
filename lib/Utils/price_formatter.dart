@@ -1,7 +1,9 @@
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'package:graba2z/Controllers/country_controller.dart';
+import 'package:graba2z/Controllers/theme_controller.dart';
 import 'package:graba2z/Controllers/language_controller.dart';
 
 /// True when the app language is Arabic and [LanguageController] is ready.
@@ -57,3 +59,9 @@ String currencySymbolForSelected({bool? arabic}) {
   }
   return ar ? 'د.إ' : 'AED';
 }
+
+AppThemeController? _themeCtrl() => Get.isRegistered<AppThemeController>() ? Get.find<AppThemeController>() : null;
+Color themePriceColor() => _themeCtrl()?.priceColor ?? const Color(0xFFDC2626);
+Color themeOldPriceColor() => _themeCtrl()?.oldPriceColor ?? const Color(0xFF9CA3AF);
+TextStyle priceTextStyle({double? fontSize, FontWeight? fontWeight, Color? fallback}) => TextStyle(color: _themeCtrl()?.priceColor ?? fallback ?? const Color(0xFFDC2626), fontSize: fontSize, fontWeight: fontWeight);
+TextStyle oldPriceTextStyle({double? fontSize, FontWeight? fontWeight}) => TextStyle(color: themeOldPriceColor(), fontSize: fontSize, fontWeight: fontWeight, decoration: TextDecoration.lineThrough);

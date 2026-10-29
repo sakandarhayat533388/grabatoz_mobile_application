@@ -105,4 +105,5 @@ class Configss {
   static String referralQuote = '$baseUrl/api/referrals/quote';
   static String referralValidate(String code) =>
       '$baseUrl/api/referrals/validate/$code';
+  static String theme = '$baseUrl/api/theme';
 }
