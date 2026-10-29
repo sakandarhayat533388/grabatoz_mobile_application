@@ -23,6 +23,7 @@ import 'package:graba2z/Controllers/notification_controller.dart';
 import "package:get/get.dart";
 import 'package:graba2z/Services/notification_permission_preloader.dart';
 
+import 'dart:async';
 import 'dart:io';
 
 class MyHttpOverrides extends HttpOverrides {
@@ -151,9 +152,20 @@ Future<void> main() async {
   if (!isAllowedToSendNotifications) {
     AwesomeNotifications().requestPermissionToSendNotifications();
   }
+  runApp(MyApp(userId: userId)); // Pass userId to MyApp
+  configEasyLoading();
   // FCM push: initialize Firebase only when the platform config files
   // (google-services.json / GoogleService-Info.plist) are present.
   // The app must keep working without them.
+  // Fire-and-forget AFTER runApp: on a fresh install the FCM token is
+  // created over the network and can take seconds (or stall) — awaiting
+  // it before runApp left the app stuck on the white launch screen
+  // until it was killed and relaunched (token then served from cache).
+  unawaited(_initFcmPush());
+}
+
+/// FCM startup, run after the first frame (see the call site in main).
+Future<void> _initFcmPush() async {
   try {
     await Firebase.initializeApp();
     PushNotificationService.firebaseReady = true;
@@ -161,8 +173,6 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('FCM disabled — Firebase.initializeApp failed: $e');
   }
-  runApp(MyApp(userId: userId)); // Pass userId to MyApp
-  configEasyLoading();
 }
 
 // void main() {

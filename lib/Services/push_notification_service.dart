@@ -149,7 +149,12 @@ class PushNotificationService {
 
   Future<String?> _currentToken() async {
     try {
-      return await FirebaseMessaging.instance.getToken();
+      // Bounded wait: on a fresh install the token is created over the
+      // network and this call can stall for a long time. On timeout the
+      // token still arrives later via onTokenRefresh and registers then.
+      return await FirebaseMessaging.instance
+          .getToken()
+          .timeout(const Duration(seconds: 10));
     } catch (_) {
       return null;
     }
