@@ -6,6 +6,7 @@ import 'package:graba2z/Controllers/favController.dart';
 import 'package:graba2z/Controllers/first_user_discount_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/image_helper.dart';
+import 'package:graba2z/Utils/price_formatter.dart';
 import 'package:graba2z/Views/Product%20Folder/newProductDetails.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart' as svg;
@@ -788,11 +789,11 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                                 ),
                                                 TextSpan(
                                                   text: "$currentPrice AED",
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                       fontSize: 10,
                                                       fontWeight:
                                                           FontWeight.bold,
-                                                      color: kredColor),
+                                                      color: themePriceColor()),
                                                 ),
                                               ],
                                             ),
@@ -800,10 +801,10 @@ class _DealsProductCardState extends State<DealsProductCard> {
                                           if (hasOffer)
                                             Text(
                                               "AED ${_formatPrice(widget.productList is Map ? widget.productList['price'] : null)}",
-                                              style: const TextStyle(
+                                              style: TextStyle(
                                                 fontSize: 8,
                                                 fontWeight: FontWeight.bold,
-                                                color: kSecondaryColor,
+                                                color: themeOldPriceColor(),
                                                 decoration:
                                                     TextDecoration.lineThrough,
                                                 decorationColor: kredColor,

@@ -27,6 +27,8 @@ import 'package:graba2z/Controllers/dynamic_section_controller.dart';
 import 'package:graba2z/Widgets/HomeSections/home_section_builder.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:graba2z/Controllers/loyalty_controller.dart';
+import 'package:graba2z/Controllers/theme_controller.dart';
+import 'package:graba2z/Widgets/theme_logo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreenView extends StatefulWidget {
@@ -540,11 +542,9 @@ class _HomeScreenViewState extends State<HomeScreenView> {
           ),
 
           // Change: always show logo on Home
-          titleWidget: Image.asset(
-            AppImages.logoicon,
+          titleWidget: ThemeLogo(
+            fallbackAsset: 'assets/images/logoicon.png',
             width: 100,
-            height: 100,
-            color: kdefwhiteColor,
           ),
           actionicon: Row(
             mainAxisSize: MainAxisSize.min,
@@ -584,15 +584,19 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                           child: Container(
                             width: 18,
                             height: 18,
-                            decoration: const BoxDecoration(
-                              color: kredColor,
+                            decoration: BoxDecoration(
+                              color: Get.isRegistered<AppThemeController>()
+                                  ? Get.find<AppThemeController>().badgeBg
+                                  : kredColor,
                               shape: BoxShape.circle,
                             ),
                             alignment: Alignment.center,
                             child: Text(
                               cartNotifier.cartOtherInfoList.length.toString(),
-                              style: const TextStyle(
-                                color: kdefwhiteColor,
+                              style: TextStyle(
+                                color: Get.isRegistered<AppThemeController>()
+                                    ? Get.find<AppThemeController>().badgeText
+                                    : kdefwhiteColor,
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                               ),

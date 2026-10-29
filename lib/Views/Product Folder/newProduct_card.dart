@@ -716,10 +716,10 @@ class _NewProductCardState extends State<NewProductCard> {
                                               ),
                                               TextSpan(
                                                 text: currentPrice,
-                                                style: const TextStyle(
+                                                style: TextStyle(
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.bold,
-                                                    color: kredColor),
+                                                    color: themePriceColor()),
                                               ),
                                             ],
                                           ),
@@ -727,10 +727,10 @@ class _NewProductCardState extends State<NewProductCard> {
                                         if (hasOffer)
                                           Text(
                                             "${_formatPrice(widget.prdouctList is Map ? widget.prdouctList['price'] : null)}",
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontSize: 8,
                                               fontWeight: FontWeight.bold,
-                                              color: kSecondaryColor,
+                                              color: themeOldPriceColor(),
                                               decoration:
                                                   TextDecoration.lineThrough,
                                               decorationColor: kredColor,
