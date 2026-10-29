@@ -68,7 +68,7 @@ class ActiveOrdersTabState extends State<ActiveOrdersTab> {
                             color: kPrimaryColor.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.shopping_bag_outlined,
                             size: 80,
                             color: kPrimaryColor,

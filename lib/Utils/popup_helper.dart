@@ -71,7 +71,7 @@ class PopupHelper {
                                   ? CachedNetworkImage(
                                       imageUrl: ImageHelper.getUrl(popup.mobileImageUrl!),
                                       fit: BoxFit.fill,
-                                      placeholder: (context, url) => const Center(
+                                      placeholder: (context, url) => Center(
                                         child: CircularProgressIndicator(
                                           color: kPrimaryColor,
                                         ),

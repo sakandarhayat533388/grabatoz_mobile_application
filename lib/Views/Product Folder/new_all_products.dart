@@ -855,7 +855,7 @@ class _NewAllProductState extends State<NewAllProduct> {
                     padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
                     child: Row(
                       children: [
-                        const Icon(Icons.inventory_2, size: 18, color: kPrimaryColor),
+                        Icon(Icons.inventory_2, size: 18, color: kPrimaryColor),
                         const SizedBox(width: 10),
                         Text(
                           'product_products_found'.trParams({'count': applied.length.toString()}),
@@ -1021,7 +1021,7 @@ class _NewAllProductState extends State<NewAllProduct> {
                           SizedBox(height: 8,),
                           Row(
                             children: [
-                              const Icon(Icons.inventory_2,
+                              Icon(Icons.inventory_2,
                                   size: 18, color: kPrimaryColor),
                               SizedBox(width: 10,),
                               Text(

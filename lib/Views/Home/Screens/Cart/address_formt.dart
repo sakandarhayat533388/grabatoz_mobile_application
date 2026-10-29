@@ -266,7 +266,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                     child: Container(
                       height: 10,
                       width: 10,
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         color: kPrimaryColor,
                         shape: BoxShape.circle,
                       ),

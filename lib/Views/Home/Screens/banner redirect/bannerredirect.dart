@@ -715,7 +715,7 @@ class _bannerProductState extends State<bannerProduct> {
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            const Icon(Icons.inventory_2,
+                            Icon(Icons.inventory_2,
                                 size: 18, color: kPrimaryColor),
                             const SizedBox(width: 10),
                             Text(

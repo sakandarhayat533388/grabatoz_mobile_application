@@ -641,7 +641,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                     color: kPrimaryColor.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.person_search_rounded,
                     color: kPrimaryColor,
                     size: 34,
@@ -1647,7 +1647,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   ),
                                   if (isSelected) ...[
                                     const SizedBox(width: 4),
-                                    const Icon(
+                                    Icon(
                                       Icons.check_circle_rounded,
                                       color: kPrimaryColor,
                                       size: 20,
@@ -1842,7 +1842,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   color: Colors.grey.withValues(alpha: 0.3))),
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                   color: kPrimaryColor, width: 1.5)),
                         ),
                       ),
@@ -1886,7 +1886,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   color: Colors.grey.withValues(alpha: 0.3))),
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                   color: kPrimaryColor, width: 1.5)),
                         ),
                         onChanged: (phone) {
@@ -1955,7 +1955,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                   color: Colors.grey.withValues(alpha: 0.3))),
                           focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
+                              borderSide: BorderSide(
                                   color: kPrimaryColor, width: 1.5)),
                         ),
                       ),

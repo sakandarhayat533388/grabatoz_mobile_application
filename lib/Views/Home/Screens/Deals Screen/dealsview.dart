@@ -814,7 +814,7 @@ class _offerDealsState extends State<offerDeals> {
                         SizedBox(height: 8,),
                         Row(
                           children: [
-                            const Icon(Icons.inventory_2,
+                            Icon(Icons.inventory_2,
                                 size: 18, color: kPrimaryColor),
                             SizedBox(width: 10,),
                             Text(

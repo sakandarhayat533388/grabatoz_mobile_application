@@ -149,7 +149,7 @@ class _InboxTile extends StatelessWidget {
                           height: 10,
                           margin:
                               const EdgeInsets.only(left: 8),
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: kPrimaryColor,
                             shape: BoxShape.circle,
                           ),
@@ -198,7 +198,7 @@ class _Thumb extends StatelessWidget {
         child: imageUrl.isEmpty
             ? Container(
                 color: kdefgreyColor,
-                child: const Icon(
+                child: Icon(
                   Icons.notifications_outlined,
                   color: kPrimaryColor,
                 ),
@@ -219,7 +219,7 @@ class _Thumb extends StatelessWidget {
                 ),
                 errorWidget: (_, __, ___) => Container(
                   color: kdefgreyColor,
-                  child: const Icon(
+                  child: Icon(
                     Icons.notifications_outlined,
                     color: kPrimaryColor,
                   ),

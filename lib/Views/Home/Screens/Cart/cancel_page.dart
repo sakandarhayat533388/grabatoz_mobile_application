@@ -164,7 +164,7 @@ class CancelPagePayment extends StatelessWidget {
                     context: context,
                     barrierDismissible: false,
                     builder: (context) {
-                      return const Center(
+                      return Center(
                           child:
                               CircularProgressIndicator(color: kPrimaryColor));
                     });

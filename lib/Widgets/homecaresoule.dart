@@ -201,7 +201,7 @@ class ImageCarouselSliderState extends State<ImageCarouselSlider> {
             ? AnimatedSmoothIndicator(
                 activeIndex: _currentIndex,
                 count: bannerList.length,
-                effect: const WormEffect(
+                effect: WormEffect(
                   dotHeight: 8,
                   dotWidth: 8,
                   activeDotColor: kPrimaryColor,

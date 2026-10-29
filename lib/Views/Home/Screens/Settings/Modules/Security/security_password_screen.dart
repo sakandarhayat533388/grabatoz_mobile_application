@@ -214,7 +214,7 @@ class _SecurityPasswordScreenState extends State<SecurityPasswordScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
         ),
         suffixIcon: IconButton(
           icon: Icon(

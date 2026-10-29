@@ -658,7 +658,7 @@ class _SearchScreenSecondState extends State<SearchScreenSecond> {
 
                               children: [
 
-                                const Icon(Icons.inventory_2,
+                                Icon(Icons.inventory_2,
 
                                     size: 18, color: kPrimaryColor),
 

@@ -51,7 +51,7 @@ class ProfileMenuScreen extends StatelessWidget {
                           auth.fullName.value.isNotEmpty
                               ? auth.fullName.value[0].toUpperCase()
                               : "U",
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             color: kPrimaryColor,
