@@ -100,7 +100,12 @@ class AppThemeController extends GetxController {
     final raw = _effective.logos['headerMobile'] ?? '';
     if (raw.isEmpty) return '';
     if (raw.startsWith('http')) return raw;
-    if (raw.startsWith('/')) return 'https://api.grabatoz.ae$raw';
+    // Relative logo paths are website-root assets: they are served by the
+    // website host, NOT the API host (verified 2026-11-02:
+    // api.grabatoz.ae/admin-logo.svg returns 404 JSON, while
+    // www.grabatoz.ae/admin-logo.svg returns the real SVG). The theme
+    // guide's "prefix with api.grabatoz.ae" rule does not hold for these.
+    if (raw.startsWith('/')) return 'https://www.grabatoz.ae$raw';
     return raw;
   }
 
