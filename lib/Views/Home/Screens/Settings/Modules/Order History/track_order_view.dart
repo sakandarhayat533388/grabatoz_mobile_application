@@ -139,7 +139,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
                 decoration: InputDecoration(
                   labelText: 'profile_email'.tr,
                   border: const OutlineInputBorder(),
-                  focusedBorder: const OutlineInputBorder(
+                  focusedBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
                   ),
                   labelStyle: const TextStyle(color: kSecondaryColor),
@@ -295,7 +295,7 @@ class _TrackOrderScreenState extends State<TrackOrderScreen> {
         const SizedBox(height: 10),
         Row(
           children: [
-            const Icon(Icons.local_shipping_outlined, color: kPrimaryColor),
+            Icon(Icons.local_shipping_outlined, color: kPrimaryColor),
             const SizedBox(width: 8),
             Text(
               'orders_current_status'.trParams({'status': _localizedStep(currentStatus)}),

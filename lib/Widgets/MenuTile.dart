@@ -107,7 +107,7 @@ class _CategoryTileState extends State<CategoryTile> {
                   },
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: kPrimaryColor,
                       shape: BoxShape.circle,
                     ),

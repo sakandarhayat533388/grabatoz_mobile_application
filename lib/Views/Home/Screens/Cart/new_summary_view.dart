@@ -627,9 +627,9 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                                 const SizedBox(height: 5),
                                 Text(
                                   formatPriceForSelected(cartItem.cartBasePrice * (cartItem.quantity ?? 0)),
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: Colors.green,
+                                    color: themePriceColor(),
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -688,7 +688,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.stars,
+                            Icon(Icons.stars,
                                 size: 20, color: kPrimaryColor),
                             const SizedBox(width: 8),
                             Expanded(
@@ -726,7 +726,7 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.stars,
+                          Icon(Icons.stars,
                               size: 20, color: kPrimaryColor),
                           const SizedBox(width: 8),
                           Expanded(
@@ -868,9 +868,9 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     _buildSummaryRowWithStyle(
                       'payment_original_price'.tr,
                       formatPriceForSelected(_cartOriginalTotal),
-                      valueStyle: const TextStyle(
+                      valueStyle: TextStyle(
                         fontSize: 13,
-                        color: Colors.grey,
+                        color: themeOldPriceColor(),
                         decoration: TextDecoration.lineThrough,
                       ),
                     ),
@@ -879,9 +879,9 @@ class _NewSummaryViewState extends State<NewSummaryView> {
                     _buildSummaryRowWithStyle(
                       'payment_discounted_price'.tr,
                       formatPriceForSelected(subtotal),
-                      valueStyle: const TextStyle(
+                      valueStyle: TextStyle(
                         fontSize: 13,
-                        color: Color(0xFFD32F2F), // Red/Orange color
+                        color: themePriceColor(), // Red/Orange color
                         fontWeight: FontWeight.bold,
                       ),
                     ),

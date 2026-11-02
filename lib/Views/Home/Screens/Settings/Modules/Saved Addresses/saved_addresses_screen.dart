@@ -440,7 +440,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+        borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
       ),
     );
   }

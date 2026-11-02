@@ -487,7 +487,7 @@ class OrderCard extends StatelessWidget {
                               fit: BoxFit.cover,
                               placeholder: (context, url) => Container(
                                 color: Colors.grey.withValues(alpha: 0.05),
-                                child: const Center(
+                                child: Center(
                                   child: SizedBox(
                                     width: 16,
                                     height: 16,

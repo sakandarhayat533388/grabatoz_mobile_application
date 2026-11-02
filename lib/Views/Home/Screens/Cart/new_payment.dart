@@ -1285,9 +1285,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           _buildSummaryRowWithStyle(
             'payment_original_price'.tr,
             formatPriceForSelected(originalTotal),
-            valueStyle: const TextStyle(
+            valueStyle: TextStyle(
               fontSize: 13,
-              color: Colors.grey,
+              color: themeOldPriceColor(),
               decoration: TextDecoration.lineThrough,
             ),
           ),
@@ -1295,9 +1295,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           _buildSummaryRowWithStyle(
             'payment_discounted_price'.tr,
             formatPriceForSelected(currentSubtotal),
-            valueStyle: const TextStyle(
+            valueStyle: TextStyle(
               fontSize: 13,
-              color: Color(0xFFD32F2F),
+              color: themePriceColor(),
               fontWeight: FontWeight.bold,
             ),
           ),

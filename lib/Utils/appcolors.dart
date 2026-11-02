@@ -1,6 +1,8 @@
 import 'package:graba2z/Utils/packages.dart';
+import 'package:get/get.dart';
+import 'package:graba2z/Controllers/theme_controller.dart';
 
-const Color kPrimaryColor = Color(0xFF84cc16);
+Color get kPrimaryColor => Get.isRegistered<AppThemeController>() ? Get.find<AppThemeController>().brand : const Color(0xFF84CC16);
 const Color kSecondaryColor = Color(0xFF333333);
 
 const Color kmediumblackColor = Color(0xFF828588);
@@ -11,7 +13,7 @@ const Color kdefwhiteColor = Color(0xFFFFFFFF);
 const Color kredColor = Color(0xFFFF311C);
 const Color kdefgreenColor = Color(0xFF16A34A);
 
-const ColorScheme kColorScheme = ColorScheme(
+final ColorScheme kColorScheme = ColorScheme(
   primary: kPrimaryColor,
   secondary: kSecondaryColor,
   surface: kdefwhiteColor,
@@ -23,7 +25,7 @@ const ColorScheme kColorScheme = ColorScheme(
   brightness: Brightness.light,
 );
 
-const ColorScheme kDarkColorScheme = ColorScheme(
+final ColorScheme kDarkColorScheme = ColorScheme(
   primary: kPrimaryColor,
   secondary: kSecondaryColor,
   surface: kdefblackColor,

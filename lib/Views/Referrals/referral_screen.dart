@@ -178,7 +178,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock_outline, size: 56, color: kPrimaryColor),
+            Icon(Icons.lock_outline, size: 56, color: kPrimaryColor),
             const SizedBox(height: 16),
             Text(
               'referral_login_required'.tr,
@@ -539,7 +539,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             const SizedBox(height: 4),
             Text(
               discountText,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: kPrimaryColor,

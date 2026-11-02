@@ -178,7 +178,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock_outline, size: 56, color: kPrimaryColor),
+            Icon(Icons.lock_outline, size: 56, color: kPrimaryColor),
             const SizedBox(height: 16),
             Text(
               'loyalty_login_required'.tr,
@@ -341,7 +341,7 @@ class _LoyaltyScreenState extends State<LoyaltyScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.check_circle,
+                  Icon(Icons.check_circle,
                       size: 16, color: kPrimaryColor),
                   const SizedBox(width: 8),
                   Expanded(

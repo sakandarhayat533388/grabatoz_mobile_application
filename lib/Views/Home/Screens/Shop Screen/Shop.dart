@@ -769,7 +769,7 @@ class _ShopState extends State<Shop> {
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.inventory_2,
+                            Icon(Icons.inventory_2,
                                 size: 18, color: kPrimaryColor),
                             SizedBox(
                               width: 10,

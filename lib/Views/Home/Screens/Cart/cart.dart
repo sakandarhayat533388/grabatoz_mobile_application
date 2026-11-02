@@ -31,7 +31,7 @@ const String _homeSvg = '''
 </svg>
 ''';
 
-const Color _discountBrandColor = kPrimaryColor;
+Color _discountBrandColor = kPrimaryColor;
 const Color _discountGold = Color(0xFFF5B51B);
 const Color _discountSoftBrandColor = Color(0xFFF0FBE0);
 const Color _discountSoftGold = Color(0xFFFFF7E4);
@@ -351,7 +351,7 @@ class _CartState extends State<Cart> {
                           child: Container(
                             width: 25,
                             height: 25,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: kPrimaryColor,
                             ),
@@ -563,10 +563,10 @@ class _CartState extends State<Cart> {
                         const SizedBox(height: 4),
                         Text(
                           formatPriceForSelected(cartNotifier.cartTotalPriceF()),
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: kredColor),
+                              color: themePriceColor()),
                         ),
                       ],
                     ),
@@ -591,7 +591,7 @@ class _CartState extends State<Cart> {
                                 Get.to(() => const LoyaltyScreen()),
                             child: Row(
                               children: [
-                                const Icon(Icons.stars,
+                                Icon(Icons.stars,
                                     size: 20, color: kPrimaryColor),
                                 const SizedBox(width: 8),
                                 Expanded(
@@ -603,7 +603,7 @@ class _CartState extends State<Cart> {
                                     ),
                                   ),
                                 ),
-                                const Icon(Icons.chevron_right,
+                                Icon(Icons.chevron_right,
                                     size: 20, color: kPrimaryColor),
                               ],
                             ),
@@ -756,7 +756,7 @@ class _CartState extends State<Cart> {
                                     .clamp(0.0, double.infinity);
                             return Text(
                               formatPriceForSelected(displayTotal),
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: kPrimaryColor),
@@ -910,7 +910,7 @@ class _CartState extends State<Cart> {
                         const SizedBox(height: 6),
                         Text(
                           formatPriceForSelected(double.tryParse(price) ?? 0.0),
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: kPrimaryColor),
                         ),
@@ -934,7 +934,7 @@ class _CartState extends State<Cart> {
                 foregroundColor: kPrimaryColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(60),
-                  side: const BorderSide(color: kPrimaryColor),
+                  side: BorderSide(color: kPrimaryColor),
                 ),
               ),
               child: Text('cancel'.tr,
@@ -1051,7 +1051,7 @@ Future<bool?> _confirmRemoveDialog(
                       const SizedBox(height: 6),
                       Text(
                           formatPriceForSelected(double.tryParse(price) ?? 0.0),
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: kPrimaryColor)),
                     ],
@@ -1072,7 +1072,7 @@ Future<bool?> _confirmRemoveDialog(
               foregroundColor: kPrimaryColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(60),
-                side: const BorderSide(color: kPrimaryColor),
+                side: BorderSide(color: kPrimaryColor),
               ),
             ),
             child: Text('cancel'.tr,
@@ -1138,7 +1138,7 @@ Future<bool?> showGuestDiscountWarning(BuildContext context) {
               foregroundColor: kPrimaryColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
-                side: const BorderSide(color: kPrimaryColor),
+                side: BorderSide(color: kPrimaryColor),
               ),
             ),
             child: Text(
@@ -1289,10 +1289,10 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                           Expanded(
                             child: Text(
                               formatPriceForSelected(widget.cartItem.cartBasePrice * (widget.cartItem.quantity ?? 0)),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
-                                color: kredColor,
+                                color: themePriceColor(),
                               ),
                             ),
                           ),
@@ -1303,7 +1303,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                                 child: Container(
                                   width: 20,
                                   height: 20,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: kPrimaryColor,
                                     shape: BoxShape.circle,
                                   ),
@@ -1325,7 +1325,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                                 child: Container(
                                   width: 20,
                                   height: 20,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: kPrimaryColor,
                                     shape: BoxShape.circle,
                                   ),
@@ -1702,7 +1702,7 @@ class _CheckoutBenefitItem extends StatelessWidget {
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
+          style: TextStyle(
             color: _discountBrandColor,
             fontSize: 11,
             fontWeight: FontWeight.w900,

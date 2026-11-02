@@ -349,7 +349,7 @@ class EditProfileState extends State<EditProfile> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
         ),
       ),
     );
@@ -376,7 +376,7 @@ class EditProfileState extends State<EditProfile> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
         ),
       ),
       initialCountryCode: initialCountryCode,
@@ -422,7 +422,7 @@ class EditProfileState extends State<EditProfile> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
         ),
       ),
       items: [
@@ -475,7 +475,7 @@ class EditProfileState extends State<EditProfile> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: kPrimaryColor, width: 1.5),
+          borderSide: BorderSide(color: kPrimaryColor, width: 1.5),
         ),
         suffixIcon: const Icon(Icons.calendar_today_outlined, color: Colors.grey, size: 20),
       ),
