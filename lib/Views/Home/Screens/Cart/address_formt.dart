@@ -107,6 +107,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
         _userController.city.value = cityController.text.trim();
         _userController.state.value = selectedState;
         _userController.zipcode.value = zipCodeController.text.trim();
+        _userController.country.value = countryNameForCode(selectedCountryCode);
         if (mounted) Navigator.pop(context);
       } else {
         _userController.saveAddress(

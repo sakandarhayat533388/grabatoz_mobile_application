@@ -33,6 +33,11 @@ class UserController extends GetxController {
   final activeStep = 0.obs;
   var phoneController = TextEditingController();
   var zipcode = ''.obs;
+  // The address country (name form, e.g. 'UAE', 'Saudi Arabia') carried
+  // through checkout into the profile sync and the order's shippingAddress.
+  // Before this existed the chain dropped the country and the backend
+  // stored 'UAE' (or nothing) for every non-UAE shopper.
+  var country = 'UAE'.obs;
   RxInt? selectedStoreIndex = (-1).obs; // Changed back to -1 for no selection
 
   @override
@@ -61,6 +66,7 @@ class UserController extends GetxController {
     city.value = (sp.getString('user_city') ?? '').replaceAll('"', '');
     state.value = (sp.getString('user_state') ?? '').replaceAll('"', '');
     zipcode.value = (sp.getString('user_zipCode') ?? '').replaceAll('"', '');
+    country.value = (sp.getString('user_country') ?? 'UAE').replaceAll('"', '');
   }
 
   Future<void> saveAddress({
@@ -123,6 +129,11 @@ class UserController extends GetxController {
         await prefs.setString('user_city', cityStr);
         await prefs.setString('user_zipCode', zipStr);
         await prefs.setString('user_state', stateStr);
+        final countryStr =
+            resAddr != null ? (resAddr['country'] ?? '').toString() : country;
+        await prefs.setString(
+            'user_country', countryStr.isNotEmpty ? countryStr : country);
+        this.country.value = countryStr.isNotEmpty ? countryStr : country;
         await prefs.setString('user_phone', phone);
 
         getUserInformation();
@@ -139,6 +150,8 @@ class UserController extends GetxController {
         await prefs.setString('user_city', city);
         await prefs.setString('user_zipCode', zipCode);
         await prefs.setString('user_state', state);
+        await prefs.setString('user_country', country);
+        this.country.value = country;
         await prefs.setString('user_phone', phone);
         Get.back();
         getUserInformation();

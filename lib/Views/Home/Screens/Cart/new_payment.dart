@@ -337,6 +337,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                 prefs.getString('guest_address');
                             String? guestEmail = prefs.getString('guest_email');
                             String? guestPhone = prefs.getString('guest_phone');
+                            String? guestCountry =
+                                prefs.getString('guest_country');
 
                             if (checkGuest) {
                               createOrder(
@@ -349,7 +351,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     "address": guestAddress,
                                     "city": guestCity,
                                     "state": guestState,
-                                    "zipCode": guestZipCode
+                                    "zipCode": guestZipCode,
+                                    "country": guestCountry ?? 'UAE'
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
@@ -378,7 +381,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     "state": _usercontroller.state.value
                                         .replaceAll('"', ''),
                                     "zipCode": _usercontroller.zipcode.value
-                                        .replaceAll('"', '')
+                                        .replaceAll('"', ''),
+                                    "country": _usercontroller.country.value
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
@@ -399,6 +403,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                 prefs.getString('guest_address');
                             String? guestEmail = prefs.getString('guest_email');
                             String? guestPhone = prefs.getString('guest_phone');
+                            String? guestCountry =
+                                prefs.getString('guest_country');
 
                             if (checkGuest) {
                               createOrder(
@@ -411,7 +417,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     "address": guestAddress,
                                     "city": guestCity,
                                     "state": guestState,
-                                    "zipCode": guestZipCode
+                                    "zipCode": guestZipCode,
+                                    "country": guestCountry ?? 'UAE'
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
@@ -440,7 +447,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     "state": _usercontroller.state.value
                                         .replaceAll('"', ''),
                                     "zipCode": _usercontroller.zipcode.value
-                                        .replaceAll('"', '')
+                                        .replaceAll('"', ''),
+                                    "country": _usercontroller.country.value
                                   },
                                   {
                                     "phone": _usercontroller.storePhone.value,

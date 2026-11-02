@@ -59,6 +59,10 @@ class AuthController extends GetxController {
   final token = ''.obs;
   final fullName = "--".obs;
   final address = "--".obs;
+  // The profile address's country as last read from the backend. Used as
+  // the sendUserData country whenever the caller does not pass one, so a
+  // plain profile edit no longer resets a non-UAE country back to 'UAE'.
+  final profileCountry = 'UAE'.obs;
   final phoneNumber = "--".obs;
   final email = "--".obs;
   final gender = "".obs;
@@ -147,6 +151,8 @@ class AuthController extends GetxController {
         final cityVal = addressData != null ? (addressData['city'] ?? '') : '';
         final stateVal = addressData != null ? (addressData['state'] ?? '') : '';
         final zipCodeVal = addressData != null ? (addressData['zipCode'] ?? '') : '';
+        final countryVal = addressData != null ? (addressData['country'] ?? '') : '';
+        profileCountry.value = countryVal.toString().trim().isNotEmpty ? countryVal.toString() : 'UAE';
 
         address.value = streetVal.toString().replaceAll('"', '');
 
@@ -165,6 +171,7 @@ class AuthController extends GetxController {
         await prefs.setString('user_zipCode', zipCodeVal.toString().replaceAll('"', ''));
         await prefs.setString('user_city', cityVal.toString().replaceAll('"', ''));
         await prefs.setString('user_state', stateVal.toString().replaceAll('"', ''));
+        await prefs.setString('user_country', profileCountry.value);
         await prefs.setString('user_phone', (data['phone'] ?? '').toString());
         await prefs.setString('user_name', (data['name'] ?? '').toString());
         await prefs.setString('userName', (data['name'] ?? '').toString());
@@ -228,7 +235,7 @@ class AuthController extends GetxController {
       "city": (city == null || city.isEmpty) ? null : city,
       "state": (state == null || state.isEmpty) ? null : state,
       "zipCode": (zipCode == null || zipCode.isEmpty) ? null : zipCode,
-      "country": country ?? 'UAE',
+      "country": country ?? profileCountry.value,
     };
 
     data["address"] = addressMap;
