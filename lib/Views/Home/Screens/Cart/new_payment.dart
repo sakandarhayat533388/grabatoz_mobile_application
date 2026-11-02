@@ -1065,7 +1065,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         "last_name": firstLast['last_name'],
         "phone_number": phone,
       },
-      "country_code": _selectedCountryCode,
+      // AE on purpose — NOT the shopper's selected country. Tamara
+      // validates the country/currency combination against the merchant
+      // account: the merchant is UAE and the charge is AED, so a Saudi or
+      // Kuwait country_code here is rejected as "Unsupported country
+      // currency combination". The website checkout sends "AE" as well.
+      // The shopper's country is saved on their address and order instead.
+      "country_code": "AE",
       "description": "Order for ${items.length} item(s) from Graba2z",
       "merchant_url": {
         "cancel": "${Configss.webBaseUrl}/payment/cancel",
@@ -1177,7 +1183,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final name = _splitName(fullName);
     return {
       "city": _usercontroller.city.value.replaceAll('"', ''),
-      "country_code": _selectedCountryCode,
+      // AE on purpose: must match the payload country/currency combination
+      // Tamara validates (see tamaraPaymentRequest). The real address text
+      // (city, street, region) still goes through as entered.
+      "country_code": "AE",
       "first_name": name['first_name'],
       "last_name": name['last_name'],
       "line1": _usercontroller.street.value.replaceAll('"', ''),
