@@ -4,6 +4,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:intl_phone_field/phone_number.dart';
 import '../../../../../../Controllers/address_controller.dart';
 import '../../../../../../Controllers/authController.dart';
+import '../../../../../../Utils/country_states.dart';
 import '../../../../../../Utils/appcolors.dart';
 import '../../../../../../Widgets/customappbar.dart';
 import '../../../../../../Widgets/primarybutton.dart';
@@ -92,17 +93,27 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
     String selectedState = address?.state.isNotEmpty == true ? address!.state : 'address_select_state'.tr;
     bool isDefault = address?.isDefault ?? false;
 
-    final List<String> uaeStates = [
-      'address_select_state'.tr,
-      'Abu Dhabi',
-      'Ajman',
-      'Al Ain',
-      'Dubai',
-      'Fujairah',
-      'Ras Al Khaimah',
-      'Sharjah',
-      'Umm al-Qaywain',
-    ];
+    // Address country: the saved one when editing, otherwise the country
+    // the shopper is browsing with. The state list follows the country
+    // (the same province data the website offers — country_states.dart).
+    final countryOptions = addressCountryOptions();
+    String selectedCountryCode = isEdit
+        ? countryCodeFor(address.country)
+        : defaultAddressCountryCode();
+    if (!countryOptions.any((o) => o.code == selectedCountryCode)) {
+      selectedCountryCode = countryOptions.first.code;
+    }
+
+    List<String> stateOptionsFor(String countryCode) => [
+          'address_select_state'.tr,
+          ...(provincesForCountry(countryCode) ?? const <String>[]),
+        ];
+
+    // A stored state is only kept if it belongs to the selected country.
+    if (!(provincesForCountry(selectedCountryCode)?.contains(selectedState) ??
+        false)) {
+      selectedState = 'address_select_state'.tr;
+    }
 
     showDialog(
       context: context,
@@ -191,15 +202,43 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                       ),
                       const SizedBox(height: 14),
 
+                      // COUNTRY *
+                      _buildDialogFieldGroup(
+                        label: 'address_country'.tr,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedCountryCode,
+                          decoration: _inputDecoration(hintText: 'address_country'.tr),
+                          items: countryOptions
+                              .map((o) => DropdownMenuItem(
+                                    value: o.code,
+                                    child: Text(o.displayName, style: const TextStyle(fontSize: 13)),
+                                  ))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setDialogState(() {
+                                selectedCountryCode = val;
+                                selectedState = 'address_select_state'.tr;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
                       // STATE / EMIRATE *
                       _buildDialogFieldGroup(
                         label: 'address_state'.tr,
                         child: DropdownButtonFormField<String>(
-                          initialValue: uaeStates.contains(selectedState)
+                          // Re-keyed per country so the field re-initializes
+                          // with that country's provinces on a country change.
+                          key: ValueKey('address-state-$selectedCountryCode'),
+                          initialValue: stateOptionsFor(selectedCountryCode)
+                                  .contains(selectedState)
                               ? selectedState
                               : 'address_select_state'.tr,
                           decoration: _inputDecoration(hintText: 'address_select_state'.tr),
-                          items: uaeStates
+                          items: stateOptionsFor(selectedCountryCode)
                               .map((st) => DropdownMenuItem(
                                     value: st,
                                     child: Text(st, style: const TextStyle(fontSize: 13)),
@@ -319,13 +358,26 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                                         return;
                                       }
 
+                                      // Fallback region for an empty city or
+                                      // unselected state: 'Dubai' for UAE
+                                      // (the long-standing behaviour), else
+                                      // the selected country's first province.
+                                      final fallbackRegion =
+                                          selectedCountryCode == 'AE'
+                                              ? 'Dubai'
+                                              : (provincesForCountry(
+                                                          selectedCountryCode)
+                                                      ?.first ??
+                                                  'Dubai');
+
                                       final payload = {
                                         "name": labelVal,
                                         "phone": completePhone,
                                         "email": emailController.text.trim(),
                                         "address": streetVal,
-                                        "city": cityVal.isNotEmpty ? cityVal : "Dubai",
-                                        "state": selectedState == 'address_select_state'.tr ? 'Dubai' : selectedState,
+                                        "city": cityVal.isNotEmpty ? cityVal : fallbackRegion,
+                                        "state": selectedState == 'address_select_state'.tr ? fallbackRegion : selectedState,
+                                        "country": countryNameForCode(selectedCountryCode),
                                         "zipCode": zipController.text.trim().isNotEmpty
                                             ? zipController.text.trim()
                                             : "00000",
@@ -634,7 +686,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                   if (addr.city.isNotEmpty || addr.state.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      "${addr.city}${addr.city.isNotEmpty && addr.state.isNotEmpty ? ', ' : ''}${addr.state} ${addr.zipCode}",
+                      "${addr.city}${addr.city.isNotEmpty && addr.state.isNotEmpty ? ', ' : ''}${addr.state} ${addr.zipCode}${addr.country.isNotEmpty ? ', ${addr.country}' : ''}",
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey[700],

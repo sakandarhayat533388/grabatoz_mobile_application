@@ -65,6 +65,7 @@ class AddressModel {
   final String address;
   final String city;
   final String state;
+  final String country;
   final String zipCode;
   final bool isDefault;
 
@@ -76,6 +77,7 @@ class AddressModel {
     required this.address,
     required this.city,
     required this.state,
+    this.country = 'UAE',
     required this.zipCode,
     required this.isDefault,
   });
@@ -90,6 +92,7 @@ class AddressModel {
       address: (json['address'] ?? json['street'])?.toString() ?? '',
       city: json['city']?.toString() ?? '',
       state: json['state']?.toString() ?? '',
+      country: json['country']?.toString() ?? 'UAE',
       zipCode: json['zipCode']?.toString() ?? '',
       isDefault: json['isDefault'] == true,
     );
@@ -103,6 +106,7 @@ class AddressModel {
       'address': address,
       'city': city,
       'state': state,
+      'country': country,
       'zipCode': zipCode,
       'isDefault': isDefault,
     };

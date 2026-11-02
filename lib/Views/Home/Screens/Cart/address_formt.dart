@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:graba2z/Controllers/checkout_controller.dart';
+import 'package:graba2z/Utils/country_states.dart';
 import 'package:graba2z/Utils/packages.dart'; // for AuthController
 
 class AddressDetailsBottomSheet extends StatefulWidget {
@@ -28,17 +29,18 @@ class AddressDetailsBottomSheet extends StatefulWidget {
 class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
   String addressType = 'home'.tr;
   String selectedState = 'Select State';
-  List<String> states = [
-    'Select State',
-    'Abu Dhabi',
-    'Ajman',
-    'Al Ain',
-    'Dubai',
-    'Fujairah',
-    'Ras Al Khaimah',
-    'Sharjah',
-    'Umm al-Qaywain',
-  ];
+
+  // Address country (the shopper's browsing country by default); the state
+  // list follows it — the same province data the website offers
+  // (country_states.dart). The country dropdown below used to be a disabled
+  // 'UAE'-only placeholder and the states were always UAE emirates.
+  String selectedCountryCode = defaultAddressCountryCode();
+  final List<AddressCountryOption> countryOptions = addressCountryOptions();
+
+  List<String> get states => [
+        'Select State',
+        ...(provincesForCountry(selectedCountryCode) ?? const <String>[]),
+      ];
 
   bool isDefault = false;
   final addressController = TextEditingController();
@@ -63,6 +65,17 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
     }
     if (widget.existingState != null && widget.existingState!.isNotEmpty) {
       final cleanState = widget.existingState!.replaceAll('"', '');
+      // If the stored state belongs to another country's provinces, switch
+      // the form to that country so the state stays selectable.
+      for (final entry in countryProvinces.entries) {
+        if (entry.value.contains(cleanState)) {
+          selectedCountryCode = entry.key;
+          break;
+        }
+      }
+      if (!countryOptions.any((o) => o.code == selectedCountryCode)) {
+        selectedCountryCode = countryOptions.first.code;
+      }
       if (states.contains(cleanState)) {
         selectedState = cleanState;
       }
@@ -85,6 +98,8 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
         await prefs.setString('guest_address', addressController.text.trim());
         await prefs.setString('guest_zip', zipCodeController.text.trim());
         await prefs.setString('guest_state', selectedState);
+        await prefs.setString(
+            'guest_country', countryNameForCode(selectedCountryCode));
         await prefs.setBool('Guest', true);
 
         _userController.homeNameController.text = nameController.text.trim();
@@ -100,7 +115,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
           city: cityController.text.toString(),
           state: selectedState,
           zipCode: zipCodeController.text.toString(),
-          country: 'UAE',
+          country: countryNameForCode(selectedCountryCode),
         );
 
         // Also sync to AuthController for Edit Profile
@@ -171,14 +186,20 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                   Text('checkout_country_label'.tr),
                   SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    initialValue: 'UAE',
-                    items: ['UAE']
-                        .map((country) => DropdownMenuItem<String>(
-                              value: country,
-                              child: Text(country),
+                    initialValue: selectedCountryCode,
+                    items: countryOptions
+                        .map((option) => DropdownMenuItem<String>(
+                              value: option.code,
+                              child: Text(option.displayName),
                             ))
                         .toList(),
-                    onChanged: null,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() {
+                        selectedCountryCode = value;
+                        selectedState = 'Select State';
+                      });
+                    },
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
@@ -187,6 +208,7 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                   Text('checkout_state_region'.tr),
                   SizedBox(height: 6),
                   DropdownButtonFormField<String>(
+                    key: ValueKey('sheet-state-$selectedCountryCode'),
                     initialValue: selectedState,
                     items: states
                         .map((state) => DropdownMenuItem<String>(

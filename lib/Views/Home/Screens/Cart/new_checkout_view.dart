@@ -10,6 +10,7 @@ import 'package:graba2z/Controllers/deliveryController.dart';
 import 'package:graba2z/Controllers/payment_charges_controller.dart';
 import 'package:graba2z/Utils/appextensions.dart';
 import 'package:graba2z/Utils/price_formatter.dart';
+import 'package:graba2z/Utils/country_states.dart';
 import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Utils/packages.dart'; // for AuthController
 import 'package:graba2z/Views/Home/Screens/Cart/address_formt.dart';
@@ -1761,17 +1762,28 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
         : 'Select State';
     bool isDefault = address?.isDefault ?? false;
 
-    final List<String> uaeStates = [
-      'Select State',
-      'Abu Dhabi',
-      'Ajman',
-      'Al Ain',
-      'Dubai',
-      'Fujairah',
-      'Ras Al Khaimah',
-      'Sharjah',
-      'Umm al-Qaywain',
-    ];
+    // Address country: the saved one when editing, otherwise the country
+    // the shopper is browsing with. The state list follows the country
+    // (the same province data the website offers — country_states.dart).
+    String selectedAddressCountryCode = isEdit
+        ? countryCodeFor(address.country)
+        : defaultAddressCountryCode();
+    final countryOptions = addressCountryOptions();
+    if (!countryOptions.any((o) => o.code == selectedAddressCountryCode)) {
+      selectedAddressCountryCode = countryOptions.first.code;
+    }
+
+    List<String> stateOptionsFor(String countryCode) => [
+          'Select State',
+          ...(provincesForCountry(countryCode) ?? const <String>[]),
+        ];
+
+    // A stored state is only kept if it belongs to the selected country.
+    if (!(provincesForCountry(selectedAddressCountryCode)
+            ?.contains(selectedState) ??
+        false)) {
+      selectedState = 'Select State';
+    }
 
     showDialog(
       context: context,
@@ -1961,6 +1973,50 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       ),
                       const SizedBox(height: 14),
 
+                      // COUNTRY *
+                      Text('checkout_country_label'.tr,
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: kSecondaryColor)),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedAddressCountryCode,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.3))),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(
+                                  color: kPrimaryColor, width: 1.5)),
+                        ),
+                        items: countryOptions
+                            .map((o) => DropdownMenuItem(
+                                value: o.code,
+                                child: Text(o.displayName,
+                                    style: const TextStyle(fontSize: 13))))
+                            .toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setDialogState(() {
+                              selectedAddressCountryCode = val;
+                              selectedState = 'Select State';
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 14),
+
                       // STATE / EMIRATE *
                       Text('checkout_state_emirate'.tr,
                           style: TextStyle(
@@ -1969,7 +2025,15 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                               color: kSecondaryColor)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
-                        initialValue: selectedState,
+                        // Re-keyed per country so the field re-initializes
+                        // with that country's provinces on a country change.
+                        key: ValueKey(
+                            'checkout-state-$selectedAddressCountryCode'),
+                        initialValue:
+                            stateOptionsFor(selectedAddressCountryCode)
+                                    .contains(selectedState)
+                                ? selectedState
+                                : 'Select State',
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.white,
@@ -1984,7 +2048,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                               borderSide: BorderSide(
                                   color: Colors.grey.withValues(alpha: 0.3))),
                         ),
-                        items: uaeStates
+                        items: stateOptionsFor(selectedAddressCountryCode)
                             .map((st) => DropdownMenuItem(
                                 value: st,
                                 child: Text(st,
@@ -2135,6 +2199,18 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                         return;
                                       }
 
+                                      // Fallback region for an empty city or
+                                      // unselected state: 'Dubai' for UAE
+                                      // (the long-standing behaviour), else
+                                      // the selected country's first province.
+                                      final fallbackRegion =
+                                          selectedAddressCountryCode == 'AE'
+                                              ? 'Dubai'
+                                              : (provincesForCountry(
+                                                          selectedAddressCountryCode)
+                                                      ?.first ??
+                                                  'Dubai');
+
                                       final payload = {
                                         "name": labelVal,
                                         "phone": phoneController.text
@@ -2146,10 +2222,12 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                                         "address": streetVal,
                                         "city": cityVal.isNotEmpty
                                             ? cityVal
-                                            : "Dubai",
+                                            : fallbackRegion,
                                         "state": selectedState == 'Select State'
-                                            ? 'Dubai'
+                                            ? fallbackRegion
                                             : selectedState,
+                                        "country": countryNameForCode(
+                                            selectedAddressCountryCode),
                                         "zipCode":
                                             zipController.text.trim().isNotEmpty
                                                 ? zipController.text.trim()
