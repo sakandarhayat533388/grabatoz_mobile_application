@@ -186,11 +186,13 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                   Text('checkout_country_label'.tr),
                   SizedBox(height: 6),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: selectedCountryCode,
                     items: countryOptions
                         .map((option) => DropdownMenuItem<String>(
                               value: option.code,
-                              child: Text(option.displayName),
+                              child: Text(option.displayName,
+                                  overflow: TextOverflow.ellipsis),
                             ))
                         .toList(),
                     onChanged: (value) {
@@ -208,12 +210,14 @@ class _AddressDetailsBottomSheetState extends State<AddressDetailsBottomSheet> {
                   Text('checkout_state_region'.tr),
                   SizedBox(height: 6),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     key: ValueKey('sheet-state-$selectedCountryCode'),
                     initialValue: selectedState,
                     items: states
                         .map((state) => DropdownMenuItem<String>(
                               value: state,
-                              child: Text(state),
+                              child: Text(state,
+                                  overflow: TextOverflow.ellipsis),
                             ))
                         .toList(),
                     onChanged: (value) {

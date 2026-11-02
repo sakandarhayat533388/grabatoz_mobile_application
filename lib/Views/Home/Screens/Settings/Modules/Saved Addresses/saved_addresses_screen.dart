@@ -206,12 +206,13 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                       _buildDialogFieldGroup(
                         label: 'address_country'.tr,
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           initialValue: selectedCountryCode,
                           decoration: _inputDecoration(hintText: 'address_country'.tr),
                           items: countryOptions
                               .map((o) => DropdownMenuItem(
                                     value: o.code,
-                                    child: Text(o.displayName, style: const TextStyle(fontSize: 13)),
+                                    child: Text(o.displayName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
                                   ))
                               .toList(),
                           onChanged: (val) {
@@ -230,6 +231,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                       _buildDialogFieldGroup(
                         label: 'address_state'.tr,
                         child: DropdownButtonFormField<String>(
+                          isExpanded: true,
                           // Re-keyed per country so the field re-initializes
                           // with that country's provinces on a country change.
                           key: ValueKey('address-state-$selectedCountryCode'),
@@ -241,7 +243,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                           items: stateOptionsFor(selectedCountryCode)
                               .map((st) => DropdownMenuItem(
                                     value: st,
-                                    child: Text(st, style: const TextStyle(fontSize: 13)),
+                                    child: Text(st, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)),
                                   ))
                               .toList(),
                           onChanged: (val) {

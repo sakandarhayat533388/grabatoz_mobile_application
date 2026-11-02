@@ -1981,6 +1981,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                               color: kSecondaryColor)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         initialValue: selectedAddressCountryCode,
                         decoration: InputDecoration(
                           filled: true,
@@ -2004,6 +2005,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                             .map((o) => DropdownMenuItem(
                                 value: o.code,
                                 child: Text(o.displayName,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(fontSize: 13))))
                             .toList(),
                         onChanged: (val) {
@@ -2025,6 +2027,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                               color: kSecondaryColor)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         // Re-keyed per country so the field re-initializes
                         // with that country's provinces on a country change.
                         key: ValueKey(
@@ -2052,6 +2055,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                             .map((st) => DropdownMenuItem(
                                 value: st,
                                 child: Text(st,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                         fontSize: 13))))
                             .toList(),
