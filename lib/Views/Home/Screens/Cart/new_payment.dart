@@ -43,29 +43,6 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       ? Get.find<CountryController>().countryCode
       : 'AE';
 
-  /// Currency the payment providers must charge in: the SELECTED country's
-  /// currency (SAR for Saudi Arabia, QAR for Qatar, ...), not always AED.
-  /// Tamara/Tabby merchant accounts are country-specific and reject a
-  /// currency that does not match the consumer's country. The order itself
-  /// stays AED on the backend; only the provider charge converts.
-  String get _payCurrencyCode {
-    if (Get.isRegistered<CountryController>()) {
-      final code =
-          Get.find<CountryController>().selectedCountry.value?.currencyCode ??
-              '';
-      if (code.isNotEmpty) return code.toUpperCase();
-    }
-    return 'AED';
-  }
-
-  double get _payRate => Get.isRegistered<CountryController>()
-      ? Get.find<CountryController>().effectiveRate
-      : 1.0;
-
-  /// AED amount -> selected-currency amount, at the same effective rate the
-  /// price display uses, rounded to 2 decimals.
-  double _payConvert(double amountAed) =>
-      double.parse((amountAed * _payRate).toStringAsFixed(2));
 
   double _firstOrderDiscountAmount() {
     if (!Get.isRegistered<FirstUserDiscountController>()) return 0.0;
@@ -820,6 +797,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           await tamaraPaymentRequest(
             orderId: data['_id'],
             totalAmount: payableTotalPrice,
+            shippingAmount: standardShippingPrice,
             customer: {
               "name": shippingAdress?['name'] ?? '',
               "email": shippingAdress?['email'] ?? '',
@@ -894,7 +872,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         list.add({
           "title": item.productName ?? "",
           "quantity": qty,
-          "unit_price": _payConvert(unit).toStringAsFixed(2),
+          "unit_price": unit.toStringAsFixed(2),
           "reference_id": (item.productId ?? '').toString(),
         });
       } catch (e) {
@@ -942,8 +920,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
     final Map<String, dynamic> payload = {
       "payment": {
-        "amount": _payConvert(totalAmount).toStringAsFixed(2),
-        "currency": _payCurrencyCode,
+        "amount": totalAmount.toStringAsFixed(2),
+        "currency": "AED",
         "buyer": {
           "phone": phone,
           "email": email,
@@ -1029,6 +1007,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   Future<void> tamaraPaymentRequest({
     required String orderId,
     required double totalAmount,
+    double shippingAmount = 0,
     Map<String, dynamic>? customer,
     String? userId,
     bool appDiscountApplied = false,
@@ -1059,17 +1038,25 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     final Map<String, dynamic> payload = {
       "order_reference_id": orderId,
       "order_number": "ORD_$orderId",
+      // Amounts stay AED: the backend verifies total_amount.amount against
+      // the stored AED order total and overwrites it before calling Tamara,
+      // so a converted amount fails that check and a converted currency
+      // would not match the amount. Charging SAR needs the conversion to
+      // happen on the backend, next to its amount override.
       "total_amount": {
-        "amount": _payConvert(totalAmount),
-        "currency": _payCurrencyCode,
+        "amount": totalAmount,
+        "currency": "AED",
       },
+      // The order's real shipping amount (the website checkout sends its
+      // delivery charge here as well). A hard 0 while the total includes
+      // shipping makes the payload breakdown inconsistent for Tamara.
       "shipping_amount": {
-        "amount": 0,
-        "currency": _payCurrencyCode,
+        "amount": shippingAmount,
+        "currency": "AED",
       },
       "tax_amount": {
         "amount": 0,
-        "currency": _payCurrencyCode,
+        "currency": "AED",
       },
       "items": items,
       "consumer": {
@@ -1127,8 +1114,26 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               loyaltyPointsName: loyaltyPointsName,
             ));
       } else {
-        final msg = _extractServerMessage(response.body);
-        EasyLoading.showError('payment_tamara_init_failed'.trParams({'error': msg}));
+        String msg = _extractServerMessage(response.body);
+        // The backend wraps Tamara's own response in the body's 'error'
+        // field — surface it next to the generic message: it carries
+        // Tamara's exact refusal reason (amount limits, consumer or
+        // country validation, ...), which 'message' alone hides.
+        try {
+          final bodyData = jsonDecode(response.body);
+          if (bodyData is Map && bodyData['error'] != null) {
+            final err = bodyData['error'];
+            final String detail = err is Map
+                ? (err['message'] ?? jsonEncode(err)).toString()
+                : err.toString();
+            if (detail.isNotEmpty && detail != msg) {
+              msg = '$msg - $detail';
+            }
+          }
+        } catch (_) {}
+        if (msg.length > 180) msg = '${msg.substring(0, 180)}...';
+        EasyLoading.showError(
+            'payment_tamara_init_failed'.trParams({'error': msg}));
         log('Tamara init failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
@@ -1144,21 +1149,17 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       try {
         final qty = (item.quantity ?? 1).toInt();
         final unit = item.cartBasePrice;
-        // Convert into the selected country's currency; the line total is
-        // derived from the converted unit price so unit x qty always equals
-        // the line total (Tamara validates this).
-        final convUnit = _payConvert(unit);
-        final convTotal = double.parse((convUnit * qty).toStringAsFixed(2));
+        final total = (unit * qty).toDouble();
         list.add({
           "name": item.productName ?? "",
           "type": "Physical",
           "reference_id": (item.productId ?? '').toString(),
           "sku": (item.productId ?? '').toString(),
           "quantity": qty,
-          "discount_amount": {"amount": 0, "currency": _payCurrencyCode},
-          "tax_amount": {"amount": 0, "currency": _payCurrencyCode},
-          "unit_price": {"amount": convUnit, "currency": _payCurrencyCode},
-          "total_amount": {"amount": convTotal, "currency": _payCurrencyCode},
+          "discount_amount": {"amount": 0, "currency": "AED"},
+          "tax_amount": {"amount": 0, "currency": "AED"},
+          "unit_price": {"amount": unit, "currency": "AED"},
+          "total_amount": {"amount": total, "currency": "AED"},
         });
       } catch (e) {
         log('Skipping cart item for Tamara mapping: $e');
