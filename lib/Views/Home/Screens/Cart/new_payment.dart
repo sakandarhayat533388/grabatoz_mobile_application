@@ -43,6 +43,30 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       ? Get.find<CountryController>().countryCode
       : 'AE';
 
+  /// Currency the payment providers must charge in: the SELECTED country's
+  /// currency (SAR for Saudi Arabia, QAR for Qatar, ...), not always AED.
+  /// Tamara/Tabby merchant accounts are country-specific and reject a
+  /// currency that does not match the consumer's country. The order itself
+  /// stays AED on the backend; only the provider charge converts.
+  String get _payCurrencyCode {
+    if (Get.isRegistered<CountryController>()) {
+      final code =
+          Get.find<CountryController>().selectedCountry.value?.currencyCode ??
+              '';
+      if (code.isNotEmpty) return code.toUpperCase();
+    }
+    return 'AED';
+  }
+
+  double get _payRate => Get.isRegistered<CountryController>()
+      ? Get.find<CountryController>().effectiveRate
+      : 1.0;
+
+  /// AED amount -> selected-currency amount, at the same effective rate the
+  /// price display uses, rounded to 2 decimals.
+  double _payConvert(double amountAed) =>
+      double.parse((amountAed * _payRate).toStringAsFixed(2));
+
   double _firstOrderDiscountAmount() {
     if (!Get.isRegistered<FirstUserDiscountController>()) return 0.0;
 
@@ -870,7 +894,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         list.add({
           "title": item.productName ?? "",
           "quantity": qty,
-          "unit_price": unit.toStringAsFixed(2),
+          "unit_price": _payConvert(unit).toStringAsFixed(2),
           "reference_id": (item.productId ?? '').toString(),
         });
       } catch (e) {
@@ -918,8 +942,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
     final Map<String, dynamic> payload = {
       "payment": {
-        "amount": totalAmount.toStringAsFixed(2),
-        "currency": "AED",
+        "amount": _payConvert(totalAmount).toStringAsFixed(2),
+        "currency": _payCurrencyCode,
         "buyer": {
           "phone": phone,
           "email": email,
@@ -1036,16 +1060,16 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       "order_reference_id": orderId,
       "order_number": "ORD_$orderId",
       "total_amount": {
-        "amount": totalAmount,
-        "currency": "AED",
+        "amount": _payConvert(totalAmount),
+        "currency": _payCurrencyCode,
       },
       "shipping_amount": {
         "amount": 0,
-        "currency": "AED",
+        "currency": _payCurrencyCode,
       },
       "tax_amount": {
         "amount": 0,
-        "currency": "AED",
+        "currency": _payCurrencyCode,
       },
       "items": items,
       "consumer": {
@@ -1120,17 +1144,21 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       try {
         final qty = (item.quantity ?? 1).toInt();
         final unit = item.cartBasePrice;
-        final total = (unit * qty).toDouble();
+        // Convert into the selected country's currency; the line total is
+        // derived from the converted unit price so unit x qty always equals
+        // the line total (Tamara validates this).
+        final convUnit = _payConvert(unit);
+        final convTotal = double.parse((convUnit * qty).toStringAsFixed(2));
         list.add({
           "name": item.productName ?? "",
           "type": "Physical",
           "reference_id": (item.productId ?? '').toString(),
           "sku": (item.productId ?? '').toString(),
           "quantity": qty,
-          "discount_amount": {"amount": 0, "currency": "AED"},
-          "tax_amount": {"amount": 0, "currency": "AED"},
-          "unit_price": {"amount": unit, "currency": "AED"},
-          "total_amount": {"amount": total, "currency": "AED"},
+          "discount_amount": {"amount": 0, "currency": _payCurrencyCode},
+          "tax_amount": {"amount": 0, "currency": _payCurrencyCode},
+          "unit_price": {"amount": convUnit, "currency": _payCurrencyCode},
+          "total_amount": {"amount": convTotal, "currency": _payCurrencyCode},
         });
       } catch (e) {
         log('Skipping cart item for Tamara mapping: $e');
