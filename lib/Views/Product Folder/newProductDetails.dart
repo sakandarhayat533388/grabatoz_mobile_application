@@ -2728,7 +2728,7 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
                   const SizedBox(height: 4),
                   Text(
                     priceText,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: kPrimaryColor,
@@ -2752,7 +2752,7 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
               right: 6,
               child: Container(
                 padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: kPrimaryColor,
                   shape: BoxShape.circle,
                 ),
@@ -3529,7 +3529,7 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
-                          buttonTextStyle: const TextStyle(
+                          buttonTextStyle: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                             color: kPrimaryColor,
@@ -3695,10 +3695,10 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
                                 children: [
                                   Text(
                                     formatPriceForSelected(offerDisplayPrice),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
-                                        color: kredColor),
+                                        color: themePriceColor()),
                                   ),
                                   const SizedBox(width: 2),
                                   Text(
@@ -3706,18 +3706,18 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
                                     style: TextStyle(
                                         fontWeight: FontWeight.normal,
                                         fontSize: 10,
-                                        color: kredColor.withOpacity(0.8)),
+                                        color: themePriceColor().withOpacity(0.8)),
                                   ),
                                   Padding(
                                     padding: const EdgeInsets.only(left: 8.0),
                                     child: Text(
                                       formatPriceForSelected(regularDisplayPrice),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                           decoration:
                                               TextDecoration.lineThrough,
                                           fontWeight: FontWeight.normal,
                                           fontSize: 12,
-                                          color: Colors.grey),
+                                          color: themeOldPriceColor()),
                                     ),
                                   ),
                                 ],
@@ -3729,10 +3729,10 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
                                 children: [
                                   Text(
                                     formatPriceForSelected(regularDisplayPrice),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 18,
-                                        color: kdefblackColor),
+                                        color: themePriceColor()),
                                   ),
                                   const SizedBox(width: 2),
                                   Text(
@@ -3740,7 +3740,7 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
                                     style: TextStyle(
                                         fontWeight: FontWeight.normal,
                                         fontSize: 10,
-                                        color: kdefblackColor.withOpacity(0.8)),
+                                        color: themePriceColor().withOpacity(0.8)),
                                   ),
                                 ],
                               );
@@ -3763,7 +3763,7 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
                           if (s == null || !s.isEnabled || !s.showOnProductPage) return const SizedBox.shrink();
                           final est = (((double.tryParse(widget.offerPrice) ?? 0.0) > 0.001 && (double.tryParse(widget.offerPrice) ?? 0.0) < (double.tryParse(widget.price) ?? 0.0) ? (double.tryParse(widget.offerPrice) ?? 0.0) : (double.tryParse(widget.price) ?? 0.0)) * s.earnPointsPerAed).floor();
                           if (est <= 0) return const SizedBox.shrink();
-                          return Padding(padding: const EdgeInsets.only(top: 4), child: Row(children: [const Icon(Icons.stars, size: 14, color: kPrimaryColor), const SizedBox(width: 4), Text('loyalty_earn_hint'.trParams({'points': '$est', 'name': lc.pointsName}), style: const TextStyle(fontSize: 12, color: kPrimaryColor))]));
+                          return Padding(padding: const EdgeInsets.only(top: 4), child: Row(children: [Icon(Icons.stars, size: 14, color: kPrimaryColor), const SizedBox(width: 4), Text('loyalty_earn_hint'.trParams({'points': '$est', 'name': lc.pointsName}), style: TextStyle(fontSize: 12, color: kPrimaryColor))]));
                         }),
                         10.0.heightbox,
                         _buildProductOptions(),
@@ -4624,7 +4624,7 @@ String _optionLabel(dynamic option, List<String> preferredKeys) {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Container(
-                  decoration: const BoxDecoration(color: kPrimaryColor),
+                  decoration: BoxDecoration(color: kPrimaryColor),
                   child: TextButton(
                     onPressed: () async {
                       final result = await showModalBottomSheet<bool>(
