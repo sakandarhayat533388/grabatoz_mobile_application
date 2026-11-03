@@ -255,6 +255,21 @@ class CartNotifier extends GetxController {
       return;
     }
 
+    // API guide §8.1: at checkout the backend applies ONLY AppDiscount
+    // codes to app orders — an ordinary coupon validates here but is
+    // silently ignored on the order itself. Refuse it now with a clear
+    // message instead of promising a discount that never comes off.
+    final couponObjForGate = couponData['coupon'] is Map
+        ? Map<String, dynamic>.from(couponData['coupon'] as Map)
+        : null;
+    if (couponObjForGate == null ||
+        couponObjForGate['isAppDiscount'] != true) {
+      EasyLoading.dismiss();
+      EasyLoading.showError('coupon_web_only'.tr);
+      print("❌ Coupon is not an app discount: $couponCode");
+      return;
+    }
+
     double discountAmount = 0.0;
     if (couponData['coupon'] is Map) {
       final couponObj = Map<String, dynamic>.from(couponData['coupon']);

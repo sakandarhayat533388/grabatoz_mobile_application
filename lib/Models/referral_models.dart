@@ -284,6 +284,14 @@ class ReferralReward {
   final DateTime? expiresAt;
   final DateTime? usedAt;
 
+  /// Why a quote refused this reward for the current basket
+  /// (`below_minimum`, `first_order_only`, `expired`, `not_active`,
+  /// `no_value`, ...). Only quote responses carry it; empty = not blocked.
+  final String blockedReason;
+
+  /// The quote's own applicability verdict. Null outside quote responses.
+  final bool? applicable;
+
   const ReferralReward({
     this.id = '',
     this.role = '',
@@ -300,9 +308,15 @@ class ReferralReward {
     this.firstOrderOnly = false,
     this.expiresAt,
     this.usedAt,
+    this.blockedReason = '',
+    this.applicable,
   });
 
   bool get isActive => status == 'active';
+
+  /// True when a quote says this reward cannot discount the current
+  /// basket. Panel (/me) rewards never carry a blockedReason.
+  bool get isBlocked => blockedReason.isNotEmpty;
 
   factory ReferralReward.fromJson(Map<String, dynamic> json) {
     final discountApplied = _d(
@@ -326,6 +340,8 @@ class ReferralReward {
       firstOrderOnly: _b(json['firstOrderOnly']),
       expiresAt: _date(json['expiresAt']),
       usedAt: _date(json['usedAt']),
+      blockedReason: _s(json['blockedReason']),
+      applicable: json['applicable'] == null ? null : _b(json['applicable']),
     );
   }
 }
@@ -442,7 +458,11 @@ class ReferralQuote {
   }
 }
 
-/// Parses a referral code validation result from POST /api/referrals/validate (HTTP 200 even when valid is false).
+/// Parses a referral code validation result from GET /api/referrals/validate/:code (HTTP 200 even when valid is false).
+///
+/// Live response shape (API guide §4.2): the inviter's first name arrives as
+/// `referrerName` and the friend's reward terms under `reward` — NOT
+/// `firstName` / `offer`. The old keys are kept as fallbacks only.
 class ReferralValidation {
   final bool valid;
   final String reason;
@@ -457,11 +477,11 @@ class ReferralValidation {
   });
 
   factory ReferralValidation.fromJson(Map<String, dynamic> json) {
-    final offerMap = _map(json['offer']);
+    final offerMap = _map(json['reward'] ?? json['offer']);
     return ReferralValidation(
       valid: _b(json['valid']),
       reason: _s(json['reason']),
-      firstName: _sOrNull(json['firstName']),
+      firstName: _sOrNull(json['referrerName'] ?? json['firstName']),
       offer: offerMap == null ? null : ReferralOffer.fromJson(offerMap),
     );
   }

@@ -148,6 +148,17 @@ class ReferralController extends GetxController {
           !activeIds.contains(checkoutRewardId.value)) {
         checkoutRewardId.value = '';
       }
+      // A reward can be active yet blocked for THIS basket (below its
+      // minimum, first-order-only, ...). Never keep such a selection:
+      // submitting its id fails the whole order with a server 400.
+      if (checkoutRewardId.value.isNotEmpty) {
+        for (final reward in quote.rewards) {
+          if (reward.id == checkoutRewardId.value && reward.isBlocked) {
+            checkoutRewardId.value = '';
+            break;
+          }
+        }
+      }
       if (checkoutRewardId.value.isEmpty && quote.best != null) {
         checkoutRewardId.value = quote.best!.id;
       }
