@@ -11,6 +11,7 @@ import 'package:graba2z/Controllers/referral_controller.dart';
 import 'package:graba2z/Controllers/payment_charges_controller.dart';
 import 'package:graba2z/Controllers/country_controller.dart';
 import 'package:graba2z/Utils/price_formatter.dart';
+import 'package:graba2z/Utils/country_states.dart';
 import 'package:graba2z/Utils/guest_checkout_storage.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:graba2z/Views/success_page/successpayment.dart';
@@ -42,6 +43,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   String get _selectedCountryCode => Get.isRegistered<CountryController>()
       ? Get.find<CountryController>().countryCode
       : 'AE';
+
+  /// Country stored on the order in the backend: the country selected in
+  /// the app's country selector — the owner's rule. Not the address
+  /// record's own country: an address saved earlier (or defaulted to UAE)
+  /// must not override the shopper's selected country.
+  String get _orderCountryName =>
+      countryNameForCode(defaultAddressCountryCode());
 
 
   double _firstOrderDiscountAmount() {
@@ -352,7 +360,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     "city": guestCity,
                                     "state": guestState,
                                     "zipCode": guestZipCode,
-                                    "country": guestCountry ?? 'UAE'
+                                    "country": (guestCountry != null &&
+                                            guestCountry.isNotEmpty)
+                                        ? guestCountry
+                                        : _orderCountryName
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
@@ -382,7 +393,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                         .replaceAll('"', ''),
                                     "zipCode": _usercontroller.zipcode.value
                                         .replaceAll('"', ''),
-                                    "country": _usercontroller.country.value
+                                    "country": _orderCountryName
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
@@ -418,7 +429,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                     "city": guestCity,
                                     "state": guestState,
                                     "zipCode": guestZipCode,
-                                    "country": guestCountry ?? 'UAE'
+                                    "country": (guestCountry != null &&
+                                            guestCountry.isNotEmpty)
+                                        ? guestCountry
+                                        : _orderCountryName
                                   },
                                   {},
                                   _usercontroller.subtotalAmount.value,
@@ -448,7 +462,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                                         .replaceAll('"', ''),
                                     "zipCode": _usercontroller.zipcode.value
                                         .replaceAll('"', ''),
-                                    "country": _usercontroller.country.value
+                                    "country": _orderCountryName
                                   },
                                   {
                                     "phone": _usercontroller.storePhone.value,

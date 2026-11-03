@@ -547,7 +547,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
             _userController.zipcode.value.replaceAll('"', ''))
         .trim();
     final country = (prefs.getString('guest_country') ??
-            _userController.country.value)
+            countryNameForCode(defaultAddressCountryCode()))
         .trim();
     final registeredEmail = prefs.getString('guest_registered_email') ?? '';
 
@@ -1269,7 +1269,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       city: _userController.city.value,
                       state: _userController.state.value,
                       zipCode: _userController.zipcode.value,
-                      country: _userController.country.value,
+                      country: countryNameForCode(defaultAddressCountryCode()),
                       showSuccessMessage: false,
                     );
                   }
@@ -1343,7 +1343,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       city: _authController.editcityController.text,
                       state: _authController.editStateController.text,
                       zipCode: _authController.editzipcodeController.text,
-                      country: _userController.country.value,
+                      country: countryNameForCode(defaultAddressCountryCode()),
                       showSuccessMessage: false,
                     );
 
@@ -1379,7 +1379,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                         city: _userController.city.value,
                         state: _userController.state.value,
                         zipCode: _userController.zipcode.value,
-                        country: _userController.country.value,
+                        country: countryNameForCode(defaultAddressCountryCode()),
                         showSuccessMessage: false,
                       );
                     }
@@ -1518,7 +1518,7 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
                       ? _userController.state.value
                       : 'Dubai',
                   zipCode: _userController.zipcode.value,
-                  country: _userController.country.value,
+                  country: countryNameForCode(defaultAddressCountryCode()),
                   isDefault: true,
                 ),
               );
@@ -1734,8 +1734,12 @@ class _CheckoutStepperState extends State<CheckoutStepper> {
     _userController.city.value = addr.city;
     _userController.state.value = addr.state;
     _userController.zipcode.value = addr.zipCode;
-    _userController.country.value = addr.country;
-    _authController.profileCountry.value = addr.country;
+    // The country carried through checkout is the one selected in the
+    // app's country selector (the owner's rule), not the address record's
+    // own country — an older address must not drag the order back to UAE.
+    _userController.country.value =
+        countryNameForCode(defaultAddressCountryCode());
+    _authController.profileCountry.value = _userController.country.value;
 
     // Sync to AuthController as well so listeners/rebuilds stay 100% in sync
     _authController.editaddressController.text = addr.address;
