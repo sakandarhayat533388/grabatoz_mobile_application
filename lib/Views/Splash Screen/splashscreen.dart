@@ -3,6 +3,7 @@ import 'package:graba2z/Controllers/addtocart.dart';
 import 'package:graba2z/Controllers/home_controller.dart';
 import 'package:graba2z/Utils/packages.dart';
 import 'package:graba2z/Views/Home/home.dart';
+import 'package:graba2z/Views/Onboarding/onboarding_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -44,11 +45,20 @@ class SplashScreenState extends State<SplashScreen> {
     _loadUserIdAndCart(cartNotifier);
   }
 
-  void _navigateToHome() {
+  Future<void> _navigateToHome() async {
+    // First launch goes to onboarding (country, then language) once;
+    // afterwards the saved flag sends every launch straight home.
+    var onboardingDone = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      onboardingDone = prefs.getBool(kOnboardingDoneKey) ?? false;
+    } catch (_) {}
+    if (!mounted) return;
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(seconds: 2),
-        pageBuilder: (context, animation, secondaryAnimation) => const Home(),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            onboardingDone ? const Home() : const OnboardingScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           // Fade transition
           return FadeTransition(
