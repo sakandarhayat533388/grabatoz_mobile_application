@@ -26,6 +26,7 @@ import 'package:graba2z/Api/Models/category_slider_item.dart';
 import 'package:graba2z/Controllers/dynamic_section_controller.dart';
 import 'package:graba2z/Widgets/HomeSections/home_section_builder.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:graba2z/Controllers/loyalty_controller.dart';
 import 'package:graba2z/Controllers/country_controller.dart';
 import 'package:graba2z/Widgets/country_selector.dart';
@@ -560,17 +561,34 @@ class _HomeScreenViewState extends State<HomeScreenView> {
                 }
                 final selected =
                     Get.find<CountryController>().selectedCountry.value;
+                final flagSvg = selected?.flagSvg ?? '';
+                Widget flagChild = const Icon(Icons.flag_outlined,
+                    size: 16, color: kdefwhiteColor);
+                if (flagSvg.trim().isNotEmpty) {
+                  try {
+                    flagChild = SvgPicture.string(
+                      flagSvg,
+                      width: 36,
+                      height: 24,
+                      fit: BoxFit.cover,
+                    );
+                  } catch (_) {}
+                }
                 return GestureDetector(
                   onTap: () => showCountrySelector(context),
                   child: Container(
-                    margin: const EdgeInsets.only(right: 2),
-                    padding: const EdgeInsets.all(4),
+                    margin: const EdgeInsets.only(right: 6),
+                    width: 36,
+                    height: 24,
                     decoration: BoxDecoration(
-                      color: kdefwhiteColor,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                          color: Colors.black.withValues(alpha: 0.15)),
                     ),
-                    child: CountryFlag(selected?.flagSvg ?? '',
-                        width: 28, height: 20),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: flagChild,
+                    ),
                   ),
                 );
               }),
