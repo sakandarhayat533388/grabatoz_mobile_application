@@ -27,6 +27,8 @@ import 'package:graba2z/Controllers/dynamic_section_controller.dart';
 import 'package:graba2z/Widgets/HomeSections/home_section_builder.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:graba2z/Controllers/loyalty_controller.dart';
+import 'package:graba2z/Controllers/country_controller.dart';
+import 'package:graba2z/Widgets/country_selector.dart';
 import 'package:graba2z/Controllers/theme_controller.dart';
 import 'package:graba2z/Widgets/theme_logo.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -549,6 +551,29 @@ class _HomeScreenViewState extends State<HomeScreenView> {
           actionicon: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Country / currency shortcut on Home (owner request): the
+              // selected country's flag, opening the same selector as the
+              // Settings 'Country / Currency' row.
+              Obx(() {
+                if (!Get.isRegistered<CountryController>()) {
+                  return const SizedBox.shrink();
+                }
+                final selected =
+                    Get.find<CountryController>().selectedCountry.value;
+                return GestureDetector(
+                  onTap: () => showCountrySelector(context),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 2),
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: kdefwhiteColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: CountryFlag(selected?.flagSvg ?? '',
+                        width: 28, height: 20),
+                  ),
+                );
+              }),
               IconButton(
                   onPressed: () {
                     Navigator.push(
